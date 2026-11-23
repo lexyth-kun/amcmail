@@ -1,3 +1,5 @@
+import { initAmcThreeScene } from './scene3d.js';
+
 const POLL_INTERVAL_SEC = 10;
 const STORAGE_KEYS = {
   theme: 'amc_mail_theme',
@@ -14,6 +16,8 @@ const RANDOM_PREFIXES = [
 ];
 
 const LOCAL_PART_REGEX = /^[a-z0-9][a-z0-9._+-]{0,62}$/;
+
+let threeController = null;
 
 const state = {
   domains: [],
@@ -61,12 +65,37 @@ const state = {
 const $ = (id) => document.getElementById(id);
 
 const els = {
-  headerDomainCount: $('header-domain-count'),
+  hero3dCanvas: $('hero-3d-canvas'),
+  ambient3dCanvas: $('ambient-3d-canvas'),
+  btnToggle3d: $('btn-toggle-3d'),
+
+  sidebarActiveAddr: $('sidebar-active-addr'),
+  btnSidebarCopy: $('btn-sidebar-copy'),
+  btnSidebarRandom: $('btn-sidebar-random'),
+  sideCountAll: $('side-count-all'),
+  sideCountInbox: $('side-count-inbox'),
+  sideCountBounce: $('side-count-bounce'),
+  sideCountOtp: $('side-count-otp'),
+  sideDomainCount: $('side-domain-count'),
+  btnSidebarAdmin: $('btn-sidebar-admin'),
+  sidebarAdminDot: $('sidebar-admin-dot'),
+  btnSidebarTheme: $('btn-sidebar-theme'),
+  sidebarThemeLabel: $('sidebar-theme-label'),
+
+  heroDomainCount: $('hero-domain-count'),
+  heroInboxCount: $('hero-inbox-count'),
+  heroBounceCount: $('hero-bounce-count'),
+
   btnThemeToggle: $('btn-theme-toggle'),
   iconMoon: $('icon-moon'),
   iconSun: $('icon-sun'),
   btnOpenAdmin: $('btn-open-admin'),
   adminActiveDot: $('admin-active-dot'),
+
+  mobNavInbox: $('mob-nav-inbox'),
+  mobNavBounce: $('mob-nav-bounce'),
+  mobNavRandom: $('mob-nav-random'),
+  mobNavAdmin: $('mob-nav-admin'),
 
   btnToggleAutoPoll: $('btn-toggle-autopoll'),
   pollStatusText: $('poll-status-text'),
@@ -273,23 +302,29 @@ async function apiFetch(path, options = {}) {
   return data;
 }
 
-function syncThemeIcons() {
+function syncThemeUI() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   els.iconMoon.classList.toggle('hidden', isDark);
   els.iconSun.classList.toggle('hidden', !isDark);
   els.btnThemeToggle.setAttribute('aria-pressed', String(isDark));
+  els.sidebarThemeLabel.textContent = isDark ? 'Mode Terang' : 'Mode Gelap';
+  threeController?.setTheme(isDark ? 'dark' : 'light');
 }
 
 function toggleTheme() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const root = document.documentElement;
+  root.classList.add('theme-switching');
+  const isDark = root.getAttribute('data-theme') === 'dark';
   if (isDark) {
-    document.documentElement.removeAttribute('data-theme');
+    root.removeAttribute('data-theme');
     try { localStorage.setItem(STORAGE_KEYS.theme, 'light'); } catch {}
   } else {
-    document.documentElement.setAttribute('data-theme', 'dark');
+    root.setAttribute('data-theme', 'dark');
     try { localStorage.setItem(STORAGE_KEYS.theme, 'dark'); } catch {}
   }
-  syncThemeIcons();
+  syncThemeUI();
+  void root.offsetHeight;
+  requestAnimationFrame(() => root.classList.remove('theme-switching'));
 }
 
 function loadHistory() {
@@ -341,7 +376,30 @@ function renderHistoryChips() {
     .join('');
 }
 
-function setActiveAddress(localPart, domain, { pushUrl = true } = {}) {
+function setFilter(nextFilter, { scrollToInbox = false } = {}) {
+  state.filter = nextFilter;
+
+  document.querySelectorAll('.filter-tab').forEach((t) => {
+    const active = t.dataset.filter === nextFilter;
+    t.classList.toggle('is-active', active);
+    t.setAttribute('aria-selected', String(active));
+  });
+
+  document.querySelectorAll('[data-nav-filter]').forEach((btn) => {
+    btn.classList.toggle('is-active', btn.dataset.navFilter === nextFilter);
+  });
+
+  els.mobNavInbox.classList.toggle('is-active', nextFilter !== 'bounce');
+  els.mobNavBounce.classList.toggle('is-active', nextFilter === 'bounce');
+
+  if (scrollToInbox) {
+    els.mailWorkspace.classList.remove('is-reading');
+    els.mailWorkspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  fetchInbox({ silent: false });
+}
+
+function setActiveAddress(localPart, domain, { pushUrl = true, animate3d = true } = {}) {
   const cleanUser = String(localPart || '').trim().toLowerCase();
   const cleanDomain = String(domain || state.defaultDomain).trim().toLowerCase();
 
@@ -361,6 +419,7 @@ function setActiveAddress(localPart, domain, { pushUrl = true } = {}) {
 
   const full = getActiveAddress();
   els.inboxActiveLabel.textContent = full;
+  els.sidebarActiveAddr.textContent = full;
   els.mailWorkspace.classList.remove('is-reading');
 
   try {
@@ -374,8 +433,11 @@ function setActiveAddress(localPart, domain, { pushUrl = true } = {}) {
   }
 
   addToHistory(full);
-  renderDomainPills();
+  renderDomainCards();
   renderReaderEmpty();
+  if (animate3d) {
+    threeController?.pulse('generate');
+  }
   fetchInbox({ silent: false });
   resetPollCountdown();
 }
@@ -402,8 +464,10 @@ function validateUsernameInput(rawUser) {
 
 function renderDomainControls() {
   const list = state.domains;
-  els.headerDomainCount.textContent = `${list.length} Domain`;
+  els.sideDomainCount.textContent = String(list.length);
+  els.heroDomainCount.textContent = String(list.length);
   els.retentionInfo.textContent = `Retensi otomatis: ${formatRetentionLabel(state.retentionHours)}`;
+  threeController?.setDomainCount(list.length);
 
   const currentSelection = state.activeDomain || state.defaultDomain;
   els.selectDomain.innerHTML = list
@@ -416,14 +480,20 @@ function renderDomainControls() {
     els.selectDomain.value = list[0].domain;
   }
 
-  renderDomainPills();
+  renderDomainCards();
 }
 
-function renderDomainPills() {
+function renderDomainCards() {
   els.domainPills.innerHTML = state.domains
     .map((d) => {
       const active = d.domain === state.activeDomain;
-      return `<button type="button" class="domain-pill-btn ${active ? 'is-current' : ''}" data-pick-domain="${escapeHtml(d.domain)}">@${escapeHtml(d.domain)}</button>`;
+      const tag = active ? 'Aktif' : d.isDefault ? 'Utama' : 'Pilih';
+      return `
+        <button type="button" class="domain-card-btn ${active ? 'is-current' : ''}" data-pick-domain="${escapeHtml(d.domain)}">
+          <span class="domain-card-name">@${escapeHtml(d.domain)}</span>
+          <span class="domain-card-tag">${tag}</span>
+        </button>
+      `;
     })
     .join('');
 }
@@ -455,10 +525,13 @@ async function fetchInbox({ silent = false } = {}) {
       if (newlyArrived.length > 0) {
         const first = newlyArrived[0];
         if (first.isBounce) {
+          threeController?.pulse('bounce');
           showToast(`Bounce terdeteksi (${first.bounceSummary?.smtpCode || 'DSN'}): ${first.subject}`, 'error');
         } else if (first.otpCode) {
+          threeController?.pulse('otp');
           showToast(`Kode OTP baru masuk: ${first.otpCode}`, 'success');
         } else {
+          threeController?.pulse('inbox');
           showToast(`${newlyArrived.length} pesan baru masuk ke ${address}`, 'success');
         }
       }
@@ -490,6 +563,12 @@ function renderCounts() {
   els.countInbox.textContent = state.counts.inbox;
   els.countBounce.textContent = state.counts.bounce;
   els.countOtp.textContent = state.counts.otp;
+  els.sideCountAll.textContent = state.counts.all;
+  els.sideCountInbox.textContent = state.counts.inbox;
+  els.sideCountBounce.textContent = state.counts.bounce;
+  els.sideCountOtp.textContent = state.counts.otp;
+  els.heroInboxCount.textContent = state.counts.all;
+  els.heroBounceCount.textContent = state.counts.bounce;
   els.tabFilterBounce.classList.toggle('has-items', state.counts.bounce > 0);
 }
 
@@ -618,6 +697,10 @@ async function openEmail(id) {
       state.counts.unread = Math.max(0, state.counts.unread - 1);
       renderInboxList();
     }
+
+    if (data.email.isBounce) threeController?.pulse('bounce');
+    else if (data.email.otpCode) threeController?.pulse('otp');
+    else threeController?.pulse('inbox');
 
     renderEmailIntoContainer(els.readerContent, state.selectedDetail, {
       activeTab: state.readerTab,
@@ -919,10 +1002,13 @@ async function triggerSimulation(scenario, customAddress = null, extra = {}) {
     });
 
     if (res.isBounce) {
+      threeController?.pulse('bounce');
       showToast(`Simulasi bounce (${res.bounceSummary?.smtpCode || 'DSN'}) terkirim ke ${recipient}`, 'success');
     } else if (res.otpCode) {
+      threeController?.pulse('otp');
       showToast(`Simulasi OTP (${res.otpCode}) terkirim ke ${recipient}`, 'success');
     } else {
+      threeController?.pulse('inbox');
       showToast(`Email simulasi terkirim ke ${recipient}`, 'success');
     }
 
@@ -940,6 +1026,7 @@ async function triggerSimulation(scenario, customAddress = null, extra = {}) {
 
 function updateAdminIndicators() {
   els.adminActiveDot.classList.toggle('hidden', !state.adminAuthenticated);
+  els.sidebarAdminDot.classList.toggle('hidden', !state.adminAuthenticated);
   const showSim = state.simulatorEnabled || state.adminAuthenticated;
   els.simMenuWrap.classList.toggle('hidden', !showSim);
 }
@@ -1207,8 +1294,61 @@ function logoutAdmin() {
   showToast('Anda keluar dari Panel Admin.');
 }
 
+async function copyActiveEmailAction() {
+  const typed = els.inputUsername.value.trim().toLowerCase();
+  if (typed && typed !== state.activeLocalPart) {
+    const check = validateUsernameInput(typed);
+    if (!check.valid) {
+      els.builderError.textContent = check.error;
+      els.builderError.classList.remove('hidden');
+      return;
+    }
+    setActiveAddress(check.value, els.selectDomain.value || state.activeDomain);
+  }
+  const addr = getActiveAddress();
+  const ok = await copyText(addr, `Disalin: ${addr}`);
+  if (ok) {
+    els.btnCopyLabel.textContent = 'Tersalin';
+    setTimeout(() => {
+      els.btnCopyLabel.textContent = 'Salin Email';
+    }, 1600);
+  }
+}
+
+function randomizeUsernameAction() {
+  const newUser = generateRandomUsername();
+  setActiveAddress(newUser, els.selectDomain.value || state.defaultDomain);
+  showToast(`Username baru: ${newUser}@${state.activeDomain}`);
+}
+
 function bindEvents() {
   els.btnThemeToggle.addEventListener('click', toggleTheme);
+  els.btnSidebarTheme.addEventListener('click', toggleTheme);
+  els.btnSidebarCopy.addEventListener('click', copyActiveEmailAction);
+  els.btnSidebarRandom.addEventListener('click', randomizeUsernameAction);
+  els.btnSidebarAdmin.addEventListener('click', openAdminModal);
+
+  els.btnToggle3d.addEventListener('click', () => {
+    if (!threeController) return;
+    const next = !threeController.isPaused();
+    threeController.setPaused(next);
+    els.btnToggle3d.textContent = next ? 'Lanjut 3D' : 'Jeda 3D';
+    els.btnToggle3d.setAttribute('aria-pressed', String(next));
+  });
+
+  document.querySelectorAll('[data-nav-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setFilter(btn.dataset.navFilter, { scrollToInbox: true });
+    });
+  });
+
+  els.mobNavInbox.addEventListener('click', () => setFilter('all', { scrollToInbox: true }));
+  els.mobNavBounce.addEventListener('click', () => setFilter('bounce', { scrollToInbox: true }));
+  els.mobNavRandom.addEventListener('click', () => {
+    randomizeUsernameAction();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  els.mobNavAdmin.addEventListener('click', openAdminModal);
 
   els.btnToggleAutoPoll.addEventListener('click', () => {
     state.autoPoll = !state.autoPoll;
@@ -1244,32 +1384,8 @@ function bindEvents() {
     showToast(`Domain diganti ke @${els.selectDomain.value}`);
   });
 
-  els.btnCopyEmail.addEventListener('click', async () => {
-    const typed = els.inputUsername.value.trim().toLowerCase();
-    if (typed && typed !== state.activeLocalPart) {
-      const check = validateUsernameInput(typed);
-      if (!check.valid) {
-        els.builderError.textContent = check.error;
-        els.builderError.classList.remove('hidden');
-        return;
-      }
-      setActiveAddress(check.value, els.selectDomain.value || state.activeDomain);
-    }
-    const addr = getActiveAddress();
-    const ok = await copyText(addr, `Disalin: ${addr}`);
-    if (ok) {
-      els.btnCopyLabel.textContent = 'Tersalin';
-      setTimeout(() => {
-        els.btnCopyLabel.textContent = 'Salin Email';
-      }, 1600);
-    }
-  });
-
-  els.btnRandomUser.addEventListener('click', () => {
-    const newUser = generateRandomUsername();
-    setActiveAddress(newUser, els.selectDomain.value || state.defaultDomain);
-    showToast(`Username baru: ${newUser}@${state.activeDomain}`);
-  });
+  els.btnCopyEmail.addEventListener('click', copyActiveEmailAction);
+  els.btnRandomUser.addEventListener('click', randomizeUsernameAction);
 
   els.btnRandomAll.addEventListener('click', () => {
     const newUser = generateRandomUsername();
@@ -1329,15 +1445,7 @@ function bindEvents() {
   });
 
   document.querySelectorAll('.filter-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      state.filter = tab.dataset.filter;
-      document.querySelectorAll('.filter-tab').forEach((t) => {
-        const active = t === tab;
-        t.classList.toggle('is-active', active);
-        t.setAttribute('aria-selected', String(active));
-      });
-      fetchInbox({ silent: false });
-    });
+    tab.addEventListener('click', () => setFilter(tab.dataset.filter));
   });
 
   let searchDebounce = null;
@@ -1731,7 +1839,7 @@ function bindEvents() {
 
 async function init() {
   els.footerYear.textContent = String(new Date().getFullYear());
-  syncThemeIcons();
+  syncThemeUI();
   loadHistory();
 
   try {
@@ -1739,6 +1847,21 @@ async function init() {
   } catch {}
 
   bindEvents();
+
+  // Initialize Three.js asynchronously so first paint and API fetch never wait on WebGL.
+  initAmcThreeScene({
+    heroCanvas: els.hero3dCanvas,
+    ambientCanvas: els.ambient3dCanvas,
+  }).then((ctrl) => {
+    threeController = ctrl;
+    if (ctrl && typeof ctrl.isPaused === 'function' && ctrl.isPaused()) {
+      els.btnToggle3d.textContent = 'Lanjut 3D';
+      els.btnToggle3d.setAttribute('aria-pressed', 'true');
+    }
+    if (state.domains.length) {
+      threeController?.setDomainCount(state.domains.length);
+    }
+  });
 
   try {
     const [health, domRes] = await Promise.all([
@@ -1787,7 +1910,7 @@ async function init() {
       initDomain = state.defaultDomain;
     }
 
-    setActiveAddress(initUser, initDomain, { pushUrl: Boolean(urlEmail) });
+    setActiveAddress(initUser, initDomain, { pushUrl: Boolean(urlEmail), animate3d: false });
     startPollingLoop();
   } catch (err) {
     state.inboxError = err.message;

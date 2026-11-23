@@ -2,11 +2,11 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>AMC Mail: Temporary Mail dan Bounce Monitor | Al Muthi Creative</title>
-  <meta name="description" content="Temporary mail multi-domain milik Al Muthi Creative untuk amc.web.id, lexyth.my.id, rsykwnda.my.id, almuthicreative.my.id, jelupang.web.id, dan cilpa.biz.id dengan pemantauan bounce SMTP dan ekstraksi kode OTP.">
+  <meta name="description" content="Temporary mail multi-domain resmi Al Muthi Creative dengan pemantauan bounce SMTP, ekstraksi OTP otomatis, dan antarmuka 3D selaras dengan order.amc.web.id.">
   <meta name="author" content="Al Muthi Creative">
-  <meta name="theme-color" content="#0369a1">
+  <meta name="theme-color" content="#38bdf8">
 
   <link rel="icon" type="image/png" href="./assets/amc-logo.png">
   <link rel="apple-touch-icon" href="./assets/amc-logo.png">
@@ -14,7 +14,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <script>
     (function () {
@@ -31,24 +31,112 @@
 <body>
   <a href="#main-content" class="skip-link">Langsung ke kotak masuk</a>
 
-  <header class="site-header" id="site-header">
-    <div class="header-inner">
-      <a href="./" class="brand-lockup" id="brand-home-link">
-        <div class="brand-logo">
+  <canvas id="ambient-3d-canvas" aria-hidden="true"></canvas>
+
+  <!-- Desktop Fixed Left Ice-Glass Sidebar (>= 1024px, matching order.amc.web.id) -->
+  <aside class="desktop-app-sidebar" aria-label="Sidebar AMC Mail">
+    <a href="./" class="sidebar-brand" id="sidebar-home-link">
+      <div class="sidebar-logo-tile logo-sweep-wrap">
+        <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="40" height="40" fetchpriority="high">
+      </div>
+      <div>
+        <span class="brand-title">AMC <span>Mail</span></span>
+        <span class="brand-sub">Al Muthi Creative</span>
+      </div>
+    </a>
+
+    <div class="sidebar-mailbox-card">
+      <span class="sidebar-mailbox-label">Mailbox Aktif</span>
+      <span class="sidebar-mailbox-addr" id="sidebar-active-addr">...</span>
+      <div class="sidebar-mailbox-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-sidebar-copy" style="flex:1;">Salin</button>
+        <button type="button" class="btn btn-soft btn-sm" id="btn-sidebar-random">Acak</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section-label">Kotak Masuk</div>
+    <nav class="sidebar-nav-list" aria-label="Filter kotak masuk">
+      <button type="button" class="sidebar-link is-active" data-nav-filter="all" id="side-nav-all">
+        <span class="sidebar-link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+          <span>Semua Pesan</span>
+        </span>
+        <span class="sidebar-count" id="side-count-all">0</span>
+      </button>
+
+      <button type="button" class="sidebar-link" data-nav-filter="inbox" id="side-nav-inbox">
+        <span class="sidebar-link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          <span>Pesan Masuk</span>
+        </span>
+        <span class="sidebar-count" id="side-count-inbox">0</span>
+      </button>
+
+      <button type="button" class="sidebar-link" data-nav-filter="bounce" id="side-nav-bounce">
+        <span class="sidebar-link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>Bounce &amp; DSN</span>
+        </span>
+        <span class="sidebar-count is-bounce" id="side-count-bounce">0</span>
+      </button>
+
+      <button type="button" class="sidebar-link" data-nav-filter="otp" id="side-nav-otp">
+        <span class="sidebar-link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <span>Kode OTP</span>
+        </span>
+        <span class="sidebar-count is-otp" id="side-count-otp">0</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-section-label">Domain &amp; Pengaturan</div>
+    <div class="sidebar-nav-list">
+      <a href="#domain-directory" class="sidebar-link" id="side-nav-domains">
+        <span class="sidebar-link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          <span>Domain AMC</span>
+        </span>
+        <span class="sidebar-count" id="side-domain-count">6</span>
+      </a>
+
+      <button type="button" class="sidebar-link" id="btn-sidebar-admin">
+        <span class="sidebar-link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Panel Admin</span>
+        </span>
+        <span id="sidebar-admin-dot" class="status-dot-inline hidden" aria-hidden="true"></span>
+      </button>
+
+      <a href="https://order.amc.web.id" target="_blank" rel="noopener noreferrer" class="sidebar-link">
+        <span class="sidebar-link-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+          <span>AMC Order</span>
+        </span>
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <button type="button" class="btn btn-sm" id="btn-sidebar-theme">
+        <span id="sidebar-theme-label">Mode Gelap</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Mobile & Tablet Frosted Top Header (< 1024px) -->
+  <header class="mobile-header" id="site-header">
+    <div class="mobile-header-inner">
+      <a href="./" class="mobile-brand" id="brand-home-link">
+        <div class="mobile-logo-tile logo-sweep-wrap">
           <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="30" height="30" fetchpriority="high">
         </div>
-        <div class="brand-text">
+        <div>
           <span class="brand-title">AMC <span>Mail</span></span>
           <span class="brand-sub">Al Muthi Creative</span>
         </div>
       </a>
 
-      <nav class="header-nav" aria-label="Navigasi utama">
-        <a href="#domain-directory" class="btn btn-sm" id="btn-scroll-domains">
-          <span id="header-domain-count">6 Domain</span>
-        </a>
-
-        <button type="button" class="btn btn-icon btn-sm" id="btn-theme-toggle" aria-label="Ganti tema terang atau gelap" title="Ganti tema terang atau gelap">
+      <nav class="header-actions" aria-label="Navigasi atas">
+        <button type="button" class="header-icon-btn" id="btn-theme-toggle" aria-label="Ganti tema terang atau gelap" title="Ganti tema">
           <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
           </svg>
@@ -65,12 +153,12 @@
           </svg>
         </button>
 
-        <button type="button" class="btn btn-sm" id="btn-open-admin" aria-label="Buka Panel Admin">
+        <button type="button" class="owner-login-icon" id="btn-open-admin" aria-label="Buka Panel Admin">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <rect x="3" y="11" width="18" height="11" rx="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          <span class="btn-text-hide-sm">Admin</span>
+          <span>Admin</span>
           <span id="admin-active-dot" class="status-dot-inline hidden" aria-hidden="true"></span>
         </button>
       </nav>
@@ -78,106 +166,122 @@
   </header>
 
   <main class="app-main" id="main-content">
-    <section class="generator-section" aria-labelledby="main-heading">
-      <div class="generator-head">
-        <div>
-          <h1 id="main-heading">Temporary Mail dan Bounce Monitor</h1>
-          <p class="generator-subtitle">
-            Buat alamat email acak atau kustom pada domain Al Muthi Creative untuk membaca pesan masuk, kode OTP, dan laporan bounce SMTP.
+    <!-- Hero Welcome Card with Interactive Three.js 3D Mail Core -->
+    <section class="amc-hero-card" aria-labelledby="main-heading">
+      <div class="hero-top-grid">
+        <div class="hero-copy">
+          <h1 id="main-heading">AMC Temporary Mail &amp; Bounce Monitor</h1>
+          <p class="hero-subtitle">
+            Buat alamat sementara acak atau kustom pada domain Al Muthi Creative, baca kode OTP sekali klik, dan pantau diagnostik bounce SMTP secara langsung.
           </p>
-        </div>
-
-        <button type="button" class="poll-control" id="btn-toggle-autopoll" aria-pressed="true" title="Jeda atau lanjutkan pembaruan otomatis">
-          <span class="dot" aria-hidden="true"></span>
-          <span id="poll-status-text">Otomatis 10d</span>
-        </button>
-      </div>
-
-      <form class="address-builder" id="address-form" novalidate>
-        <div class="builder-field">
-          <label for="input-username" class="builder-label">Username</label>
-          <input
-            type="text"
-            id="input-username"
-            class="username-input"
-            placeholder="ketik.username"
-            autocomplete="off"
-            autocapitalize="off"
-            spellcheck="false"
-            maxlength="63"
-          >
-        </div>
-
-        <span class="at-divider" aria-hidden="true">@</span>
-
-        <div class="builder-field">
-          <label for="select-domain" class="builder-label">Domain AMC</label>
-          <select id="select-domain" class="domain-select"></select>
-        </div>
-
-        <div class="address-primary-actions">
-          <button type="submit" class="btn btn-soft btn-apply-custom hidden" id="btn-apply-custom">
-            Pakai Alamat
-          </button>
-
-          <button type="button" class="btn btn-primary btn-copy-main" id="btn-copy-email">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <rect x="9" y="9" width="13" height="13" rx="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-            <span id="btn-copy-label">Salin Email</span>
-          </button>
-        </div>
-      </form>
-
-      <p class="builder-error hidden" id="builder-error" role="alert"></p>
-
-      <div class="generator-toolbar">
-        <div class="toolbar-group">
-          <button type="button" class="btn btn-sm" id="btn-random-user">Acak Username</button>
-          <button type="button" class="btn btn-sm" id="btn-random-all">Ganti Email Baru</button>
-          <button type="button" class="btn btn-sm" id="btn-refresh-inbox">Periksa Inbox</button>
-        </div>
-
-        <div class="toolbar-group">
-          <div class="sim-menu-wrap hidden" id="sim-menu-wrap">
-            <button type="button" class="btn btn-sm btn-soft" id="btn-sim-menu" aria-expanded="false" aria-haspopup="menu">
-              Uji Kirim / Bounce
+          <div class="hero-live-strip">
+            <span class="hero-pill"><strong id="hero-domain-count">6</strong> Domain Aktif</span>
+            <span class="hero-pill"><strong id="hero-inbox-count">0</strong> Pesan</span>
+            <span class="hero-pill is-bounce"><strong id="hero-bounce-count">0</strong> Bounce</span>
+            <button type="button" class="poll-control" id="btn-toggle-autopoll" aria-pressed="true" title="Jeda atau lanjutkan pembaruan inbox otomatis">
+              <span class="dot" aria-hidden="true"></span>
+              <span id="poll-status-text">Otomatis 10d</span>
             </button>
+          </div>
+        </div>
 
-            <div class="sim-dropdown hidden" id="sim-dropdown" role="menu">
-              <div class="sim-dropdown-title">Kirim simulasi ke alamat aktif</div>
-              <button type="button" class="sim-option" data-sim="hard_bounce" role="menuitem">
-                <strong>Hard Bounce (550 5.1.1)</strong>
-                <small>DSN Gmail: alamat tujuan tidak ditemukan</small>
-              </button>
-              <button type="button" class="sim-option" data-sim="soft_bounce" role="menuitem">
-                <strong>Soft Bounce (452 4.2.2)</strong>
-                <small>DSN Yahoo: kotak masuk tujuan penuh</small>
-              </button>
-              <button type="button" class="sim-option" data-sim="policy_bounce" role="menuitem">
-                <strong>Policy Block (550 5.7.1)</strong>
-                <small>Penolakan DMARC atau kebijakan keamanan</small>
-              </button>
-              <button type="button" class="sim-option" data-sim="otp" role="menuitem">
-                <strong>Email Verifikasi OTP</strong>
-                <small>Kode 6 digit yang diekstrak otomatis</small>
-              </button>
-              <button type="button" class="sim-option" data-sim="welcome" role="menuitem">
-                <strong>Pesan HTML dan Lampiran</strong>
-                <small>Uji tampilan HTML terisolasi dan unduh file</small>
-              </button>
-            </div>
+        <div class="hero-3d-stage" aria-label="Visualisasi 3D AMC Mail Core">
+          <canvas id="hero-3d-canvas" width="280" height="220"></canvas>
+          <div class="stage-3d-controls">
+            <span class="stage-3d-hint">Geser untuk putar 3D</span>
+            <button type="button" class="btn-3d-pause" id="btn-toggle-3d" aria-pressed="false">Jeda 3D</button>
           </div>
         </div>
       </div>
 
-      <div class="mailbox-history hidden" id="mailbox-history">
-        <span class="history-label">Mailbox sesi ini:</span>
-        <div class="history-chips" id="history-chips"></div>
+      <div class="address-shell">
+        <form class="address-builder" id="address-form" novalidate>
+          <div class="builder-field">
+            <label for="input-username" class="builder-label">Username</label>
+            <input
+              type="text"
+              id="input-username"
+              class="username-input"
+              placeholder="ketik.username"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              maxlength="63"
+            >
+          </div>
+
+          <span class="at-divider" aria-hidden="true">@</span>
+
+          <div class="builder-field">
+            <label for="select-domain" class="builder-label">Domain AMC</label>
+            <select id="select-domain" class="domain-select"></select>
+          </div>
+
+          <div class="address-primary-actions">
+            <button type="submit" class="btn btn-soft btn-apply-custom hidden" id="btn-apply-custom">
+              Pakai Alamat
+            </button>
+
+            <button type="button" class="btn btn-primary btn-copy-main" id="btn-copy-email">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span id="btn-copy-label">Salin Email</span>
+            </button>
+          </div>
+        </form>
+
+        <p class="builder-error hidden" id="builder-error" role="alert"></p>
+
+        <div class="generator-toolbar">
+          <div class="toolbar-group">
+            <button type="button" class="btn btn-sm" id="btn-random-user">Acak Username</button>
+            <button type="button" class="btn btn-sm" id="btn-random-all">Ganti Email Baru</button>
+            <button type="button" class="btn btn-sm" id="btn-refresh-inbox">Periksa Inbox</button>
+          </div>
+
+          <div class="toolbar-group">
+            <div class="sim-menu-wrap hidden" id="sim-menu-wrap">
+              <button type="button" class="btn btn-sm btn-soft" id="btn-sim-menu" aria-expanded="false" aria-haspopup="menu">
+                Uji Kirim / Bounce
+              </button>
+
+              <div class="sim-dropdown hidden" id="sim-dropdown" role="menu">
+                <div class="sim-dropdown-title">Kirim simulasi ke alamat aktif</div>
+                <button type="button" class="sim-option" data-sim="hard_bounce" role="menuitem">
+                  <strong>Hard Bounce (550 5.1.1)</strong>
+                  <small>DSN Gmail: alamat tujuan tidak ditemukan</small>
+                </button>
+                <button type="button" class="sim-option" data-sim="soft_bounce" role="menuitem">
+                  <strong>Soft Bounce (452 4.2.2)</strong>
+                  <small>DSN Yahoo: kotak masuk tujuan penuh</small>
+                </button>
+                <button type="button" class="sim-option" data-sim="policy_bounce" role="menuitem">
+                  <strong>Policy Block (550 5.7.1)</strong>
+                  <small>Penolakan DMARC atau kebijakan keamanan</small>
+                </button>
+                <button type="button" class="sim-option" data-sim="otp" role="menuitem">
+                  <strong>Email Verifikasi OTP</strong>
+                  <small>Kode 6 digit diekstrak otomatis</small>
+                </button>
+                <button type="button" class="sim-option" data-sim="welcome" role="menuitem">
+                  <strong>Pesan HTML dan Lampiran</strong>
+                  <small>Uji tampilan HTML terisolasi dan unduh file</small>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mailbox-history hidden" id="mailbox-history">
+          <span class="history-label">Mailbox sesi ini:</span>
+          <div class="history-chips" id="history-chips"></div>
+        </div>
       </div>
     </section>
 
+    <!-- Split-Pane Frosted Glass Mail Workspace -->
     <section class="mail-workspace" id="mail-workspace" aria-label="Kotak Masuk dan Pembaca Pesan">
       <aside class="inbox-pane" aria-label="Daftar Pesan Masuk">
         <div class="inbox-pane-header">
@@ -230,7 +334,7 @@
         <div class="state-panel" id="reader-empty">
           <h3>Pilih Pesan untuk Membaca</h3>
           <p>
-            Email masuk, kode OTP, dan laporan hard atau soft bounce (DSN) yang dikirim ke alamat aktif akan ditampilkan di panel ini.
+            Email masuk, kode OTP, dan laporan hard atau soft bounce (DSN) yang dikirim ke alamat aktif akan ditampilkan lengkap di panel ini.
           </p>
         </div>
 
@@ -238,24 +342,58 @@
       </div>
     </section>
 
-    <section class="domain-strip" id="domain-directory" aria-label="Daftar Domain Aktif AMC">
-      <div class="domain-strip-left">
-        <span class="domain-strip-label">Domain Aktif AMC:</span>
-        <div class="domain-pills" id="domain-pills"></div>
+    <!-- Active AMC Domains Glass Grid -->
+    <section class="domains-section" id="domain-directory" aria-labelledby="domains-heading">
+      <div class="domains-head">
+        <h2 id="domains-heading">Domain Aktif Al Muthi Creative</h2>
+        <span class="brand-sub" id="retention-info">Retensi otomatis: 7 hari</span>
       </div>
-      <span class="brand-sub" id="retention-info">Retensi otomatis: 7 hari</span>
+      <div class="domain-grid" id="domain-pills"></div>
     </section>
 
     <footer class="site-footer">
-      &copy; <span id="footer-year">2026</span> <strong>Al Muthi Creative (AMC)</strong>. AMC Mail.
+      &copy; <span id="footer-year">2026</span> <strong>Al Muthi Creative (AMC)</strong>. <a href="https://order.amc.web.id" target="_blank" rel="noopener noreferrer">order.amc.web.id</a>
     </footer>
   </main>
 
+  <!-- Mobile Bottom Navigation Bar (< 1024px, matching order.amc.web.id) -->
+  <nav class="mobile-bottom-nav" aria-label="Navigasi bawah mobile">
+    <div class="mobile-nav-grid">
+      <button type="button" class="mobile-nav-item is-active" id="mob-nav-inbox" data-mob-action="inbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+        <span>Inbox</span>
+      </button>
+
+      <button type="button" class="mobile-nav-item" id="mob-nav-bounce" data-mob-action="bounce">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span>Bounce</span>
+      </button>
+
+      <button type="button" class="mobile-nav-orb-btn" id="mob-nav-random" data-mob-action="random" aria-label="Buat email baru acak">
+        <span class="mobile-nav-orb" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+        </span>
+        <span>Acak</span>
+      </button>
+
+      <a href="#domain-directory" class="mobile-nav-item" id="mob-nav-domains">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        <span>Domain</span>
+      </a>
+
+      <button type="button" class="mobile-nav-item" id="mob-nav-admin" data-mob-action="admin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <span>Admin</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Admin Panel Modal -->
   <div class="modal-backdrop hidden" id="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
     <div class="modal-panel is-compact" id="admin-modal-panel">
       <div class="modal-head">
         <h2 class="modal-title" id="admin-modal-title">
-          <img src="./assets/amc-logo.png" alt="" width="24" height="24">
+          <span class="modal-title-logo"><img src="./assets/amc-logo.png" alt="" width="24" height="24"></span>
           <span>Panel Admin AMC Mail</span>
         </h2>
         <div class="toolbar-group">
@@ -266,7 +404,7 @@
 
       <div class="modal-body">
         <form class="admin-login-box" id="admin-login-form">
-          <p class="generator-subtitle" style="margin:0;">
+          <p class="hero-subtitle" style="margin:0;">
             Masukkan PIN Admin untuk mengelola domain AMC, memantau semua pesan masuk dan bounce (catch-all), serta mengatur retensi.
           </p>
           <div class="form-field">
@@ -279,7 +417,7 @@
 
         <div class="hidden" id="admin-workspace">
           <div class="admin-warning-bar hidden" id="admin-default-pin-warning">
-            Masih memakai PIN bawaan lokal (<code>amc2026</code>). Ubah di produksi Cloudflare lewat <code>npx wrangler secret put ADMIN_PIN</code>.
+            Masih memakai PIN bawaan lokal (<code>amc2026</code>). Ubah di produksi Cloudflare lewat Settings &gt; Variables and Secrets (<code>ADMIN_PIN</code>).
           </div>
 
           <div class="admin-summary-strip" aria-label="Ringkasan data saat ini">
@@ -351,7 +489,7 @@
             <form class="add-domain-form" id="admin-add-domain-form">
               <div class="form-field">
                 <label for="input-new-domains">Tambah domain baru (satu per baris atau pisahkan koma)</label>
-                <textarea id="input-new-domains" class="textarea-input" placeholder="domainbaru.my.id&#10;proyek2.web.id&#10;cadangan.biz.id"></textarea>
+                <textarea id="input-new-domains" class="textarea-input" placeholder="zizi.web.id&#10;domainbaru.my.id&#10;cadangan.biz.id"></textarea>
               </div>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div class="form-field">
@@ -388,10 +526,10 @@
             <details class="cf-guide-box">
               <summary>Panduan menghubungkan domain ke Cloudflare Email Routing (Catch-All)</summary>
               <ol class="cf-guide-steps">
-                <li>Tambahkan domain Anda (misalnya <code>amc.web.id</code> atau <code>lexyth.my.id</code>) ke akun Cloudflare.</li>
-                <li>Buka menu Email lalu Email Routing pada domain tersebut, kemudian aktifkan Email Routing agar record MX dan SPF terpasang.</li>
-                <li>Buka tab Routing rules, aktifkan Catch-all address, pilih aksi Send to a Worker, lalu pilih Worker <code>amcmail</code>.</li>
-                <li>Ulangi langkah di atas saat domain cadangan lain sudah dapat diakses. Email pertama yang masuk akan otomatis menandai domain sebagai terkoneksi.</li>
+                <li>Tambahkan domain Anda ke akun Cloudflare AMC ini dan ganti Nameserver di registrar sampai berstatus Active.</li>
+                <li>Buka menu Email Service lalu Email Routing, klik Onboard Domain, pilih domain, lalu klik Activate (hapus MX lama dulu jika bentrok).</li>
+                <li>Buka tab Routing rules, edit Catch-all address, aktifkan statusnya, pilih Send to a Worker, lalu pilih Worker <code>amcmail</code>.</li>
+                <li>Email pertama yang masuk akan otomatis menandai domain sebagai Terkoneksi.</li>
               </ol>
             </details>
           </div>
@@ -456,6 +594,7 @@
     </div>
   </div>
 
+  <!-- Admin Message Inspector Modal -->
   <div class="modal-backdrop hidden" id="inspector-modal" role="dialog" aria-modal="true" aria-labelledby="inspector-title">
     <div class="modal-panel">
       <div class="modal-head">

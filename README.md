@@ -38,7 +38,9 @@ amcmail/
     ├── manifest.json
     ├── assets/amc-logo.png
     ├── css/style.css
-    └── js/app.js
+    └── js/
+        ├── app.js
+        └── scene3d.js
 ```
 
 ## Cara deploy ke Cloudflare
