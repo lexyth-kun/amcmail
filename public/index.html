@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>AMC Mail: Kotak Masuk &amp; Bounce Monitor | Al Muthi Creative</title>
-  <meta name="description" content="Layanan kotak masuk email multi-domain Al Muthi Creative dengan workspace Admin terpadu dan pembaca email baca-saja untuk pengunjung.">
+  <meta name="description" content="Layanan kotak masuk email multi-domain Al Muthi Creative selaras dengan order.amc.web.id.">
   <meta name="author" content="Al Muthi Creative">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#38bdf8">
 
   <link rel="icon" type="image/png" href="./assets/amc-logo.png">
   <link rel="apple-touch-icon" href="./assets/amc-logo.png">
@@ -14,7 +14,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <script>
     (function () {
@@ -31,11 +31,11 @@
 <body>
   <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
 
-  <!-- Desktop Fixed Left Sidebar (>= 1024px) -->
+  <!-- Desktop Fixed Left Sidebar (304px, matching order.amc.web.id) -->
   <aside class="desktop-app-sidebar" aria-label="Sidebar AMC Mail">
     <a href="./" class="sidebar-brand" id="sidebar-home-link">
-      <div class="sidebar-logo-tile">
-        <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="34" height="34" fetchpriority="high">
+      <div class="sidebar-logo-tile logo-sweep-wrap">
+        <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="44" height="44" fetchpriority="high">
       </div>
       <div>
         <span class="brand-title">AMC <span>Mail</span></span>
@@ -45,12 +45,17 @@
 
     <!-- Sidebar Block A: Public Read-Only Navigation -->
     <div id="sidebar-public-block">
-      <div class="sidebar-mailbox-card">
-        <span class="sidebar-mailbox-label">Email Dibuka</span>
-        <span class="sidebar-mailbox-addr" id="sidebar-active-addr">Belum dipilih</span>
-        <div class="sidebar-mailbox-actions">
-          <button type="button" class="btn btn-primary btn-sm" id="btn-sidebar-copy" style="flex:1;" disabled>Salin</button>
+      <div class="sidebar-user-card">
+        <div class="sidebar-user-top">
+          <div class="sidebar-medal-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          </div>
+          <div class="sidebar-user-meta">
+            <span class="sidebar-mailbox-label">Email Dibuka</span>
+            <span class="sidebar-mailbox-addr" id="sidebar-active-addr">Belum dipilih</span>
+          </div>
         </div>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-sidebar-copy" style="width:100%;" disabled>Salin Alamat</button>
       </div>
 
       <div class="sidebar-section-label">Kotak Masuk</div>
@@ -114,12 +119,17 @@
       </div>
     </div>
 
-    <!-- Sidebar Block B: Full Admin Workspace Navigation (replaces public sidebar after login) -->
+    <!-- Sidebar Block B: Full Admin Workspace Navigation -->
     <div id="sidebar-admin-block" class="hidden">
-      <div class="sidebar-admin-card">
-        <div class="admin-role-pill">
-          <span class="dot" aria-hidden="true"></span>
-          <span>Mode Admin Aktif</span>
+      <div class="sidebar-user-card">
+        <div class="sidebar-user-top">
+          <div class="sidebar-medal-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          </div>
+          <div class="sidebar-user-meta">
+            <span class="admin-role-pill"><span class="dot" aria-hidden="true"></span> Admin Aktif</span>
+            <span class="sidebar-mailbox-addr">Al Muthi Creative</span>
+          </div>
         </div>
         <button type="button" class="btn btn-primary btn-sm" id="btn-sidebar-quick-create" style="width:100%;">
           + Buat Email Baru
@@ -179,7 +189,7 @@
     </div>
 
     <div class="sidebar-footer">
-      <button type="button" class="btn btn-sm" id="btn-sidebar-theme">
+      <button type="button" class="btn btn-soft btn-sm" id="btn-sidebar-theme">
         <span id="sidebar-theme-label">Mode Gelap</span>
       </button>
       <button type="button" class="btn btn-sm btn-danger-outline hidden" id="btn-sidebar-logout">
@@ -188,12 +198,12 @@
     </div>
   </aside>
 
-  <!-- Mobile & Tablet Top Header (< 1024px) -->
+  <!-- Mobile & Tablet Top Header (< 1024px, matching order.amc.web.id) -->
   <header class="mobile-header" id="site-header">
     <div class="mobile-header-inner">
       <a href="./" class="mobile-brand" id="brand-home-link">
-        <div class="mobile-logo-tile">
-          <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="26" height="26" fetchpriority="high">
+        <div class="mobile-logo-tile logo-sweep-wrap">
+          <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="28" height="28" fetchpriority="high">
         </div>
         <div>
           <span class="brand-title">AMC <span>Mail</span></span>
@@ -237,7 +247,7 @@
   <main class="app-main" id="main-content">
     <!-- Full-page Admin Workspace (visible after Admin PIN login) -->
     <div id="admin-workspace-shell" class="admin-shell hidden">
-      <header class="admin-topbar">
+      <header class="desktop-welcome-card admin-welcome-banner">
         <div class="admin-topbar-copy">
           <div class="admin-topbar-title-row">
             <h1 id="admin-view-title">Buat &amp; Kelola Alamat Email</h1>
@@ -247,26 +257,53 @@
             Buat alamat email baru pada domain Al Muthi Creative, bagikan link kotak masuk baca-saja, dan pantau seluruh pesan masuk.
           </p>
         </div>
-
-        <div class="admin-topbar-metrics" aria-label="Ringkasan Workspace Admin">
-          <button type="button" class="kpi-chip" data-admin-view="mailboxes">
-            <strong id="kpi-total-mailboxes">0</strong>
-            <span>Email (<span id="kpi-active-mailboxes">0</span> aktif)</span>
-          </button>
-          <button type="button" class="kpi-chip" data-admin-view="catchall">
-            <strong id="kpi-total-emails">0</strong>
-            <span>Pesan (<span id="kpi-emails-24h">0</span>/24j)</span>
-          </button>
-          <button type="button" class="kpi-chip is-bounce" data-admin-view="catchall" data-jump-bounce="true">
-            <strong id="kpi-total-bounces">0</strong>
-            <span>Bounce (<span id="kpi-bounces-24h">0</span>/24j)</span>
-          </button>
-          <button type="button" class="kpi-chip" data-admin-view="domains">
-            <strong id="kpi-active-domains">0</strong>
-            <span>Domain (<span id="kpi-pending-domains">0</span> pending)</span>
-          </button>
+        <div class="welcome-emblem-tile" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
         </div>
       </header>
+
+      <!-- Order-style 4-card Stat Grid (clickable shortcuts) -->
+      <div class="desktop-stat-grid" aria-label="Ringkasan Workspace Admin">
+        <button type="button" class="desktop-stat-card" data-admin-view="mailboxes">
+          <span class="desktop-stat-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          </span>
+          <span class="stat-card-copy">
+            <strong id="kpi-total-mailboxes">0</strong>
+            <span>Email (<span id="kpi-active-mailboxes">0</span> aktif)</span>
+          </span>
+        </button>
+
+        <button type="button" class="desktop-stat-card" data-admin-view="catchall">
+          <span class="desktop-stat-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+          </span>
+          <span class="stat-card-copy">
+            <strong id="kpi-total-emails">0</strong>
+            <span>Pesan (<span id="kpi-emails-24h">0</span> / 24j)</span>
+          </span>
+        </button>
+
+        <button type="button" class="desktop-stat-card is-bounce" data-admin-view="catchall" data-jump-bounce="true">
+          <span class="desktop-stat-icon is-bounce" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          </span>
+          <span class="stat-card-copy">
+            <strong id="kpi-total-bounces">0</strong>
+            <span>Bounce (<span id="kpi-bounces-24h">0</span> / 24j)</span>
+          </span>
+        </button>
+
+        <button type="button" class="desktop-stat-card" data-admin-view="domains">
+          <span class="desktop-stat-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          </span>
+          <span class="stat-card-copy">
+            <strong id="kpi-active-domains">0</strong>
+            <span>Domain (<span id="kpi-pending-domains">0</span> pending)</span>
+          </span>
+        </button>
+      </div>
 
       <div class="admin-warning-bar hidden" id="admin-default-pin-warning">
         Masih memakai PIN bawaan lokal (<code>amc2026</code>). Ubah di produksi Cloudflare lewat Settings &gt; Variables and Secrets (<code>ADMIN_PIN</code>).
@@ -276,9 +313,12 @@
       <section id="admin-view-mailboxes" class="admin-view-section">
         <div class="admin-card">
           <div class="admin-card-head">
-            <div>
-              <h2>Buat Alamat Email Baru</h2>
-              <p class="card-sub">Alamat yang dibuat di sini langsung aktif dan bisa dibuka pengunjung dalam mode baca-saja.</p>
+            <div class="card-head-with-step">
+              <span class="step-badge" aria-hidden="true">1</span>
+              <div>
+                <h2>Buat Alamat Email Baru</h2>
+                <p class="card-sub">Alamat yang dibuat di sini langsung aktif dan bisa dibuka pengunjung dalam mode baca-saja.</p>
+              </div>
             </div>
           </div>
 
@@ -294,9 +334,9 @@
             </div>
             <div class="builder-field">
               <label for="input-quick-label" class="builder-label">Keterangan (opsional)</label>
-              <input type="text" id="input-quick-label" class="text-input" style="min-height:44px;" placeholder="Misal: Klien Canva / Order #14">
+              <input type="text" id="input-quick-label" class="text-input" style="min-height:46px;" placeholder="Misal: Klien Canva / Order #14">
             </div>
-            <button type="submit" class="btn btn-primary" style="min-height:44px;padding:0 18px;" id="btn-quick-create-submit">
+            <button type="submit" class="btn btn-primary" style="min-height:46px;padding:0 20px;" id="btn-quick-create-submit">
               Buat Email
             </button>
           </form>
@@ -325,11 +365,14 @@
 
         <div class="admin-card">
           <div class="admin-card-head">
-            <div>
-              <h2>Daftar Alamat Email Terdaftar</h2>
-              <p class="card-sub">Klik <strong>Buka Inbox</strong> untuk membaca pesan, atau <strong>Salin Link</strong> untuk dibagikan ke pengguna lain.</p>
+            <div class="card-head-with-step">
+              <span class="step-badge" aria-hidden="true">2</span>
+              <div>
+                <h2>Daftar Alamat Email Terdaftar</h2>
+                <p class="card-sub">Klik <strong>Buka Inbox</strong> untuk membaca pesan, atau <strong>Salin Link</strong> untuk dibagikan ke pengguna lain.</p>
+              </div>
             </div>
-            <button type="button" class="btn btn-sm" id="btn-admin-refresh-mailboxes">Segarkan</button>
+            <button type="button" class="btn btn-soft btn-sm" id="btn-admin-refresh-mailboxes">Segarkan</button>
           </div>
 
           <div class="admin-filter-row" style="grid-template-columns: auto minmax(180px, 1fr);">
@@ -364,7 +407,7 @@
 
       <!-- Admin View 2: Full-Page Split-Pane Catch-All Inbox & Bounce Reader -->
       <section id="admin-view-catchall" class="admin-view-section hidden">
-        <div class="admin-card" style="padding:14px 16px;">
+        <div class="admin-card" style="padding:16px 18px;">
           <div class="admin-filter-row" style="margin-bottom:0;">
             <div class="form-field">
               <label for="admin-filter-domain">Domain</label>
@@ -385,7 +428,7 @@
               <label for="admin-filter-search">Cari Semua Inbox</label>
               <input type="search" id="admin-filter-search" class="text-input" placeholder="Penerima, pengirim, subjek, kode SMTP...">
             </div>
-            <button type="button" class="btn btn-sm" id="btn-admin-refresh-msgs">Segarkan</button>
+            <button type="button" class="btn btn-soft btn-sm" id="btn-admin-refresh-msgs">Segarkan</button>
           </div>
         </div>
 
@@ -418,9 +461,12 @@
       <section id="admin-view-domains" class="admin-view-section hidden">
         <div class="admin-card">
           <div class="admin-card-head">
-            <div>
-              <h2>Tambah Domain AMC</h2>
-              <p class="card-sub">Daftarkan satu atau beberapa domain sekaligus. Domain pending otomatis aktif saat email pertama masuk.</p>
+            <div class="card-head-with-step">
+              <span class="step-badge" aria-hidden="true">1</span>
+              <div>
+                <h2>Tambah Domain AMC</h2>
+                <p class="card-sub">Daftarkan satu atau beberapa domain sekaligus. Domain pending otomatis aktif saat email pertama masuk.</p>
+              </div>
             </div>
           </div>
 
@@ -449,9 +495,12 @@
 
         <div class="admin-card">
           <div class="admin-card-head">
-            <div>
-              <h2>Daftar Domain AMC</h2>
-              <p class="card-sub">Kelola status, catatan registrar, dan domain default untuk pembuatan email.</p>
+            <div class="card-head-with-step">
+              <span class="step-badge" aria-hidden="true">2</span>
+              <div>
+                <h2>Daftar Domain AMC</h2>
+                <p class="card-sub">Kelola status, catatan registrar, dan domain default untuk pembuatan email.</p>
+              </div>
             </div>
           </div>
 
@@ -510,7 +559,7 @@
 
             <div class="toolbar-group">
               <button type="submit" class="btn btn-primary btn-sm">Simpan Pengaturan</button>
-              <button type="button" class="btn btn-sm" id="btn-admin-purge">Bersihkan Pesan Kedaluwarsa</button>
+              <button type="button" class="btn btn-soft btn-sm" id="btn-admin-purge">Bersihkan Pesan Kedaluwarsa</button>
             </div>
           </form>
 
@@ -545,13 +594,13 @@
       <div class="admin-reader-banner hidden" id="admin-reader-banner">
         <span>Anda membuka pembaca per alamat dalam <strong>Mode Admin</strong>.</span>
         <div class="toolbar-group">
-          <button type="button" class="btn btn-sm btn-soft" data-admin-view="mailboxes">Kembali ke Daftar Email</button>
-          <button type="button" class="btn btn-sm" data-admin-view="catchall">Semua Pesan &amp; Bounce</button>
+          <button type="button" class="btn btn-sm btn-primary" data-admin-view="mailboxes">Kembali ke Daftar Email</button>
+          <button type="button" class="btn btn-sm btn-soft" data-admin-view="catchall">Semua Pesan &amp; Bounce</button>
         </div>
       </div>
 
-      <!-- Clean White Mailbox Lookup Card -->
-      <section class="amc-hero-card" aria-labelledby="main-heading">
+      <!-- Order-style Welcome + Mailbox Lookup Card -->
+      <section class="desktop-welcome-card amc-hero-card" aria-labelledby="main-heading">
         <div class="hero-header-row">
           <div class="hero-copy">
             <h1 id="main-heading">AMC Mail &amp; Bounce Monitor</h1>
@@ -617,7 +666,7 @@
             </p>
 
             <div class="toolbar-group">
-              <button type="button" class="btn btn-sm" id="btn-refresh-inbox" disabled>Periksa Inbox</button>
+              <button type="button" class="btn btn-soft btn-sm" id="btn-refresh-inbox" disabled>Periksa Inbox</button>
             </div>
           </div>
         </div>
@@ -746,7 +795,7 @@
     </div>
   </nav>
 
-  <!-- Compact Admin Login Modal (only for PIN entry; opens full-page Admin Workspace on success) -->
+  <!-- Compact Admin Login Modal -->
   <div class="modal-backdrop hidden" id="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
     <div class="modal-panel is-compact">
       <div class="modal-head">

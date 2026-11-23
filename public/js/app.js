@@ -840,20 +840,24 @@ function sanitizeEmailHtml(html, { allowExternalImages = false } = {}) {
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   body {
     margin: 0;
     padding: 16px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 14px;
     line-height: 1.6;
     color: #0f172a;
     background: #ffffff;
     word-wrap: break-word;
   }
+  code, pre {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
   img { max-width: 100%; height: auto; }
-  a { color: #0369a1; }
-  pre { overflow-x: auto; background: #f8fafc; padding: 10px; border-radius: 8px; }
+  a { color: #075985; }
+  pre { overflow-x: auto; background: #f0f9ff; border: 1px solid #bae6fd; padding: 10px; border-radius: 12px; }
   table { max-width: 100%; }
 </style>
 </head>
@@ -1355,12 +1359,12 @@ function renderAdminMailboxesTable() {
     .map((mb) => {
       return `
         <tr>
-          <td>
-            <div class="mono" style="font-weight:700;word-break:break-all;">${escapeHtml(mb.address)}</div>
-            <div style="font-size:0.74rem;color:var(--text-muted);">Dibuat ${escapeHtml(formatRelativeTime(mb.createdAt))}</div>
+          <td style="min-width:168px;">
+            <div class="mono" style="font-weight:700;white-space:nowrap;">${escapeHtml(mb.address)}</div>
+            <div style="font-size:0.74rem;color:var(--text-muted);white-space:nowrap;">Dibuat ${escapeHtml(formatRelativeTime(mb.createdAt))}</div>
           </td>
           <td>
-            <select class="select-input table-control" style="min-width:112px;" data-mailbox-status-id="${mb.id}">
+            <select class="select-input table-control" style="min-width:96px;" data-mailbox-status-id="${mb.id}">
               <option value="active" ${mb.status === 'active' ? 'selected' : ''}>Aktif</option>
               <option value="disabled" ${mb.status === 'disabled' ? 'selected' : ''}>Nonaktif</option>
             </select>
@@ -1369,13 +1373,15 @@ function renderAdminMailboxesTable() {
             ${mb.totalEmails} pesan / <span style="color:var(--bounce-hard);">${mb.bounceEmails} bounce</span>
           </td>
           <td>
-            <input type="text" class="text-input table-control" style="min-width:140px;" value="${escapeHtml(mb.label)}" placeholder="Keterangan..." data-mailbox-label-id="${mb.id}">
+            <input type="text" class="text-input table-control" style="min-width:116px;max-width:146px;" value="${escapeHtml(mb.label)}" placeholder="Keterangan..." data-mailbox-label-id="${mb.id}">
           </td>
           <td style="text-align:right;white-space:nowrap;">
-            <button type="button" class="btn btn-sm btn-primary" data-mailbox-open="${escapeHtml(mb.address)}">Buka Inbox</button>
-            <button type="button" class="btn btn-sm" data-mailbox-copy-addr="${escapeHtml(mb.address)}">Salin</button>
-            <button type="button" class="btn btn-sm btn-soft" data-mailbox-copy-link="${escapeHtml(mb.address)}">Salin Link</button>
-            <button type="button" class="btn btn-sm btn-danger-outline" data-mailbox-delete="${mb.id}" data-mailbox-addr="${escapeHtml(mb.address)}">Hapus</button>
+            <div class="table-actions">
+              <button type="button" class="btn btn-sm btn-primary" data-mailbox-open="${escapeHtml(mb.address)}">Buka Inbox</button>
+              <button type="button" class="btn btn-sm" data-mailbox-copy-addr="${escapeHtml(mb.address)}">Salin</button>
+              <button type="button" class="btn btn-sm btn-soft" data-mailbox-copy-link="${escapeHtml(mb.address)}">Salin Link</button>
+              <button type="button" class="btn btn-sm btn-danger-outline" data-mailbox-delete="${mb.id}" data-mailbox-addr="${escapeHtml(mb.address)}">Hapus</button>
+            </div>
           </td>
         </tr>
       `;
