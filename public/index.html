@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMC Mail: Temporary Mail dan Bounce Monitor | Al Muthi Creative</title>
+  <meta name="description" content="Temporary mail multi-domain milik Al Muthi Creative untuk amc.web.id, lexyth.my.id, rsykwnda.my.id, almuthicreative.my.id, jelupang.web.id, dan cilpa.biz.id dengan pemantauan bounce SMTP dan ekstraksi kode OTP.">
+  <meta name="author" content="Al Muthi Creative">
+  <meta name="theme-color" content="#0369a1">
+
+  <link rel="icon" type="image/png" href="./assets/amc-logo.png">
+  <link rel="apple-touch-icon" href="./assets/amc-logo.png">
+  <link rel="manifest" href="./manifest.json">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('amc_mail_theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Langsung ke kotak masuk</a>
+
+  <header class="site-header" id="site-header">
+    <div class="header-inner">
+      <a href="./" class="brand-lockup" id="brand-home-link">
+        <div class="brand-logo">
+          <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="30" height="30" fetchpriority="high">
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">AMC <span>Mail</span></span>
+          <span class="brand-sub">Al Muthi Creative</span>
+        </div>
+      </a>
+
+      <nav class="header-nav" aria-label="Navigasi utama">
+        <a href="#domain-directory" class="btn btn-sm" id="btn-scroll-domains">
+          <span id="header-domain-count">6 Domain</span>
+        </a>
+
+        <button type="button" class="btn btn-icon btn-sm" id="btn-theme-toggle" aria-label="Ganti tema terang atau gelap" title="Ganti tema terang atau gelap">
+          <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg id="icon-sun" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <button type="button" class="btn btn-sm" id="btn-open-admin" aria-label="Buka Panel Admin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span class="btn-text-hide-sm">Admin</span>
+          <span id="admin-active-dot" class="status-dot-inline hidden" aria-hidden="true"></span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="app-main" id="main-content">
+    <section class="generator-section" aria-labelledby="main-heading">
+      <div class="generator-head">
+        <div>
+          <h1 id="main-heading">Temporary Mail dan Bounce Monitor</h1>
+          <p class="generator-subtitle">
+            Buat alamat email acak atau kustom pada domain Al Muthi Creative untuk membaca pesan masuk, kode OTP, dan laporan bounce SMTP.
+          </p>
+        </div>
+
+        <button type="button" class="poll-control" id="btn-toggle-autopoll" aria-pressed="true" title="Jeda atau lanjutkan pembaruan otomatis">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="poll-status-text">Otomatis 10d</span>
+        </button>
+      </div>
+
+      <form class="address-builder" id="address-form" novalidate>
+        <div class="builder-field">
+          <label for="input-username" class="builder-label">Username</label>
+          <input
+            type="text"
+            id="input-username"
+            class="username-input"
+            placeholder="ketik.username"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            maxlength="63"
+          >
+        </div>
+
+        <span class="at-divider" aria-hidden="true">@</span>
+
+        <div class="builder-field">
+          <label for="select-domain" class="builder-label">Domain AMC</label>
+          <select id="select-domain" class="domain-select"></select>
+        </div>
+
+        <div class="address-primary-actions">
+          <button type="submit" class="btn btn-soft btn-apply-custom hidden" id="btn-apply-custom">
+            Pakai Alamat
+          </button>
+
+          <button type="button" class="btn btn-primary btn-copy-main" id="btn-copy-email">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="btn-copy-label">Salin Email</span>
+          </button>
+        </div>
+      </form>
+
+      <p class="builder-error hidden" id="builder-error" role="alert"></p>
+
+      <div class="generator-toolbar">
+        <div class="toolbar-group">
+          <button type="button" class="btn btn-sm" id="btn-random-user">Acak Username</button>
+          <button type="button" class="btn btn-sm" id="btn-random-all">Ganti Email Baru</button>
+          <button type="button" class="btn btn-sm" id="btn-refresh-inbox">Periksa Inbox</button>
+        </div>
+
+        <div class="toolbar-group">
+          <div class="sim-menu-wrap hidden" id="sim-menu-wrap">
+            <button type="button" class="btn btn-sm btn-soft" id="btn-sim-menu" aria-expanded="false" aria-haspopup="menu">
+              Uji Kirim / Bounce
+            </button>
+
+            <div class="sim-dropdown hidden" id="sim-dropdown" role="menu">
+              <div class="sim-dropdown-title">Kirim simulasi ke alamat aktif</div>
+              <button type="button" class="sim-option" data-sim="hard_bounce" role="menuitem">
+                <strong>Hard Bounce (550 5.1.1)</strong>
+                <small>DSN Gmail: alamat tujuan tidak ditemukan</small>
+              </button>
+              <button type="button" class="sim-option" data-sim="soft_bounce" role="menuitem">
+                <strong>Soft Bounce (452 4.2.2)</strong>
+                <small>DSN Yahoo: kotak masuk tujuan penuh</small>
+              </button>
+              <button type="button" class="sim-option" data-sim="policy_bounce" role="menuitem">
+                <strong>Policy Block (550 5.7.1)</strong>
+                <small>Penolakan DMARC atau kebijakan keamanan</small>
+              </button>
+              <button type="button" class="sim-option" data-sim="otp" role="menuitem">
+                <strong>Email Verifikasi OTP</strong>
+                <small>Kode 6 digit yang diekstrak otomatis</small>
+              </button>
+              <button type="button" class="sim-option" data-sim="welcome" role="menuitem">
+                <strong>Pesan HTML dan Lampiran</strong>
+                <small>Uji tampilan HTML terisolasi dan unduh file</small>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mailbox-history hidden" id="mailbox-history">
+        <span class="history-label">Mailbox sesi ini:</span>
+        <div class="history-chips" id="history-chips"></div>
+      </div>
+    </section>
+
+    <section class="mail-workspace" id="mail-workspace" aria-label="Kotak Masuk dan Pembaca Pesan">
+      <aside class="inbox-pane" aria-label="Daftar Pesan Masuk">
+        <div class="inbox-pane-header">
+          <div class="inbox-title-row">
+            <h2 class="inbox-heading">
+              <span>Inbox</span>
+              <span class="inbox-heading-addr" id="inbox-active-label">...</span>
+            </h2>
+            <button type="button" class="btn btn-sm btn-danger-outline btn-icon" id="btn-clear-inbox" aria-label="Hapus semua pesan di alamat ini" title="Hapus semua pesan di alamat ini">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="filter-tabs" role="tablist" aria-label="Filter jenis pesan">
+            <button type="button" class="filter-tab is-active" data-filter="all" role="tab" aria-selected="true" id="tab-filter-all">
+              Semua <span class="filter-count" id="count-all">0</span>
+            </button>
+            <button type="button" class="filter-tab" data-filter="inbox" role="tab" aria-selected="false" id="tab-filter-inbox">
+              Masuk <span class="filter-count" id="count-inbox">0</span>
+            </button>
+            <button type="button" class="filter-tab is-bounce-tab" data-filter="bounce" role="tab" aria-selected="false" id="tab-filter-bounce">
+              Bounce <span class="filter-count" id="count-bounce">0</span>
+            </button>
+            <button type="button" class="filter-tab" data-filter="otp" role="tab" aria-selected="false" id="tab-filter-otp">
+              OTP <span class="filter-count" id="count-otp">0</span>
+            </button>
+          </div>
+
+          <div class="search-field">
+            <label for="input-inbox-search">Cari pesan</label>
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="search" id="input-inbox-search" class="search-input" placeholder="Pengirim, subjek, kode SMTP..." autocomplete="off">
+            </div>
+          </div>
+        </div>
+
+        <div class="inbox-list" id="inbox-list" aria-live="polite"></div>
+      </aside>
+
+      <div class="reader-pane" id="reader-pane" aria-live="polite">
+        <div class="state-panel" id="reader-empty">
+          <h3>Pilih Pesan untuk Membaca</h3>
+          <p>
+            Email masuk, kode OTP, dan laporan hard atau soft bounce (DSN) yang dikirim ke alamat aktif akan ditampilkan di panel ini.
+          </p>
+        </div>
+
+        <div class="reader-content hidden" id="reader-content"></div>
+      </div>
+    </section>
+
+    <section class="domain-strip" id="domain-directory" aria-label="Daftar Domain Aktif AMC">
+      <div class="domain-strip-left">
+        <span class="domain-strip-label">Domain Aktif AMC:</span>
+        <div class="domain-pills" id="domain-pills"></div>
+      </div>
+      <span class="brand-sub" id="retention-info">Retensi otomatis: 7 hari</span>
+    </section>
+
+    <footer class="site-footer">
+      &copy; <span id="footer-year">2026</span> <strong>Al Muthi Creative (AMC)</strong>. AMC Mail.
+    </footer>
+  </main>
+
+  <div class="modal-backdrop hidden" id="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
+    <div class="modal-panel is-compact" id="admin-modal-panel">
+      <div class="modal-head">
+        <h2 class="modal-title" id="admin-modal-title">
+          <img src="./assets/amc-logo.png" alt="" width="24" height="24">
+          <span>Panel Admin AMC Mail</span>
+        </h2>
+        <div class="toolbar-group">
+          <button type="button" class="btn btn-sm hidden" id="btn-admin-logout">Keluar</button>
+          <button type="button" class="btn btn-sm" id="btn-close-admin" aria-label="Tutup Panel Admin">Tutup</button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <form class="admin-login-box" id="admin-login-form">
+          <p class="generator-subtitle" style="margin:0;">
+            Masukkan PIN Admin untuk mengelola domain AMC, memantau semua pesan masuk dan bounce (catch-all), serta mengatur retensi.
+          </p>
+          <div class="form-field">
+            <label for="input-admin-pin">PIN Admin</label>
+            <input type="password" id="input-admin-pin" class="text-input mono" placeholder="Masukkan PIN Admin" autocomplete="current-password" required>
+          </div>
+          <p class="builder-error hidden" id="admin-login-error" role="alert"></p>
+          <button type="submit" class="btn btn-primary" id="btn-admin-login-submit">Masuk ke Panel Admin</button>
+        </form>
+
+        <div class="hidden" id="admin-workspace">
+          <div class="admin-warning-bar hidden" id="admin-default-pin-warning">
+            Masih memakai PIN bawaan lokal (<code>amc2026</code>). Ubah di produksi Cloudflare lewat <code>npx wrangler secret put ADMIN_PIN</code>.
+          </div>
+
+          <div class="admin-summary-strip" aria-label="Ringkasan data saat ini">
+            <div class="summary-metric">
+              <strong id="kpi-total-emails">0</strong>
+              <span>total pesan (<span id="kpi-emails-24h">0</span> / 24 jam)</span>
+            </div>
+            <div class="summary-metric is-bounce">
+              <strong id="kpi-total-bounces">0</strong>
+              <span>bounce (<span id="kpi-bounces-24h">0</span> / 24 jam)</span>
+            </div>
+            <div class="summary-metric">
+              <strong id="kpi-active-domains">0</strong>
+              <span>domain aktif (<span id="kpi-pending-domains">0</span> pending)</span>
+            </div>
+            <div class="summary-metric">
+              <strong id="kpi-unique-mailboxes">0</strong>
+              <span>mailbox unik (<span id="kpi-total-otps">0</span> OTP)</span>
+            </div>
+          </div>
+
+          <div class="admin-tabs" role="tablist" aria-label="Menu Admin">
+            <button type="button" class="admin-tab is-active" data-admin-tab="monitor" role="tab" aria-selected="true">Monitor Semua Inbox &amp; Bounce</button>
+            <button type="button" class="admin-tab" data-admin-tab="domains" role="tab" aria-selected="false">Kelola Domain</button>
+            <button type="button" class="admin-tab" data-admin-tab="settings" role="tab" aria-selected="false">Pengaturan &amp; Uji Coba</button>
+          </div>
+
+          <div id="admin-tab-monitor">
+            <div class="admin-filter-row">
+              <div class="form-field">
+                <label for="admin-filter-domain">Domain</label>
+                <select id="admin-filter-domain" class="select-input">
+                  <option value="all">Semua Domain</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="admin-filter-type">Tipe Pesan</label>
+                <select id="admin-filter-type" class="select-input">
+                  <option value="all">Semua Tipe</option>
+                  <option value="bounce">Bounce / DSN Saja</option>
+                  <option value="otp">OTP / Verifikasi</option>
+                  <option value="inbox">Pesan Masuk Biasa</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="admin-filter-search">Cari</label>
+                <input type="search" id="admin-filter-search" class="text-input" placeholder="Tujuan, pengirim, subjek, kode SMTP...">
+              </div>
+              <button type="button" class="btn btn-sm" id="btn-admin-refresh-msgs">Segarkan</button>
+            </div>
+
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Penerima (Catch-All)</th>
+                    <th>Status / Kode</th>
+                    <th>Pengirim dan Subjek</th>
+                    <th>Waktu</th>
+                    <th style="text-align:right;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-messages-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="admin-tab-domains" class="hidden">
+            <form class="add-domain-form" id="admin-add-domain-form">
+              <div class="form-field">
+                <label for="input-new-domains">Tambah domain baru (satu per baris atau pisahkan koma)</label>
+                <textarea id="input-new-domains" class="textarea-input" placeholder="domainbaru.my.id&#10;proyek2.web.id&#10;cadangan.biz.id"></textarea>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div class="form-field">
+                  <label for="select-new-domain-status">Status awal domain</label>
+                  <select id="select-new-domain-status" class="select-input">
+                    <option value="active">Aktif (tampil di pilihan user)</option>
+                    <option value="pending">Pending (belum ada akses registrar)</option>
+                    <option value="disabled">Nonaktif sementara</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="input-new-domain-notes">Catatan registrar atau akses</label>
+                  <input type="text" id="input-new-domain-notes" class="text-input" placeholder="Opsional: lokasi registrar atau catatan akses">
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-add-domains-submit">Simpan Domain</button>
+              </div>
+            </form>
+
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Domain</th>
+                    <th>Status</th>
+                    <th>Pesan / Bounce</th>
+                    <th>Catatan</th>
+                    <th style="text-align:right;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-domains-tbody"></tbody>
+              </table>
+            </div>
+
+            <details class="cf-guide-box">
+              <summary>Panduan menghubungkan domain ke Cloudflare Email Routing (Catch-All)</summary>
+              <ol class="cf-guide-steps">
+                <li>Tambahkan domain Anda (misalnya <code>amc.web.id</code> atau <code>lexyth.my.id</code>) ke akun Cloudflare.</li>
+                <li>Buka menu Email lalu Email Routing pada domain tersebut, kemudian aktifkan Email Routing agar record MX dan SPF terpasang.</li>
+                <li>Buka tab Routing rules, aktifkan Catch-all address, pilih aksi Send to a Worker, lalu pilih Worker <code>amcmail</code>.</li>
+                <li>Ulangi langkah di atas saat domain cadangan lain sudah dapat diakses. Email pertama yang masuk akan otomatis menandai domain sebagai terkoneksi.</li>
+              </ol>
+            </details>
+          </div>
+
+          <div id="admin-tab-settings" class="hidden">
+            <div class="settings-grid">
+              <form class="settings-card" id="admin-settings-form">
+                <h3>Retensi dan Penerimaan Domain</h3>
+                <div class="form-field">
+                  <label for="select-retention-hours">Simpan email masuk selama</label>
+                  <select id="select-retention-hours" class="select-input">
+                    <option value="24">24 Jam</option>
+                    <option value="72">3 Hari (72 Jam)</option>
+                    <option value="168">7 Hari (168 Jam)</option>
+                    <option value="720">30 Hari (720 Jam)</option>
+                    <option value="2160">90 Hari</option>
+                  </select>
+                </div>
+
+                <label class="checkbox-row" for="check-auto-register">
+                  <input type="checkbox" id="check-auto-register">
+                  <span>Otomatis daftarkan domain baru saat ada email masuk lewat Cloudflare Email Routing</span>
+                </label>
+
+                <div class="form-field">
+                  <label for="input-blocked-users">Username yang dibatasi untuk publik (pisahkan koma)</label>
+                  <input type="text" id="input-blocked-users" class="text-input mono" placeholder="Opsional: admin,root">
+                </div>
+
+                <div class="toolbar-group">
+                  <button type="submit" class="btn btn-primary btn-sm">Simpan Pengaturan</button>
+                  <button type="button" class="btn btn-sm" id="btn-admin-purge">Bersihkan Pesan Kedaluwarsa</button>
+                </div>
+              </form>
+
+              <form class="settings-card" id="admin-sim-form">
+                <h3>Kirim Uji Coba Email atau Bounce</h3>
+                <div class="form-field">
+                  <label for="input-admin-sim-to">Alamat tujuan</label>
+                  <input type="email" id="input-admin-sim-to" class="text-input mono" placeholder="nama@amc.web.id" required>
+                </div>
+                <div class="form-field">
+                  <label for="select-admin-sim-type">Skenario uji</label>
+                  <select id="select-admin-sim-type" class="select-input">
+                    <option value="hard_bounce">Hard Bounce: 550 5.1.1 User Unknown (DSN)</option>
+                    <option value="soft_bounce">Soft Bounce: 452 4.2.2 Mailbox Full (DSN)</option>
+                    <option value="policy_bounce">Policy Block: 550 5.7.1 DMARC Reject (DSN)</option>
+                    <option value="otp">Email OTP Verifikasi 6 Digit</option>
+                    <option value="welcome">Email HTML dengan Lampiran</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="input-admin-sim-failed">Alamat gagal tujuan (khusus bounce, opsional)</label>
+                  <input type="email" id="input-admin-sim-failed" class="text-input mono" placeholder="tujuan@domain.com">
+                </div>
+                <button type="submit" class="btn btn-soft btn-sm">Kirim Uji Coba</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="inspector-modal" role="dialog" aria-modal="true" aria-labelledby="inspector-title">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h2 class="modal-title" id="inspector-title">Detail Pesan (Mode Admin)</h2>
+        <button type="button" class="btn btn-sm" id="btn-close-inspector">Tutup</button>
+      </div>
+      <div class="modal-body" style="padding:0;" id="inspector-body"></div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+name = "amcmail"
+main = "src/worker.js"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "amcmail-db"
+# Replace database_id with the output from: npx wrangler d1 create amcmail-db
+database_id = "9c2ef7ac-43d1-4409-bc42-22b83052fbc1"
+migrations_dir = "migrations"
+
+[vars]
+APP_NAME = "AMC Mail"
+# Keep "false" in production so only authenticated admins can trigger test emails.
+ALLOW_SIMULATOR = "false"
+
+[triggers]
+crons = ["0 */6 * * *"]

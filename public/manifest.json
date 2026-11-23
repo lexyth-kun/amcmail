@@ -1,0 +1,16 @@
+{
+  "name": "AMC Mail: Temporary Mail dan Bounce Monitor",
+  "short_name": "AMC Mail",
+  "description": "Layanan temporary mail multi-domain dan pemantau bounce SMTP untuk Al Muthi Creative.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#0369a1",
+  "icons": [
+    {
+      "src": "/assets/amc-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
