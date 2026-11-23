@@ -7,6 +7,25 @@ const STORAGE_KEYS = {
 
 const LOCAL_PART_REGEX = /^[a-z0-9][a-z0-9._+-]{0,62}$/;
 
+const ADMIN_VIEW_META = {
+  mailboxes: {
+    title: 'Buat & Kelola Alamat Email',
+    subtitle: 'Buat alamat email baru pada domain Al Muthi Creative, bagikan link kotak masuk baca-saja, atau kelola status aksesnya.',
+  },
+  catchall: {
+    title: 'Semua Pesan & Bounce (Catch-All)',
+    subtitle: 'Baca langsung seluruh email masuk, kode OTP, dan laporan bounce SMTP dari semua domain AMC dalam satu layar penuh.',
+  },
+  domains: {
+    title: 'Kelola Domain AMC',
+    subtitle: 'Tambahkan domain baru, atur status aktif atau pending, dan hubungkan Cloudflare Email Routing Catch-All.',
+  },
+  settings: {
+    title: 'Pengaturan & Uji Kirim',
+    subtitle: 'Atur masa retensi email, pendaftaran otomatis domain baru, dan kirim simulasi email atau bounce SMTP.',
+  },
+};
+
 const state = {
   domains: [],
   defaultDomain: 'amc.web.id',
@@ -30,8 +49,6 @@ const state = {
 
   selectedId: null,
   selectedDetail: null,
-  readerLoading: false,
-  readerError: null,
   readerTab: 'html',
   allowExternalImages: false,
 
@@ -42,47 +59,121 @@ const state = {
   adminToken: '',
   adminAuthenticated: false,
   adminDefaultPin: false,
-  adminActiveTab: 'mailboxes',
+  adminView: 'mailboxes',
   adminMailboxes: [],
   adminMailboxAddressSet: new Set(),
   adminDomains: [],
   adminMessages: [],
-  adminInspectorDetail: null,
-  adminInspectorTab: 'html',
-  adminInspectorImages: false,
+  adminSelectedId: null,
+  adminSelectedDetail: null,
+  adminReaderTab: 'html',
+  adminAllowImages: false,
   lastFocusedBeforeModal: null,
 };
 
 const $ = (id) => document.getElementById(id);
 
 const els = {
+  sidebarBrandSub: $('sidebar-brand-sub'),
+  mobileBrandSub: $('mobile-brand-sub'),
+  sidebarPublicBlock: $('sidebar-public-block'),
+  sidebarAdminBlock: $('sidebar-admin-block'),
+
   sidebarActiveAddr: $('sidebar-active-addr'),
   btnSidebarCopy: $('btn-sidebar-copy'),
-  btnSidebarCreate: $('btn-sidebar-create'),
   sideCountAll: $('side-count-all'),
   sideCountInbox: $('side-count-inbox'),
   sideCountBounce: $('side-count-bounce'),
   sideCountOtp: $('side-count-otp'),
   sideDomainCount: $('side-domain-count'),
   btnSidebarAdmin: $('btn-sidebar-admin'),
-  sidebarAdminDot: $('sidebar-admin-dot'),
+
+  btnSidebarQuickCreate: $('btn-sidebar-quick-create'),
+  adminSideMailboxes: $('admin-side-mailboxes'),
+  adminSideMessages: $('admin-side-messages'),
+  adminSideDomains: $('admin-side-domains'),
+
   btnSidebarTheme: $('btn-sidebar-theme'),
   sidebarThemeLabel: $('sidebar-theme-label'),
-
-  heroDomainCount: $('hero-domain-count'),
-  heroInboxCount: $('hero-inbox-count'),
-  heroBounceCount: $('hero-bounce-count'),
+  btnSidebarLogout: $('btn-sidebar-logout'),
 
   btnThemeToggle: $('btn-theme-toggle'),
   iconMoon: $('icon-moon'),
   iconSun: $('icon-sun'),
   btnOpenAdmin: $('btn-open-admin'),
-  adminActiveDot: $('admin-active-dot'),
+  btnMobileLogout: $('btn-mobile-logout'),
 
+  mobNavPublic: $('mob-nav-public'),
+  mobNavAdminBar: $('mob-nav-admin-bar'),
   mobNavInbox: $('mob-nav-inbox'),
   mobNavBounce: $('mob-nav-bounce'),
   mobNavAdmin: $('mob-nav-admin'),
 
+  adminWorkspaceShell: $('admin-workspace-shell'),
+  publicViewerShell: $('public-viewer-shell'),
+  adminReaderBanner: $('admin-reader-banner'),
+
+  adminViewTitle: $('admin-view-title'),
+  adminViewSubtitle: $('admin-view-subtitle'),
+  adminDefaultPinWarning: $('admin-default-pin-warning'),
+
+  kpiTotalMailboxes: $('kpi-total-mailboxes'),
+  kpiActiveMailboxes: $('kpi-active-mailboxes'),
+  kpiTotalEmails: $('kpi-total-emails'),
+  kpiEmails24h: $('kpi-emails-24h'),
+  kpiTotalBounces: $('kpi-total-bounces'),
+  kpiBounces24h: $('kpi-bounces-24h'),
+  kpiActiveDomains: $('kpi-active-domains'),
+  kpiPendingDomains: $('kpi-pending-domains'),
+
+  adminViewMailboxes: $('admin-view-mailboxes'),
+  adminViewCatchall: $('admin-view-catchall'),
+  adminViewDomains: $('admin-view-domains'),
+  adminViewSettings: $('admin-view-settings'),
+
+  adminQuickMailboxForm: $('admin-quick-mailbox-form'),
+  inputQuickUsername: $('input-quick-username'),
+  selectQuickDomain: $('select-quick-domain'),
+  inputQuickLabel: $('input-quick-label'),
+  adminCreateMailboxForm: $('admin-create-mailbox-form'),
+  inputNewMailboxes: $('input-new-mailboxes'),
+  selectNewMailboxDomain: $('select-new-mailbox-domain'),
+  inputNewMailboxLabel: $('input-new-mailbox-label'),
+  adminMailboxFilterDomain: $('admin-mailbox-filter-domain'),
+  adminMailboxFilterSearch: $('admin-mailbox-filter-search'),
+  btnAdminRefreshMailboxes: $('btn-admin-refresh-mailboxes'),
+  adminMailboxesTbody: $('admin-mailboxes-tbody'),
+
+  adminFilterDomain: $('admin-filter-domain'),
+  adminFilterType: $('admin-filter-type'),
+  adminFilterSearch: $('admin-filter-search'),
+  btnAdminRefreshMsgs: $('btn-admin-refresh-msgs'),
+  adminCatchallWorkspace: $('admin-catchall-workspace'),
+  adminCatchallCountLabel: $('admin-catchall-count-label'),
+  adminCatchallList: $('admin-catchall-list'),
+  adminCatchallEmpty: $('admin-catchall-empty'),
+  adminCatchallReader: $('admin-catchall-reader'),
+
+  adminAddDomainForm: $('admin-add-domain-form'),
+  inputNewDomains: $('input-new-domains'),
+  selectNewDomainStatus: $('select-new-domain-status'),
+  inputNewDomainNotes: $('input-new-domain-notes'),
+  adminDomainsTbody: $('admin-domains-tbody'),
+
+  adminSettingsForm: $('admin-settings-form'),
+  selectRetentionHours: $('select-retention-hours'),
+  checkAutoRegister: $('check-auto-register'),
+  inputBlockedUsers: $('input-blocked-users'),
+  btnAdminPurge: $('btn-admin-purge'),
+
+  adminSimForm: $('admin-sim-form'),
+  inputAdminSimTo: $('input-admin-sim-to'),
+  selectAdminSimType: $('select-admin-sim-type'),
+  inputAdminSimFailed: $('input-admin-sim-failed'),
+
+  heroDomainCount: $('hero-domain-count'),
+  heroInboxCount: $('hero-inbox-count'),
+  heroBounceCount: $('hero-bounce-count'),
   btnToggleAutoPoll: $('btn-toggle-autopoll'),
   pollStatusText: $('poll-status-text'),
 
@@ -95,7 +186,6 @@ const els = {
   builderError: $('builder-error'),
   readonlyNotice: $('readonly-notice'),
   btnRefreshInbox: $('btn-refresh-inbox'),
-  btnHeroCreateEmail: $('btn-hero-create-email'),
 
   mailWorkspace: $('mail-workspace'),
   inboxActiveLabel: $('inbox-active-label'),
@@ -116,64 +206,10 @@ const els = {
   footerYear: $('footer-year'),
 
   adminModal: $('admin-modal'),
-  adminModalPanel: $('admin-modal-panel'),
   btnCloseAdmin: $('btn-close-admin'),
-  btnAdminLogout: $('btn-admin-logout'),
   adminLoginForm: $('admin-login-form'),
   inputAdminPin: $('input-admin-pin'),
   adminLoginError: $('admin-login-error'),
-  adminWorkspace: $('admin-workspace'),
-  adminDefaultPinWarning: $('admin-default-pin-warning'),
-
-  kpiTotalMailboxes: $('kpi-total-mailboxes'),
-  kpiActiveMailboxes: $('kpi-active-mailboxes'),
-  kpiTotalEmails: $('kpi-total-emails'),
-  kpiEmails24h: $('kpi-emails-24h'),
-  kpiTotalBounces: $('kpi-total-bounces'),
-  kpiBounces24h: $('kpi-bounces-24h'),
-  kpiActiveDomains: $('kpi-active-domains'),
-  kpiPendingDomains: $('kpi-pending-domains'),
-
-  adminTabMailboxes: $('admin-tab-mailboxes'),
-  adminTabMonitor: $('admin-tab-monitor'),
-  adminTabDomains: $('admin-tab-domains'),
-  adminTabSettings: $('admin-tab-settings'),
-
-  adminCreateMailboxForm: $('admin-create-mailbox-form'),
-  inputNewMailboxes: $('input-new-mailboxes'),
-  selectNewMailboxDomain: $('select-new-mailbox-domain'),
-  inputNewMailboxLabel: $('input-new-mailbox-label'),
-  adminMailboxFilterDomain: $('admin-mailbox-filter-domain'),
-  adminMailboxFilterSearch: $('admin-mailbox-filter-search'),
-  btnAdminRefreshMailboxes: $('btn-admin-refresh-mailboxes'),
-  adminMailboxesTbody: $('admin-mailboxes-tbody'),
-
-  adminFilterDomain: $('admin-filter-domain'),
-  adminFilterType: $('admin-filter-type'),
-  adminFilterSearch: $('admin-filter-search'),
-  btnAdminRefreshMsgs: $('btn-admin-refresh-msgs'),
-  adminMessagesTbody: $('admin-messages-tbody'),
-
-  adminAddDomainForm: $('admin-add-domain-form'),
-  inputNewDomains: $('input-new-domains'),
-  selectNewDomainStatus: $('select-new-domain-status'),
-  inputNewDomainNotes: $('input-new-domain-notes'),
-  adminDomainsTbody: $('admin-domains-tbody'),
-
-  adminSettingsForm: $('admin-settings-form'),
-  selectRetentionHours: $('select-retention-hours'),
-  checkAutoRegister: $('check-auto-register'),
-  inputBlockedUsers: $('input-blocked-users'),
-  btnAdminPurge: $('btn-admin-purge'),
-
-  adminSimForm: $('admin-sim-form'),
-  inputAdminSimTo: $('input-admin-sim-to'),
-  selectAdminSimType: $('select-admin-sim-type'),
-  inputAdminSimFailed: $('input-admin-sim-failed'),
-
-  inspectorModal: $('inspector-modal'),
-  btnCloseInspector: $('btn-close-inspector'),
-  inspectorBody: $('inspector-body'),
   toastStack: $('toast-stack'),
 };
 
@@ -337,6 +373,85 @@ function parseAddressInput(rawInput, selectedDomain) {
   return { valid: true, localPart, domain };
 }
 
+function syncModeShell() {
+  const isAdmin = state.adminAuthenticated;
+  document.body.classList.toggle('is-admin-mode', isAdmin);
+
+  els.sidebarBrandSub.textContent = isAdmin ? 'Workspace Admin' : 'Al Muthi Creative';
+  els.mobileBrandSub.textContent = isAdmin ? 'Workspace Admin' : 'Al Muthi Creative';
+
+  els.sidebarPublicBlock.classList.toggle('hidden', isAdmin);
+  els.sidebarAdminBlock.classList.toggle('hidden', !isAdmin);
+  els.btnSidebarLogout.classList.toggle('hidden', !isAdmin);
+
+  els.btnOpenAdmin.classList.toggle('hidden', isAdmin);
+  els.btnMobileLogout.classList.toggle('hidden', !isAdmin);
+
+  els.mobNavPublic.classList.toggle('hidden', isAdmin);
+  els.mobNavAdminBar.classList.toggle('hidden', !isAdmin);
+
+  els.adminDefaultPinWarning.classList.toggle('hidden', !(isAdmin && state.adminDefaultPin));
+  els.btnClearInbox.classList.toggle('hidden', !isAdmin);
+  els.adminReaderBanner.classList.toggle('hidden', !isAdmin);
+
+  els.readonlyNotice.classList.toggle('is-admin', isAdmin);
+  els.readonlyNotice.textContent = isAdmin
+    ? 'Mode Admin aktif: Anda dapat membuka semua alamat dan mengelola pesan.'
+    : 'Mode baca saja: hanya Admin yang dapat membuat alamat email baru.';
+
+  if (isAdmin) {
+    const showPerAddrReader = state.adminView === 'reader';
+    els.adminWorkspaceShell.classList.toggle('hidden', showPerAddrReader);
+    els.publicViewerShell.classList.toggle('hidden', !showPerAddrReader);
+
+    if (!showPerAddrReader) {
+      const meta = ADMIN_VIEW_META[state.adminView] || ADMIN_VIEW_META.mailboxes;
+      els.adminViewTitle.textContent = meta.title;
+      els.adminViewSubtitle.textContent = meta.subtitle;
+
+      els.adminViewMailboxes.classList.toggle('hidden', state.adminView !== 'mailboxes');
+      els.adminViewCatchall.classList.toggle('hidden', state.adminView !== 'catchall');
+      els.adminViewDomains.classList.toggle('hidden', state.adminView !== 'domains');
+      els.adminViewSettings.classList.toggle('hidden', state.adminView !== 'settings');
+    }
+
+    document.querySelectorAll('[data-admin-view]').forEach((el) => {
+      if (el.classList.contains('sidebar-link') || el.classList.contains('mobile-nav-item')) {
+        el.classList.toggle('is-active', el.dataset.adminView === state.adminView);
+      }
+    });
+  } else {
+    els.adminWorkspaceShell.classList.add('hidden');
+    els.publicViewerShell.classList.remove('hidden');
+  }
+
+  updateAddressActionButtons();
+  if (state.selectedDetail) {
+    renderPublicReader();
+  }
+}
+
+function switchAdminView(view, { filterBounce = false, focusQuickInput = false } = {}) {
+  if (!state.adminAuthenticated) return;
+  state.adminView = view;
+  if (filterBounce && view === 'catchall') {
+    els.adminFilterType.value = 'bounce';
+  }
+  syncModeShell();
+  window.scrollTo({ top: 0, behavior: 'auto' });
+
+  if (view === 'mailboxes') {
+    loadAdminMailboxes();
+    if (focusQuickInput) setTimeout(() => els.inputQuickUsername.focus(), 40);
+  } else if (view === 'catchall') {
+    loadAdminStatsAndMessages();
+  } else if (view === 'domains') {
+    loadAdminDomains();
+  } else if (view === 'settings') {
+    loadAdminStatsAndMessages();
+  }
+}
+
 function updateAddressActionButtons() {
   const addr = getActiveAddress();
   const hasUsable = Boolean(addr) && (state.activeMailboxValid || state.adminAuthenticated);
@@ -478,6 +593,49 @@ function setFilter(nextFilter, { scrollToInbox = false } = {}) {
   }
 }
 
+function renderMessageCard(msg, { selected, showRecipient = false, openAttr = 'data-open-id' }) {
+  const bounce = msg.bounceSummary || msg.bounceInfo;
+  const badges = [];
+
+  if (msg.isBounce) {
+    const isHard = bounce?.severity !== 'soft';
+    const codeText = [bounce?.smtpCode, bounce?.enhancedStatus].filter(Boolean).join(' ');
+    badges.push(
+      `<span class="badge ${isHard ? 'badge-hard' : 'badge-soft'}">${isHard ? 'HARD BOUNCE' : 'SOFT BOUNCE'}${codeText ? `: ${escapeHtml(codeText)}` : ''}</span>`
+    );
+  }
+
+  if (msg.otpCode) {
+    badges.push(
+      `<button type="button" class="badge badge-otp mono" data-quick-otp="${escapeHtml(msg.otpCode)}" title="Klik untuk menyalin kode OTP">Salin OTP ${escapeHtml(msg.otpCode)}</button>`
+    );
+  }
+
+  if (msg.hasAttachments) {
+    badges.push('<span class="badge badge-neutral">Lampiran</span>');
+  }
+
+  const senderLabel = msg.fromName || msg.fromAddress || msg.sender || '(Tanpa Pengirim)';
+
+  return `
+    <article class="message-item ${selected ? 'is-selected' : ''} ${msg.isRead ? '' : 'is-unread'} ${msg.isBounce ? 'is-bounce' : ''}" data-msg-id="${escapeHtml(msg.id)}">
+      <button type="button" class="message-open-btn" ${openAttr}="${escapeHtml(msg.id)}" aria-current="${selected ? 'true' : 'false'}">
+        ${showRecipient ? `<span class="catchall-rcpt-tag">Ke: ${escapeHtml(msg.recipient)}</span>` : ''}
+        <div class="msg-row-top">
+          <div class="msg-sender">
+            ${msg.isRead ? '' : '<span class="unread-label">Baru</span>'}
+            <span class="msg-sender-name">${escapeHtml(senderLabel)}</span>
+          </div>
+          <span class="msg-time">${escapeHtml(formatRelativeTime(msg.receivedAt))}</span>
+        </div>
+        <div class="msg-subject">${escapeHtml(msg.subject || '(Tanpa Subjek)')}</div>
+        <div class="msg-snippet">${escapeHtml(msg.snippet || '')}</div>
+      </button>
+      ${badges.length ? `<div class="msg-badges-bar">${badges.join('')}</div>` : ''}
+    </article>
+  `;
+}
+
 function renderInboxList() {
   renderFilterCounts();
   const addr = getActiveAddress();
@@ -545,48 +703,7 @@ function renderInboxList() {
   }
 
   els.inboxList.innerHTML = state.messages
-    .map((msg) => {
-      const selected = msg.id === state.selectedId;
-      const bounce = msg.bounceSummary || msg.bounceInfo;
-      const badges = [];
-
-      if (msg.isBounce) {
-        const isHard = bounce?.severity !== 'soft';
-        const codeText = [bounce?.smtpCode, bounce?.enhancedStatus].filter(Boolean).join(' ');
-        badges.push(
-          `<span class="badge ${isHard ? 'badge-hard' : 'badge-soft'}">${isHard ? 'HARD BOUNCE' : 'SOFT BOUNCE'}${codeText ? `: ${escapeHtml(codeText)}` : ''}</span>`
-        );
-      }
-
-      if (msg.otpCode) {
-        badges.push(
-          `<button type="button" class="badge badge-otp mono" data-quick-otp="${escapeHtml(msg.otpCode)}" title="Klik untuk menyalin kode OTP">Salin OTP ${escapeHtml(msg.otpCode)}</button>`
-        );
-      }
-
-      if (msg.hasAttachments) {
-        badges.push('<span class="badge badge-neutral">Lampiran</span>');
-      }
-
-      const senderLabel = msg.fromName || msg.fromAddress || msg.sender || '(Tanpa Pengirim)';
-
-      return `
-        <article class="message-item ${selected ? 'is-selected' : ''} ${msg.isRead ? '' : 'is-unread'} ${msg.isBounce ? 'is-bounce' : ''}" data-msg-id="${escapeHtml(msg.id)}">
-          <button type="button" class="message-open-btn" data-open-id="${escapeHtml(msg.id)}" aria-current="${selected ? 'true' : 'false'}">
-            <div class="msg-row-top">
-              <div class="msg-sender">
-                ${msg.isRead ? '' : '<span class="unread-label">Baru</span>'}
-                <span class="msg-sender-name">${escapeHtml(senderLabel)}</span>
-              </div>
-              <span class="msg-time">${escapeHtml(formatRelativeTime(msg.receivedAt))}</span>
-            </div>
-            <div class="msg-subject">${escapeHtml(msg.subject || '(Tanpa Subjek)')}</div>
-            <div class="msg-snippet">${escapeHtml(msg.snippet || '')}</div>
-          </button>
-          ${badges.length ? `<div class="msg-badges-bar">${badges.join('')}</div>` : ''}
-        </article>
-      `;
-    })
+    .map((msg) => renderMessageCard(msg, { selected: msg.id === state.selectedId, showRecipient: false, openAttr: 'data-open-id' }))
     .join('');
 }
 
@@ -751,6 +868,7 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
   const auth = detail.authResults || {};
   const canDelete = mode === 'admin' || state.adminAuthenticated;
   const addrParam = mode === 'public' ? `?address=${encodeURIComponent(detail.recipient)}` : '';
+  const isUnregisteredCatchall = mode === 'admin' && !state.adminMailboxAddressSet.has(detail.recipient);
 
   const authBadges = [];
   for (const key of ['spf', 'dkim', 'dmarc']) {
@@ -916,10 +1034,15 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
 
   return `
     <div class="reader-header">
-      ${mode === 'public' ? '<button type="button" class="btn btn-sm mobile-back-btn" data-mobile-back>Kembali ke Inbox</button>' : ''}
+      <button type="button" class="btn btn-sm mobile-back-btn" data-mobile-back="${mode}">Kembali ke Daftar</button>
       <div class="reader-top-bar">
         <h2 class="reader-subject">${escapeHtml(detail.subject || '(Tanpa Subjek)')}</h2>
         <div class="reader-actions">
+          ${
+            isUnregisteredCatchall
+              ? `<button type="button" class="btn btn-sm btn-soft" data-admin-register-addr="${escapeHtml(detail.recipient)}">Daftarkan Email</button>`
+              : ''
+          }
           <a class="btn btn-sm" href="/api/emails/${encodeURIComponent(detail.id)}/raw${addrParam}" download>Unduh .eml</a>
           ${
             canDelete
@@ -1037,7 +1160,16 @@ function resetPollCountdown() {
 function startPollingLoop() {
   if (state.pollTimer) clearInterval(state.pollTimer);
   state.pollTimer = setInterval(() => {
-    if (!state.autoPoll || document.hidden || !getActiveAddress() || !state.activeMailboxValid) return;
+    if (!state.autoPoll || document.hidden) return;
+    if (state.adminAuthenticated && state.adminView === 'catchall') {
+      state.pollCountdown -= 1;
+      if (state.pollCountdown <= 0) {
+        state.pollCountdown = POLL_INTERVAL_SEC;
+        loadAdminStatsAndMessages();
+      }
+      return;
+    }
+    if (!getActiveAddress() || !state.activeMailboxValid) return;
     state.pollCountdown -= 1;
     if (state.pollCountdown <= 0) {
       state.pollCountdown = POLL_INTERVAL_SEC;
@@ -1048,64 +1180,22 @@ function startPollingLoop() {
   updatePollBadge();
 }
 
-function updateAdminIndicators() {
-  const isAuth = state.adminAuthenticated;
-  els.adminActiveDot.classList.toggle('hidden', !isAuth);
-  els.sidebarAdminDot.classList.toggle('hidden', !isAuth);
-  els.btnAdminLogout.classList.toggle('hidden', !isAuth);
-  els.adminDefaultPinWarning.classList.toggle('hidden', !(isAuth && state.adminDefaultPin));
-
-  els.btnHeroCreateEmail.classList.toggle('hidden', !isAuth);
-  els.btnSidebarCreate.classList.toggle('hidden', !isAuth);
-  els.btnClearInbox.classList.toggle('hidden', !isAuth);
-
-  els.readonlyNotice.classList.toggle('is-admin', isAuth);
-  els.readonlyNotice.textContent = isAuth
-    ? 'Mode Admin aktif: Anda dapat membuat alamat email baru dan mengelola pesan.'
-    : 'Mode baca saja: hanya Admin yang dapat membuat alamat email baru.';
-
-  updateAddressActionButtons();
-  if (state.selectedDetail) {
-    renderPublicReader();
+function openAdminLoginModal() {
+  if (state.adminAuthenticated) {
+    switchAdminView('mailboxes');
+    return;
   }
-}
-
-function openAdminModal(initialTab = null) {
   state.lastFocusedBeforeModal = document.activeElement;
   els.adminModal.classList.remove('hidden');
   els.adminLoginError.classList.add('hidden');
-  if (state.adminAuthenticated) {
-    els.adminModalPanel.classList.remove('is-compact');
-    els.adminLoginForm.classList.add('hidden');
-    els.adminWorkspace.classList.remove('hidden');
-    if (initialTab) switchAdminTab(initialTab);
-    loadAdminAll();
-  } else {
-    els.adminModalPanel.classList.add('is-compact');
-    els.adminLoginForm.classList.remove('hidden');
-    els.adminWorkspace.classList.add('hidden');
-    setTimeout(() => els.inputAdminPin.focus(), 40);
-  }
+  setTimeout(() => els.inputAdminPin.focus(), 40);
 }
 
-function closeAdminModal() {
+function closeAdminLoginModal() {
   els.adminModal.classList.add('hidden');
   if (state.lastFocusedBeforeModal && typeof state.lastFocusedBeforeModal.focus === 'function') {
     state.lastFocusedBeforeModal.focus();
   }
-}
-
-function switchAdminTab(tab) {
-  state.adminActiveTab = tab;
-  document.querySelectorAll('.admin-tab').forEach((btn) => {
-    const active = btn.dataset.adminTab === tab;
-    btn.classList.toggle('is-active', active);
-    btn.setAttribute('aria-selected', String(active));
-  });
-  els.adminTabMailboxes.classList.toggle('hidden', tab !== 'mailboxes');
-  els.adminTabMonitor.classList.toggle('hidden', tab !== 'monitor');
-  els.adminTabDomains.classList.toggle('hidden', tab !== 'domains');
-  els.adminTabSettings.classList.toggle('hidden', tab !== 'settings');
 }
 
 async function loadAdminAll() {
@@ -1146,6 +1236,10 @@ async function loadAdminStatsAndMessages() {
     els.kpiActiveDomains.textContent = String(st.activeDomains || 0);
     els.kpiPendingDomains.textContent = String(st.pendingDomains || 0);
 
+    els.adminSideMailboxes.textContent = String(st.totalMailboxes || 0);
+    els.adminSideMessages.textContent = String(st.totalEmails || 0);
+    els.adminSideDomains.textContent = String(st.activeDomains || 0);
+
     if (statsRes.settings) {
       els.selectRetentionHours.value = String(statsRes.settings.retentionHours || 168);
       els.checkAutoRegister.checked = Boolean(statsRes.settings.autoRegisterDomains);
@@ -1153,59 +1247,80 @@ async function loadAdminStatsAndMessages() {
     }
 
     state.adminMessages = msgRes.messages || [];
-    renderAdminMessagesTable();
+    renderAdminCatchallList();
   } catch (err) {
     if (err.status === 401) {
       handleAdminSessionExpired();
     } else {
-      showToast(`Gagal memuat monitor Admin: ${err.message}`, 'error');
+      showToast(`Gagal memuat pesan Admin: ${err.message}`, 'error');
     }
   }
 }
 
-function renderAdminMessagesTable() {
+function renderAdminCatchallList() {
+  els.adminCatchallCountLabel.textContent = `${state.adminMessages.length} pesan`;
   if (state.adminMessages.length === 0) {
-    els.adminMessagesTbody.innerHTML =
-      '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Belum ada pesan yang cocok dengan filter saat ini.</td></tr>';
+    els.adminCatchallList.innerHTML = `
+      <div class="state-panel">
+        <h3>Belum Ada Pesan</h3>
+        <p>Belum ada pesan yang cocok dengan filter domain atau tipe saat ini.</p>
+      </div>
+    `;
     return;
   }
 
-  els.adminMessagesTbody.innerHTML = state.adminMessages
-    .map((m) => {
-      let statusBadge = '<span class="badge badge-brand">Masuk</span>';
-      if (m.isBounce) {
-        const bSum = m.bounceSummary || m.bounceInfo;
-        const isHard = bSum?.severity !== 'soft';
-        const code = [bSum?.smtpCode, bSum?.enhancedStatus].filter(Boolean).join(' ');
-        statusBadge = `<span class="badge ${isHard ? 'badge-hard' : 'badge-soft'} mono">${isHard ? 'HARD' : 'SOFT'} ${escapeHtml(code || 'DSN')}</span>`;
-      } else if (m.otpCode) {
-        statusBadge = `<span class="badge badge-otp mono">OTP ${escapeHtml(m.otpCode)}</span>`;
-      }
-
-      const isRegistered = state.adminMailboxAddressSet.has(m.recipient);
-
-      return `
-        <tr>
-          <td class="mono" style="font-weight:700;word-break:break-all;">${escapeHtml(m.recipient)}</td>
-          <td>${statusBadge}</td>
-          <td style="max-width:340px;">
-            <div style="font-weight:700;color:var(--text-primary);">${escapeHtml(m.subject || '(Tanpa Subjek)')}</div>
-            <div style="font-size:0.78rem;color:var(--text-muted);">${escapeHtml(m.fromAddress || m.sender || '<>')} | ${escapeHtml((m.snippet || '').slice(0, 80))}</div>
-          </td>
-          <td style="white-space:nowrap;color:var(--text-muted);">${escapeHtml(formatRelativeTime(m.receivedAt))}</td>
-          <td style="text-align:right;white-space:nowrap;">
-            <button type="button" class="btn btn-sm btn-soft" data-admin-inspect="${escapeHtml(m.id)}">Lihat</button>
-            ${
-              isRegistered
-                ? ''
-                : `<button type="button" class="btn btn-sm" data-admin-register-addr="${escapeHtml(m.recipient)}">Daftarkan</button>`
-            }
-            <button type="button" class="btn btn-sm btn-danger-outline" data-admin-delete-msg="${escapeHtml(m.id)}">Hapus</button>
-          </td>
-        </tr>
-      `;
-    })
+  els.adminCatchallList.innerHTML = state.adminMessages
+    .map((msg) =>
+      renderMessageCard(msg, {
+        selected: msg.id === state.adminSelectedId,
+        showRecipient: true,
+        openAttr: 'data-admin-open-id',
+      })
+    )
     .join('');
+}
+
+function renderAdminCatchallReader() {
+  if (!state.adminSelectedDetail) {
+    els.adminCatchallEmpty.classList.remove('hidden');
+    els.adminCatchallReader.classList.add('hidden');
+    els.adminCatchallReader.innerHTML = '';
+    return;
+  }
+  els.adminCatchallEmpty.classList.add('hidden');
+  els.adminCatchallReader.classList.remove('hidden');
+  els.adminCatchallReader.innerHTML = buildMessageDetailMarkup(state.adminSelectedDetail, {
+    activeTab: state.adminReaderTab,
+    allowExternalImages: state.adminAllowImages,
+    mode: 'admin',
+  });
+}
+
+async function openAdminCatchallMessage(emailId) {
+  if (!emailId) return;
+  state.adminSelectedId = emailId;
+  state.adminAllowImages = false;
+  els.adminCatchallWorkspace.classList.add('is-reading');
+  renderAdminCatchallList();
+
+  els.adminCatchallEmpty.classList.add('hidden');
+  els.adminCatchallReader.classList.remove('hidden');
+  els.adminCatchallReader.innerHTML = '<div class="state-panel"><h3>Memuat Pesan...</h3></div>';
+
+  try {
+    const res = await apiFetch(`/api/emails/${encodeURIComponent(emailId)}`, { admin: true });
+    if (state.adminSelectedId !== emailId) return;
+    state.adminSelectedDetail = res.email;
+    state.adminReaderTab = res.email.isBounce && res.email.bounceInfo?.rawDsn ? 'dsn' : res.email.htmlBody ? 'html' : 'text';
+    renderAdminCatchallReader();
+  } catch (err) {
+    els.adminCatchallReader.innerHTML = `
+      <div class="state-panel">
+        <h3 class="state-error-title">Gagal Membuka Pesan</h3>
+        <p>${escapeHtml(err.message)}</p>
+      </div>
+    `;
+  }
 }
 
 async function loadAdminMailboxes() {
@@ -1220,7 +1335,9 @@ async function loadAdminMailboxes() {
     state.adminMailboxes = res.mailboxes || [];
     state.adminMailboxAddressSet = new Set(state.adminMailboxes.map((m) => m.address));
     renderAdminMailboxesTable();
-    renderAdminMessagesTable();
+    if (state.adminSelectedDetail) {
+      renderAdminCatchallReader();
+    }
   } catch (err) {
     if (err.status === 401) handleAdminSessionExpired();
     else showToast(`Gagal memuat daftar email: ${err.message}`, 'error');
@@ -1243,7 +1360,7 @@ function renderAdminMailboxesTable() {
             <div style="font-size:0.74rem;color:var(--text-muted);">Dibuat ${escapeHtml(formatRelativeTime(mb.createdAt))}</div>
           </td>
           <td>
-            <select class="select-input" style="min-height:34px;padding:4px 8px;font-size:0.8rem;min-width:112px;" data-mailbox-status-id="${mb.id}">
+            <select class="select-input table-control" style="min-width:112px;" data-mailbox-status-id="${mb.id}">
               <option value="active" ${mb.status === 'active' ? 'selected' : ''}>Aktif</option>
               <option value="disabled" ${mb.status === 'disabled' ? 'selected' : ''}>Nonaktif</option>
             </select>
@@ -1252,11 +1369,12 @@ function renderAdminMailboxesTable() {
             ${mb.totalEmails} pesan / <span style="color:var(--bounce-hard);">${mb.bounceEmails} bounce</span>
           </td>
           <td>
-            <input type="text" class="text-input" style="min-height:34px;padding:4px 9px;font-size:0.8rem;min-width:140px;" value="${escapeHtml(mb.label)}" placeholder="Keterangan..." data-mailbox-label-id="${mb.id}">
+            <input type="text" class="text-input table-control" style="min-width:140px;" value="${escapeHtml(mb.label)}" placeholder="Keterangan..." data-mailbox-label-id="${mb.id}">
           </td>
           <td style="text-align:right;white-space:nowrap;">
-            <button type="button" class="btn btn-sm btn-soft" data-mailbox-open="${escapeHtml(mb.address)}">Buka</button>
-            <button type="button" class="btn btn-sm" data-mailbox-copy-link="${escapeHtml(mb.address)}">Salin Link</button>
+            <button type="button" class="btn btn-sm btn-primary" data-mailbox-open="${escapeHtml(mb.address)}">Buka Inbox</button>
+            <button type="button" class="btn btn-sm" data-mailbox-copy-addr="${escapeHtml(mb.address)}">Salin</button>
+            <button type="button" class="btn btn-sm btn-soft" data-mailbox-copy-link="${escapeHtml(mb.address)}">Salin Link</button>
             <button type="button" class="btn btn-sm btn-danger-outline" data-mailbox-delete="${mb.id}" data-mailbox-addr="${escapeHtml(mb.address)}">Hapus</button>
           </td>
         </tr>
@@ -1280,7 +1398,8 @@ async function loadAdminDomains() {
 function syncAdminDomainDropdowns() {
   const prevMonitor = els.adminFilterDomain.value;
   const prevMbFilter = els.adminMailboxFilterDomain.value;
-  const prevNewMb = els.selectNewMailboxDomain.value;
+  const prevQuick = els.selectQuickDomain.value;
+  const prevBulk = els.selectNewMailboxDomain.value;
 
   const optsHtml =
     '<option value="all">Semua Domain</option>' +
@@ -1297,11 +1416,18 @@ function syncAdminDomainDropdowns() {
   }
 
   const usableDomains = state.adminDomains.filter((d) => d.status !== 'disabled');
-  els.selectNewMailboxDomain.innerHTML = usableDomains
-    .map((d) => `<option value="${escapeHtml(d.domain)}">@${escapeHtml(d.domain)}${d.isDefault ? ' (Default)' : ''}</option>`)
+  const creatorOpts = usableDomains
+    .map((d) => `<option value="${escapeHtml(d.domain)}">${escapeHtml(d.domain)}${d.isDefault ? ' (Default)' : ''}</option>`)
     .join('');
-  if (prevNewMb && usableDomains.some((d) => d.domain === prevNewMb)) {
-    els.selectNewMailboxDomain.value = prevNewMb;
+
+  els.selectQuickDomain.innerHTML = creatorOpts;
+  els.selectNewMailboxDomain.innerHTML = creatorOpts;
+
+  if (prevQuick && usableDomains.some((d) => d.domain === prevQuick)) {
+    els.selectQuickDomain.value = prevQuick;
+  }
+  if (prevBulk && usableDomains.some((d) => d.domain === prevBulk)) {
+    els.selectNewMailboxDomain.value = prevBulk;
   }
 }
 
@@ -1323,7 +1449,7 @@ function renderAdminDomainsTable() {
             </div>
           </td>
           <td>
-            <select class="select-input" style="min-height:34px;padding:4px 8px;font-size:0.8rem;min-width:120px;" data-domain-status-id="${d.id}">
+            <select class="select-input table-control" style="min-width:120px;" data-domain-status-id="${d.id}">
               <option value="active" ${d.status === 'active' ? 'selected' : ''}>Aktif</option>
               <option value="pending" ${d.status === 'pending' ? 'selected' : ''}>Pending</option>
               <option value="disabled" ${d.status === 'disabled' ? 'selected' : ''}>Nonaktif</option>
@@ -1333,7 +1459,7 @@ function renderAdminDomainsTable() {
             ${d.totalEmails} pesan / <span style="color:var(--bounce-hard);">${d.bounceEmails} bounce</span>
           </td>
           <td>
-            <input type="text" class="text-input" style="min-height:34px;padding:4px 9px;font-size:0.8rem;min-width:150px;" value="${escapeHtml(d.notes)}" placeholder="Catatan..." data-domain-notes-id="${d.id}">
+            <input type="text" class="text-input table-control" style="min-width:150px;" value="${escapeHtml(d.notes)}" placeholder="Catatan..." data-domain-notes-id="${d.id}">
           </td>
           <td style="text-align:right;white-space:nowrap;">
             ${
@@ -1349,29 +1475,6 @@ function renderAdminDomainsTable() {
     .join('');
 }
 
-async function openAdminInspector(emailId) {
-  els.inspectorModal.classList.remove('hidden');
-  els.inspectorBody.innerHTML = '<div class="state-panel"><h3>Memuat Detail Pesan...</h3></div>';
-  try {
-    const res = await apiFetch(`/api/emails/${encodeURIComponent(emailId)}`, { admin: true });
-    state.adminInspectorDetail = res.email;
-    state.adminInspectorImages = false;
-    state.adminInspectorTab = res.email.isBounce && res.email.bounceInfo?.rawDsn ? 'dsn' : res.email.htmlBody ? 'html' : 'text';
-    renderAdminInspector();
-  } catch (err) {
-    els.inspectorBody.innerHTML = `<div class="state-panel"><h3 class="state-error-title">Gagal Memuat</h3><p>${escapeHtml(err.message)}</p></div>`;
-  }
-}
-
-function renderAdminInspector() {
-  if (!state.adminInspectorDetail) return;
-  els.inspectorBody.innerHTML = buildMessageDetailMarkup(state.adminInspectorDetail, {
-    activeTab: state.adminInspectorTab,
-    allowExternalImages: state.adminInspectorImages,
-    mode: 'admin',
-  });
-}
-
 async function refreshPublicDomains() {
   const domRes = await apiFetch('/api/domains');
   state.domains = domRes.domains;
@@ -1385,21 +1488,20 @@ function handleAdminSessionExpired() {
   state.adminToken = '';
   state.adminAuthenticated = false;
   try { sessionStorage.removeItem(STORAGE_KEYS.adminToken); } catch {}
-  updateAdminIndicators();
-  els.adminModalPanel.classList.add('is-compact');
-  els.adminWorkspace.classList.add('hidden');
-  els.adminLoginForm.classList.remove('hidden');
+  syncModeShell();
+  openAdminLoginModal();
   showToast('Sesi Admin berakhir. Silakan masuk kembali.', 'error');
 }
 
 function logoutAdmin() {
   state.adminToken = '';
   state.adminAuthenticated = false;
+  state.adminSelectedId = null;
+  state.adminSelectedDetail = null;
   try { sessionStorage.removeItem(STORAGE_KEYS.adminToken); } catch {}
-  updateAdminIndicators();
-  closeAdminModal();
+  syncModeShell();
   if (getActiveAddress()) fetchInbox({ silent: false });
-  showToast('Anda keluar dari Panel Admin.');
+  showToast('Anda keluar dari Workspace Admin.');
 }
 
 async function copyActiveEmailAction() {
@@ -1414,13 +1516,50 @@ async function copyActiveEmailAction() {
   }
 }
 
+async function handleCreateMailboxes(rawEntries, defaultDomain, label) {
+  const res = await apiFetch('/api/admin/mailboxes', {
+    method: 'POST',
+    admin: true,
+    body: JSON.stringify({
+      addresses: rawEntries,
+      defaultDomain,
+      label,
+    }),
+  });
+  state.adminMailboxes = res.mailboxes || [];
+  state.adminMailboxAddressSet = new Set(state.adminMailboxes.map((m) => m.address));
+  renderAdminMailboxesTable();
+  await loadAdminStatsAndMessages();
+
+  const parts = [];
+  if (res.added?.length) parts.push(`${res.added.length} email dibuat`);
+  if (res.skipped?.length) parts.push(`${res.skipped.length} sudah terdaftar`);
+  if (res.invalid?.length) parts.push(`${res.invalid.length} tidak valid`);
+  showToast(parts.join(', ') || 'Selesai memproses email.', res.added?.length ? 'success' : 'default');
+  return res;
+}
+
 function bindEvents() {
   els.btnThemeToggle.addEventListener('click', toggleTheme);
   els.btnSidebarTheme.addEventListener('click', toggleTheme);
   els.btnSidebarCopy.addEventListener('click', copyActiveEmailAction);
-  els.btnSidebarCreate.addEventListener('click', () => openAdminModal('mailboxes'));
-  els.btnHeroCreateEmail.addEventListener('click', () => openAdminModal('mailboxes'));
-  els.btnSidebarAdmin.addEventListener('click', () => openAdminModal());
+  els.btnSidebarAdmin.addEventListener('click', openAdminLoginModal);
+  els.btnOpenAdmin.addEventListener('click', openAdminLoginModal);
+  els.btnSidebarLogout.addEventListener('click', logoutAdmin);
+  els.btnMobileLogout.addEventListener('click', logoutAdmin);
+
+  els.btnSidebarQuickCreate.addEventListener('click', () => {
+    switchAdminView('mailboxes', { focusQuickInput: true });
+  });
+
+  document.addEventListener('click', (e) => {
+    const viewTrigger = e.target.closest('[data-admin-view]');
+    if (viewTrigger && state.adminAuthenticated) {
+      const targetView = viewTrigger.dataset.adminView;
+      const jumpBounce = viewTrigger.dataset.jumpBounce === 'true';
+      switchAdminView(targetView, { filterBounce: jumpBounce });
+    }
+  });
 
   document.querySelectorAll('[data-nav-filter]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -1430,7 +1569,7 @@ function bindEvents() {
 
   els.mobNavInbox.addEventListener('click', () => setFilter('all', { scrollToInbox: true }));
   els.mobNavBounce.addEventListener('click', () => setFilter('bounce', { scrollToInbox: true }));
-  els.mobNavAdmin.addEventListener('click', () => openAdminModal());
+  els.mobNavAdmin.addEventListener('click', openAdminLoginModal);
 
   els.btnToggleAutoPoll.addEventListener('click', () => {
     state.autoPoll = !state.autoPoll;
@@ -1524,10 +1663,27 @@ function bindEvents() {
     }
   });
 
+  els.adminCatchallList.addEventListener('click', (e) => {
+    const otpBtn = e.target.closest('[data-quick-otp]');
+    if (otpBtn) {
+      e.stopPropagation();
+      copyText(otpBtn.dataset.quickOtp, `Kode OTP ${otpBtn.dataset.quickOtp} disalin`);
+      return;
+    }
+    const openBtn = e.target.closest('[data-admin-open-id]');
+    if (openBtn) {
+      openAdminCatchallMessage(openBtn.dataset.adminOpenId);
+    }
+  });
+
   const handleReaderClick = async (e) => {
     const backBtn = e.target.closest('[data-mobile-back]');
     if (backBtn) {
-      els.mailWorkspace.classList.remove('is-reading');
+      if (backBtn.dataset.mobileBack === 'admin') {
+        els.adminCatchallWorkspace.classList.remove('is-reading');
+      } else {
+        els.mailWorkspace.classList.remove('is-reading');
+      }
       return;
     }
 
@@ -1540,8 +1696,8 @@ function bindEvents() {
     const tabBtn = e.target.closest('[data-reader-tab]');
     if (tabBtn) {
       if (tabBtn.dataset.tabMode === 'admin') {
-        state.adminInspectorTab = tabBtn.dataset.readerTab;
-        renderAdminInspector();
+        state.adminReaderTab = tabBtn.dataset.readerTab;
+        renderAdminCatchallReader();
       } else {
         state.readerTab = tabBtn.dataset.readerTab;
         renderPublicReader();
@@ -1552,8 +1708,8 @@ function bindEvents() {
     const imgBtn = e.target.closest('[data-toggle-images]');
     if (imgBtn) {
       if (imgBtn.dataset.toggleImages === 'admin') {
-        state.adminInspectorImages = !state.adminInspectorImages;
-        renderAdminInspector();
+        state.adminAllowImages = !state.adminAllowImages;
+        renderAdminCatchallReader();
       } else {
         state.allowExternalImages = !state.allowExternalImages;
         renderPublicReader();
@@ -1565,23 +1721,36 @@ function bindEvents() {
     if (copyRawBtn) {
       const src =
         copyRawBtn.dataset.copyRaw === 'admin'
-          ? state.adminInspectorDetail?.rawSource || ''
+          ? state.adminSelectedDetail?.rawSource || ''
           : state.selectedDetail?.rawSource || '';
       copyText(src, 'Raw EML disalin ke clipboard');
       return;
     }
 
+    const regBtn = e.target.closest('[data-admin-register-addr]');
+    if (regBtn && state.adminAuthenticated) {
+      const addr = regBtn.dataset.adminRegisterAddr;
+      try {
+        await handleCreateMailboxes(addr, state.defaultDomain, 'Didaftarkan dari Catch-All');
+        renderAdminCatchallReader();
+      } catch (err) {
+        showToast(`Gagal mendaftarkan alamat: ${err.message}`, 'error');
+      }
+      return;
+    }
+
     const delBtn = e.target.closest('[data-delete-email]');
-    if (delBtn) {
-      if (!state.adminAuthenticated) return;
+    if (delBtn && state.adminAuthenticated) {
       const id = delBtn.dataset.deleteEmail;
       const mode = delBtn.dataset.deleteMode;
       try {
         if (mode === 'admin') {
           await apiFetch(`/api/admin/messages/${encodeURIComponent(id)}`, { method: 'DELETE', admin: true });
-          els.inspectorModal.classList.add('hidden');
+          state.adminSelectedId = null;
+          state.adminSelectedDetail = null;
+          els.adminCatchallWorkspace.classList.remove('is-reading');
+          renderAdminCatchallReader();
           await Promise.all([loadAdminStatsAndMessages(), loadAdminMailboxes()]);
-          if (getActiveAddress()) await fetchInbox({ silent: true });
         } else {
           await apiFetch(`/api/emails/${encodeURIComponent(id)}`, { method: 'DELETE', admin: true });
           state.selectedId = null;
@@ -1598,27 +1767,16 @@ function bindEvents() {
   };
 
   els.readerContent.addEventListener('click', handleReaderClick);
-  els.inspectorBody.addEventListener('click', handleReaderClick);
+  els.adminCatchallReader.addEventListener('click', handleReaderClick);
 
-  els.btnOpenAdmin.addEventListener('click', () => openAdminModal());
-  els.btnCloseAdmin.addEventListener('click', closeAdminModal);
-  els.btnAdminLogout.addEventListener('click', logoutAdmin);
-  els.btnCloseInspector.addEventListener('click', () => els.inspectorModal.classList.add('hidden'));
-
+  els.btnCloseAdmin.addEventListener('click', closeAdminLoginModal);
   els.adminModal.addEventListener('click', (e) => {
-    if (e.target === els.adminModal) closeAdminModal();
-  });
-  els.inspectorModal.addEventListener('click', (e) => {
-    if (e.target === els.inspectorModal) els.inspectorModal.classList.add('hidden');
+    if (e.target === els.adminModal) closeAdminLoginModal();
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      if (!els.inspectorModal.classList.contains('hidden')) {
-        els.inspectorModal.classList.add('hidden');
-      } else if (!els.adminModal.classList.contains('hidden')) {
-        closeAdminModal();
-      }
+    if (e.key === 'Escape' && !els.adminModal.classList.contains('hidden')) {
+      closeAdminLoginModal();
     }
   });
 
@@ -1636,27 +1794,36 @@ function bindEvents() {
       state.adminToken = res.token;
       state.adminAuthenticated = true;
       state.adminDefaultPin = Boolean(res.isDefaultPin);
+      state.adminView = 'mailboxes';
       els.inputAdminPin.value = '';
       try { sessionStorage.setItem(STORAGE_KEYS.adminToken, res.token); } catch {}
-      updateAdminIndicators();
-      els.adminModalPanel.classList.remove('is-compact');
-      els.adminLoginForm.classList.add('hidden');
-      els.adminWorkspace.classList.remove('hidden');
-      switchAdminTab(state.adminActiveTab || 'mailboxes');
-      showToast('Login Admin berhasil', 'success');
+      closeAdminLoginModal();
+      syncModeShell();
+      showToast('Selamat datang di Workspace Admin AMC Mail', 'success');
       await loadAdminAll();
-      if (getActiveAddress()) await fetchInbox({ silent: true });
     } catch (err) {
       els.adminLoginError.textContent = err.message;
       els.adminLoginError.classList.remove('hidden');
     }
   });
 
-  document.querySelectorAll('.admin-tab').forEach((btn) => {
-    btn.addEventListener('click', () => switchAdminTab(btn.dataset.adminTab));
+  // Admin Quick Single Email Creator
+  els.adminQuickMailboxForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const raw = els.inputQuickUsername.value.trim();
+    if (!raw) return;
+    try {
+      const res = await handleCreateMailboxes(raw, els.selectQuickDomain.value || state.defaultDomain, els.inputQuickLabel.value.trim());
+      if (res.added?.length) {
+        els.inputQuickUsername.value = '';
+        els.inputQuickLabel.value = '';
+      }
+    } catch (err) {
+      showToast(`Gagal membuat alamat email: ${err.message}`, 'error');
+    }
   });
 
-  // Admin Tab 1: Kelola Email (Admin-only mailbox creation)
+  // Admin Bulk Email Creator
   els.adminCreateMailboxForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const raw = els.inputNewMailboxes.value.trim();
@@ -1665,27 +1832,9 @@ function bindEvents() {
       return;
     }
     try {
-      const res = await apiFetch('/api/admin/mailboxes', {
-        method: 'POST',
-        admin: true,
-        body: JSON.stringify({
-          addresses: raw,
-          defaultDomain: els.selectNewMailboxDomain.value || state.defaultDomain,
-          label: els.inputNewMailboxLabel.value.trim(),
-        }),
-      });
+      await handleCreateMailboxes(raw, els.selectNewMailboxDomain.value || state.defaultDomain, els.inputNewMailboxLabel.value.trim());
       els.inputNewMailboxes.value = '';
       els.inputNewMailboxLabel.value = '';
-      state.adminMailboxes = res.mailboxes || [];
-      state.adminMailboxAddressSet = new Set(state.adminMailboxes.map((m) => m.address));
-      renderAdminMailboxesTable();
-      await loadAdminStatsAndMessages();
-
-      const parts = [];
-      if (res.added?.length) parts.push(`${res.added.length} email dibuat`);
-      if (res.skipped?.length) parts.push(`${res.skipped.length} sudah terdaftar`);
-      if (res.invalid?.length) parts.push(`${res.invalid.length} tidak valid`);
-      showToast(parts.join(', ') || 'Selesai memproses email.', res.added?.length ? 'success' : 'default');
     } catch (err) {
       showToast(`Gagal membuat alamat email: ${err.message}`, 'error');
     }
@@ -1738,8 +1887,17 @@ function bindEvents() {
     if (openBtn) {
       const addr = openBtn.dataset.mailboxOpen;
       const [u, d] = addr.split('@');
-      closeAdminModal();
-      if (u && d) setActiveAddress(u, d);
+      if (u && d) {
+        state.adminView = 'reader';
+        syncModeShell();
+        setActiveAddress(u, d);
+      }
+      return;
+    }
+
+    const copyAddrBtn = e.target.closest('[data-mailbox-copy-addr]');
+    if (copyAddrBtn) {
+      copyText(copyAddrBtn.dataset.mailboxCopyAddr, `Disalin: ${copyAddrBtn.dataset.mailboxCopyAddr}`);
       return;
     }
 
@@ -1769,7 +1927,7 @@ function bindEvents() {
     }
   });
 
-  // Admin Tab 2: Monitor
+  // Catch-All Filters
   els.adminFilterDomain.addEventListener('change', loadAdminStatsAndMessages);
   els.adminFilterType.addEventListener('change', loadAdminStatsAndMessages);
   let adminSearchTimer = null;
@@ -1779,52 +1937,7 @@ function bindEvents() {
   });
   els.btnAdminRefreshMsgs.addEventListener('click', loadAdminStatsAndMessages);
 
-  els.adminMessagesTbody.addEventListener('click', async (e) => {
-    const inspectBtn = e.target.closest('[data-admin-inspect]');
-    if (inspectBtn) {
-      openAdminInspector(inspectBtn.dataset.adminInspect);
-      return;
-    }
-
-    const regBtn = e.target.closest('[data-admin-register-addr]');
-    if (regBtn) {
-      const addr = regBtn.dataset.adminRegisterAddr;
-      try {
-        const res = await apiFetch('/api/admin/mailboxes', {
-          method: 'POST',
-          admin: true,
-          body: JSON.stringify({ address: addr, label: 'Didaftarkan dari Monitor' }),
-        });
-        state.adminMailboxes = res.mailboxes || [];
-        state.adminMailboxAddressSet = new Set(state.adminMailboxes.map((m) => m.address));
-        renderAdminMailboxesTable();
-        renderAdminMessagesTable();
-        await loadAdminStatsAndMessages();
-        showToast(`Alamat ${addr} sekarang terdaftar untuk dilihat pengunjung.`, 'success');
-      } catch (err) {
-        showToast(`Gagal mendaftarkan alamat: ${err.message}`, 'error');
-      }
-      return;
-    }
-
-    const delBtn = e.target.closest('[data-admin-delete-msg]');
-    if (delBtn) {
-      if (!confirm('Hapus pesan ini dari database?')) return;
-      try {
-        await apiFetch(`/api/admin/messages/${encodeURIComponent(delBtn.dataset.adminDeleteMsg)}`, {
-          method: 'DELETE',
-          admin: true,
-        });
-        await Promise.all([loadAdminStatsAndMessages(), loadAdminMailboxes()]);
-        if (getActiveAddress()) await fetchInbox({ silent: true });
-        showToast('Pesan dihapus.');
-      } catch (err) {
-        showToast(`Gagal menghapus pesan: ${err.message}`, 'error');
-      }
-    }
-  });
-
-  // Admin Tab 3: Domains
+  // Admin Domains
   els.adminAddDomainForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const raw = els.inputNewDomains.value.trim();
@@ -1932,7 +2045,7 @@ function bindEvents() {
     }
   });
 
-  // Admin Tab 4: Settings & Admin Simulator
+  // Admin Settings & Simulator
   els.adminSettingsForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
@@ -1961,7 +2074,6 @@ function bindEvents() {
       });
       showToast(`${res.purged || 0} pesan kedaluwarsa dibersihkan.`);
       await Promise.all([loadAdminStatsAndMessages(), loadAdminMailboxes()]);
-      if (getActiveAddress()) await fetchInbox({ silent: true });
     } catch (err) {
       showToast(`Gagal membersihkan pesan: ${err.message}`, 'error');
     }
@@ -1981,9 +2093,6 @@ function bindEvents() {
       });
       showToast(`Uji coba ${scenario} terkirim ke ${to}`, 'success');
       await Promise.all([loadAdminStatsAndMessages(), loadAdminMailboxes()]);
-      if (to === getActiveAddress()) {
-        await fetchInbox({ silent: false });
-      }
     } catch (err) {
       showToast(`Gagal mengirim uji coba: ${err.message}`, 'error');
     }
@@ -2023,8 +2132,12 @@ async function init() {
       }
     }
 
-    updateAdminIndicators();
     renderDomainControls();
+    syncModeShell();
+
+    if (state.adminAuthenticated) {
+      await loadAdminAll();
+    }
 
     const urlEmail = new URLSearchParams(window.location.search).get('email') || '';
     let savedAddr = '';
@@ -2034,6 +2147,10 @@ async function init() {
     if (candidate.includes('@')) {
       const [u, d] = candidate.split('@');
       if (LOCAL_PART_REGEX.test(u) && state.domains.some((dom) => dom.domain === d)) {
+        if (urlEmail && state.adminAuthenticated) {
+          state.adminView = 'reader';
+          syncModeShell();
+        }
         setActiveAddress(u, d, { pushUrl: Boolean(urlEmail) });
       } else {
         updateAddressActionButtons();
