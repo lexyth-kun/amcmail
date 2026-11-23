@@ -212,6 +212,11 @@
       </a>
 
       <nav class="header-actions" aria-label="Navigasi atas">
+        <a href="https://order.amc.web.id" target="_blank" rel="noopener noreferrer" class="header-order-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+          <span>AMC Order</span>
+        </a>
+
         <button type="button" class="header-icon-btn" id="btn-theme-toggle" aria-label="Ganti tema terang atau gelap" title="Ganti tema">
           <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -613,36 +618,31 @@
         </div>
       </div>
 
-      <!-- Order-style Welcome + Mailbox Lookup Card -->
-      <section class="desktop-welcome-card amc-hero-card" aria-labelledby="main-heading">
+      <!-- Compact Sky Lookup Card -->
+      <section class="desktop-welcome-card amc-hero-card is-compact-lookup" aria-labelledby="main-heading">
         <div class="hero-header-row">
           <div class="hero-copy">
-            <h1 id="main-heading">AMC Mail &amp; Bounce Monitor</h1>
-            <p class="hero-subtitle">
-              Masukkan alamat email yang sudah dibuat Admin untuk melihat pesan masuk, kode OTP, dan diagnostik bounce SMTP.
+            <h1 id="main-heading">Cek Kotak Masuk</h1>
+            <p class="hero-subtitle" id="readonly-notice">
+              Masukkan alamat email dari Admin untuk membaca pesan masuk dan kode OTP.
             </p>
           </div>
 
-          <div class="hero-live-strip">
-            <span class="hero-pill"><strong id="hero-domain-count">6</strong> Domain</span>
-            <span class="hero-pill"><strong id="hero-inbox-count">0</strong> Pesan</span>
-            <span class="hero-pill is-bounce"><strong id="hero-bounce-count">0</strong> Bounce</span>
-            <button type="button" class="poll-control" id="btn-toggle-autopoll" aria-pressed="true" title="Jeda atau lanjutkan pembaruan inbox otomatis">
-              <span class="dot" aria-hidden="true"></span>
-              <span id="poll-status-text">Otomatis 10d</span>
-            </button>
-          </div>
+          <button type="button" class="poll-control" id="btn-toggle-autopoll" aria-pressed="true" title="Jeda atau lanjutkan pembaruan inbox otomatis">
+            <span class="dot" aria-hidden="true"></span>
+            <span id="poll-status-text">Otomatis 10d</span>
+          </button>
         </div>
 
         <div class="address-shell">
           <form class="address-builder" id="address-form" novalidate>
             <div class="builder-field">
-              <label for="input-username" class="builder-label">Username atau Alamat Email</label>
+              <label for="input-username" class="builder-label">Alamat Email atau Username</label>
               <input
                 type="text"
                 id="input-username"
                 class="username-input"
-                placeholder="contoh: info atau cs@amc.web.id"
+                placeholder="contoh: demo atau cs@amc.web.id"
                 autocomplete="off"
                 autocapitalize="off"
                 spellcheck="false"
@@ -673,100 +673,95 @@
           </form>
 
           <p class="builder-error hidden" id="builder-error" role="alert"></p>
-
-          <div class="generator-toolbar">
-            <p class="readonly-hint" id="readonly-notice">
-              Mode baca saja: hanya Admin yang dapat membuat alamat email baru.
-            </p>
-
-            <div class="toolbar-group">
-              <button type="button" class="btn btn-soft btn-sm" id="btn-refresh-inbox" disabled>Periksa Inbox</button>
-            </div>
-          </div>
         </div>
       </section>
 
-      <!-- Split-Pane Mail Workspace -->
-      <section class="mail-workspace" id="mail-workspace" aria-label="Kotak Masuk dan Pembaca Pesan">
-        <aside class="inbox-pane" aria-label="Daftar Pesan Masuk">
+      <!-- Clean Full-Width Single-Column Inbox & Message Reader -->
+      <section class="mail-workspace is-simple-reader" id="mail-workspace" aria-label="Kotak Masuk dan Pembaca Pesan">
+        <div class="inbox-pane" aria-label="Daftar Pesan Masuk">
           <div class="inbox-pane-header">
             <div class="inbox-title-row">
-              <h2 class="inbox-heading">
-                <span>Inbox</span>
+              <div class="inbox-heading">
+                <h2>Kotak Masuk</h2>
                 <span class="inbox-heading-addr" id="inbox-active-label">Belum dipilih</span>
-              </h2>
-              <button type="button" class="btn btn-sm btn-danger-outline btn-icon hidden" id="btn-clear-inbox" aria-label="Hapus semua pesan di alamat ini" title="Hapus semua pesan di alamat ini (Admin)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                  <path d="M10 11v6"></path>
-                  <path d="M14 11v6"></path>
-                </svg>
-              </button>
+              </div>
+
+              <div class="inbox-head-actions">
+                <button type="button" class="btn btn-soft btn-sm" id="btn-refresh-inbox" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:15px;height:15px;">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  <span>Segarkan</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-danger-outline btn-icon hidden" id="btn-clear-inbox" aria-label="Hapus semua pesan di alamat ini" title="Hapus semua pesan di alamat ini (Admin)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                    <path d="M10 11v6"></path>
+                    <path d="M14 11v6"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <div class="filter-tabs" role="tablist" aria-label="Filter jenis pesan">
-              <button type="button" class="filter-tab is-active" data-filter="all" role="tab" aria-selected="true" id="tab-filter-all">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
-                <span>Semua</span>
-                <span class="filter-count" id="count-all">0</span>
-              </button>
-              <button type="button" class="filter-tab" data-filter="inbox" role="tab" aria-selected="false" id="tab-filter-inbox">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                <span>Masuk</span>
-                <span class="filter-count" id="count-inbox">0</span>
-              </button>
-              <button type="button" class="filter-tab is-bounce-tab" data-filter="bounce" role="tab" aria-selected="false" id="tab-filter-bounce">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                <span>Bounce</span>
-                <span class="filter-count" id="count-bounce">0</span>
-              </button>
-              <button type="button" class="filter-tab" data-filter="otp" role="tab" aria-selected="false" id="tab-filter-otp">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                <span>OTP</span>
-                <span class="filter-count" id="count-otp">0</span>
-              </button>
-            </div>
+            <div class="inbox-controls-row">
+              <div class="filter-tabs" role="tablist" aria-label="Filter jenis pesan">
+                <button type="button" class="filter-tab is-active" data-filter="all" role="tab" aria-selected="true" id="tab-filter-all">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                  <span>Semua</span>
+                  <span class="filter-count" id="count-all">0</span>
+                </button>
+                <button type="button" class="filter-tab" data-filter="inbox" role="tab" aria-selected="false" id="tab-filter-inbox">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  <span>Masuk</span>
+                  <span class="filter-count" id="count-inbox">0</span>
+                </button>
+                <button type="button" class="filter-tab is-bounce-tab" data-filter="bounce" role="tab" aria-selected="false" id="tab-filter-bounce">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                  <span>Bounce</span>
+                  <span class="filter-count" id="count-bounce">0</span>
+                </button>
+                <button type="button" class="filter-tab" data-filter="otp" role="tab" aria-selected="false" id="tab-filter-otp">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <span>OTP</span>
+                  <span class="filter-count" id="count-otp">0</span>
+                </button>
+              </div>
 
-            <div class="search-field">
-              <label for="input-inbox-search">Cari pesan</label>
-              <div class="search-wrap">
+              <div class="search-wrap inbox-search-inline">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="search" id="input-inbox-search" class="search-input" placeholder="Pengirim, subjek, kode SMTP..." autocomplete="off">
+                <input type="search" id="input-inbox-search" class="search-input" aria-label="Cari pesan" placeholder="Cari pengirim, subjek, OTP..." autocomplete="off">
               </div>
             </div>
           </div>
 
           <div class="inbox-list" id="inbox-list" aria-live="polite"></div>
-        </aside>
+        </div>
 
         <div class="reader-pane" id="reader-pane" aria-live="polite">
           <div class="state-panel" id="reader-empty">
             <h3>Pilih Pesan untuk Membaca</h3>
             <p>
-              Pesan masuk, kode OTP, dan laporan bounce SMTP dari alamat email terdaftar akan ditampilkan lengkap di panel ini.
+              Klik salah satu pesan di kotak masuk untuk melihat isi email, kode OTP, atau laporan bounce.
             </p>
           </div>
 
           <div class="reader-content hidden" id="reader-content"></div>
         </div>
       </section>
-
-      <!-- Active AMC Domains Grid -->
-      <section class="domains-section" id="domain-directory" aria-labelledby="domains-heading">
-        <div class="domains-head">
-          <h2 id="domains-heading">Domain Aktif Al Muthi Creative</h2>
-          <span class="brand-sub" id="retention-info">Retensi otomatis: 7 hari</span>
-        </div>
-        <div class="domain-grid" id="domain-pills"></div>
-      </section>
     </div>
 
     <footer class="site-footer">
-      &copy; <span id="footer-year">2026</span> <strong>Al Muthi Creative (AMC)</strong>. <a href="https://order.amc.web.id" target="_blank" rel="noopener noreferrer">order.amc.web.id</a>
+      <span>&copy; <span id="footer-year">2026</span> <strong>Al Muthi Creative (AMC)</strong></span>
+      <span class="footer-sep" aria-hidden="true">&middot;</span>
+      <span id="retention-info">Retensi otomatis: 7 hari</span>
+      <span class="footer-sep" aria-hidden="true">&middot;</span>
+      <a href="https://order.amc.web.id" target="_blank" rel="noopener noreferrer">order.amc.web.id</a>
     </footer>
   </main>
 

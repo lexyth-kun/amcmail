@@ -394,10 +394,12 @@ function syncModeShell() {
   els.btnClearInbox.classList.toggle('hidden', !isAdmin);
   els.adminReaderBanner.classList.toggle('hidden', !isAdmin);
 
-  els.readonlyNotice.classList.toggle('is-admin', isAdmin);
-  els.readonlyNotice.textContent = isAdmin
-    ? 'Mode Admin aktif: Anda dapat membuka semua alamat dan mengelola pesan.'
-    : 'Mode baca saja: hanya Admin yang dapat membuat alamat email baru.';
+  if (els.readonlyNotice) {
+    els.readonlyNotice.classList.toggle('is-admin', isAdmin);
+    els.readonlyNotice.textContent = isAdmin
+      ? 'Mode Admin aktif: Anda dapat membuka semua alamat dan mengelola pesan.'
+      : 'Masukkan alamat email dari Admin untuk membaca pesan masuk dan kode OTP.';
+  }
 
   if (isAdmin) {
     const showPerAddrReader = state.adminView === 'reader';
@@ -533,13 +535,16 @@ function renderDomainControls() {
   }
   syncCustomDropdown(els.selectDomain);
 
-  els.retentionInfo.textContent = `Retensi otomatis: ${formatRetentionLabel(state.retentionHours)}`;
-  els.heroDomainCount.textContent = String(list.length);
-  els.sideDomainCount.textContent = String(list.length);
+  if (els.retentionInfo) {
+    els.retentionInfo.textContent = `Retensi otomatis: ${formatRetentionLabel(state.retentionHours)}`;
+  }
+  if (els.heroDomainCount) els.heroDomainCount.textContent = String(list.length);
+  if (els.sideDomainCount) els.sideDomainCount.textContent = String(list.length);
   renderDomainPills();
 }
 
 function renderDomainPills() {
+  if (!els.domainPills) return;
   const selectedDom = state.activeDomain || els.selectDomain.value || state.defaultDomain;
   els.domainPills.innerHTML = state.domains
     .map((d) => {
@@ -560,13 +565,13 @@ function renderFilterCounts() {
   els.countBounce.textContent = String(state.counts.bounce || 0);
   els.countOtp.textContent = String(state.counts.otp || 0);
 
-  els.sideCountAll.textContent = String(state.counts.all || 0);
-  els.sideCountInbox.textContent = String(state.counts.inbox || 0);
-  els.sideCountBounce.textContent = String(state.counts.bounce || 0);
-  els.sideCountOtp.textContent = String(state.counts.otp || 0);
+  if (els.sideCountAll) els.sideCountAll.textContent = String(state.counts.all || 0);
+  if (els.sideCountInbox) els.sideCountInbox.textContent = String(state.counts.inbox || 0);
+  if (els.sideCountBounce) els.sideCountBounce.textContent = String(state.counts.bounce || 0);
+  if (els.sideCountOtp) els.sideCountOtp.textContent = String(state.counts.otp || 0);
 
-  els.heroInboxCount.textContent = String(state.counts.all || 0);
-  els.heroBounceCount.textContent = String(state.counts.bounce || 0);
+  if (els.heroInboxCount) els.heroInboxCount.textContent = String(state.counts.all || 0);
+  if (els.heroBounceCount) els.heroBounceCount.textContent = String(state.counts.bounce || 0);
 
   els.tabFilterBounce.classList.toggle('has-items', (state.counts.bounce || 0) > 0);
 }
@@ -580,8 +585,8 @@ function syncNavActiveStates() {
   document.querySelectorAll('[data-nav-filter]').forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.navFilter === state.filter);
   });
-  els.mobNavInbox.classList.toggle('is-active', state.filter !== 'bounce');
-  els.mobNavBounce.classList.toggle('is-active', state.filter === 'bounce');
+  if (els.mobNavInbox) els.mobNavInbox.classList.toggle('is-active', state.filter !== 'bounce');
+  if (els.mobNavBounce) els.mobNavBounce.classList.toggle('is-active', state.filter === 'bounce');
 }
 
 function setFilter(nextFilter, { scrollToInbox = false } = {}) {
@@ -597,7 +602,19 @@ function setFilter(nextFilter, { scrollToInbox = false } = {}) {
   }
 }
 
-function renderMessageCard(msg, { selected, showRecipient = false, openAttr = 'data-open-id' }) {
+function getMessageAvatarMarkup(msg, senderLabel) {
+  if (msg.isBounce) {
+    return `<span class="msg-avatar is-bounce" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>`;
+  }
+  if (msg.otpCode) {
+    return `<span class="msg-avatar is-otp" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>`;
+  }
+  const clean = String(senderLabel || 'M').replace(/^[^a-zA-Z0-9]+/, '');
+  const initial = (clean[0] || 'M').toUpperCase();
+  return `<span class="msg-avatar" aria-hidden="true">${escapeHtml(initial)}</span>`;
+}
+
+function renderMessageCard(msg, { selected, showRecipient = false, openAttr = 'data-open-id', variant = 'compact' }) {
   const bounce = msg.bounceSummary || msg.bounceInfo;
   const badges = [];
 
@@ -620,6 +637,31 @@ function renderMessageCard(msg, { selected, showRecipient = false, openAttr = 'd
   }
 
   const senderLabel = msg.fromName || msg.fromAddress || msg.sender || '(Tanpa Pengirim)';
+
+  if (variant === 'simple') {
+    return `
+      <article class="message-item is-simple-row ${selected ? 'is-selected' : ''} ${msg.isRead ? '' : 'is-unread'} ${msg.isBounce ? 'is-bounce' : ''}" data-msg-id="${escapeHtml(msg.id)}">
+        <button type="button" class="message-open-btn is-simple-open" ${openAttr}="${escapeHtml(msg.id)}" aria-current="${selected ? 'true' : 'false'}">
+          ${getMessageAvatarMarkup(msg, senderLabel)}
+          <span class="msg-simple-body">
+            <span class="msg-row-top">
+              <span class="msg-sender">
+                ${msg.isRead ? '' : '<span class="unread-label">Baru</span>'}
+                <span class="msg-sender-name">${escapeHtml(senderLabel)}</span>
+              </span>
+              <span class="msg-time">${escapeHtml(formatRelativeTime(msg.receivedAt))}</span>
+            </span>
+            <span class="msg-subject">${escapeHtml(msg.subject || '(Tanpa Subjek)')}</span>
+            <span class="msg-snippet">${escapeHtml(msg.snippet || '')}</span>
+          </span>
+          <span class="msg-row-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </span>
+        </button>
+        ${badges.length ? `<div class="msg-badges-bar is-simple-badges">${badges.join('')}</div>` : ''}
+      </article>
+    `;
+  }
 
   return `
     <article class="message-item ${selected ? 'is-selected' : ''} ${msg.isRead ? '' : 'is-unread'} ${msg.isBounce ? 'is-bounce' : ''}" data-msg-id="${escapeHtml(msg.id)}">
@@ -707,7 +749,14 @@ function renderInboxList() {
   }
 
   els.inboxList.innerHTML = state.messages
-    .map((msg) => renderMessageCard(msg, { selected: msg.id === state.selectedId, showRecipient: false, openAttr: 'data-open-id' }))
+    .map((msg) =>
+      renderMessageCard(msg, {
+        selected: msg.id === state.selectedId,
+        showRecipient: false,
+        openAttr: 'data-open-id',
+        variant: 'simple',
+      })
+    )
     .join('');
 }
 
@@ -1050,7 +1099,10 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
 
   return `
     <div class="reader-header">
-      <button type="button" class="btn btn-sm mobile-back-btn" data-mobile-back="${mode}">Kembali ke Daftar</button>
+      <button type="button" class="btn btn-soft btn-sm mobile-back-btn" data-mobile-back="${mode}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="width:15px;height:15px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        <span>${mode === 'public' ? 'Kembali ke Kotak Masuk' : 'Kembali ke Daftar'}</span>
+      </button>
       <div class="reader-top-bar">
         <h2 class="reader-subject">${escapeHtml(detail.subject || '(Tanpa Subjek)')}</h2>
         <div class="reader-actions">
@@ -1635,17 +1687,28 @@ function bindEvents() {
     resetPollCountdown();
   });
 
-  els.domainPills.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-pick-domain]');
-    if (!btn) return;
-    const dom = btn.dataset.pickDomain;
-    if (els.selectDomain.querySelector(`option[value="${CSS.escape(dom)}"]`)) {
-      els.selectDomain.value = dom;
-      syncCustomDropdown(els.selectDomain);
+  if (els.domainPills) {
+    els.domainPills.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-pick-domain]');
+      if (!btn) return;
+      const dom = btn.dataset.pickDomain;
+      if (els.selectDomain.querySelector(`option[value="${CSS.escape(dom)}"]`)) {
+        els.selectDomain.value = dom;
+        syncCustomDropdown(els.selectDomain);
+      }
+      renderDomainPills();
+      els.inputUsername.focus();
+      showToast(`Domain @${dom} dipilih. Ketik username lalu klik Buka Inbox.`);
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (activeDropdown) return;
+    if (!els.adminModal.classList.contains('hidden')) return;
+    if (els.mailWorkspace.classList.contains('is-reading')) {
+      els.mailWorkspace.classList.remove('is-reading');
     }
-    renderDomainPills();
-    els.inputUsername.focus();
-    showToast(`Domain @${dom} dipilih. Ketik username lalu klik Buka Inbox.`);
   });
 
   document.querySelectorAll('.filter-tab').forEach((tab) => {
