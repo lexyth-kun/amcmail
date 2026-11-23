@@ -433,9 +433,11 @@ function syncModeShell() {
 
 function switchAdminView(view, { filterBounce = false, focusQuickInput = false } = {}) {
   if (!state.adminAuthenticated) return;
+  closeActiveDropdown();
   state.adminView = view;
   if (filterBounce && view === 'catchall') {
     els.adminFilterType.value = 'bounce';
+    syncCustomDropdown(els.adminFilterType);
   }
   syncModeShell();
   window.scrollTo({ top: 0, behavior: 'auto' });
@@ -488,6 +490,7 @@ function setActiveAddress(localPart, domain, { pushUrl = true } = {}) {
   els.inputUsername.value = cleanUser;
   if (els.selectDomain.querySelector(`option[value="${CSS.escape(cleanDomain)}"]`)) {
     els.selectDomain.value = cleanDomain;
+    syncCustomDropdown(els.selectDomain);
   }
   els.builderError.classList.add('hidden');
   els.mailWorkspace.classList.remove('is-reading');
@@ -528,6 +531,7 @@ function renderDomainControls() {
   } else if (state.defaultDomain && list.some((d) => d.domain === state.defaultDomain)) {
     els.selectDomain.value = state.defaultDomain;
   }
+  syncCustomDropdown(els.selectDomain);
 
   els.retentionInfo.textContent = `Retensi otomatis: ${formatRetentionLabel(state.retentionHours)}`;
   els.heroDomainCount.textContent = String(list.length);
@@ -953,12 +957,20 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
     `;
   }
 
+  const tabIcons = {
+    html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line></svg>',
+    text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>',
+    dsn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>',
+    headers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>',
+    raw: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>',
+  };
+
   const availableTabs = [];
-  if (detail.htmlBody) availableTabs.push({ id: 'html', label: 'Tampilan HTML' });
-  availableTabs.push({ id: 'text', label: 'Teks Polos' });
-  if (b?.rawDsn) availableTabs.push({ id: 'dsn', label: 'Laporan DSN' });
-  availableTabs.push({ id: 'headers', label: `Header (${(detail.headers || []).length})` });
-  availableTabs.push({ id: 'raw', label: 'Raw EML' });
+  if (detail.htmlBody) availableTabs.push({ id: 'html', label: 'Tampilan HTML', icon: tabIcons.html });
+  availableTabs.push({ id: 'text', label: 'Teks Polos', icon: tabIcons.text });
+  if (b?.rawDsn) availableTabs.push({ id: 'dsn', label: 'Laporan DSN', icon: tabIcons.dsn });
+  availableTabs.push({ id: 'headers', label: 'Header', count: (detail.headers || []).length, icon: tabIcons.headers });
+  availableTabs.push({ id: 'raw', label: 'Raw EML', icon: tabIcons.raw });
 
   const chosenTab = availableTabs.some((t) => t.id === activeTab) ? activeTab : availableTabs[0].id;
   let bodyMarkup = '';
@@ -1082,7 +1094,9 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
         ${availableTabs
           .map(
             (t) =>
-              `<button type="button" class="reader-tab ${t.id === chosenTab ? 'is-active' : ''}" data-reader-tab="${t.id}" data-tab-mode="${mode}" role="tab" aria-selected="${t.id === chosenTab ? 'true' : 'false'}">${escapeHtml(t.label)}</button>`
+              `<button type="button" class="reader-tab ${t.id === chosenTab ? 'is-active' : ''}" data-reader-tab="${t.id}" data-tab-mode="${mode}" role="tab" aria-selected="${t.id === chosenTab ? 'true' : 'false'}">${t.icon}<span>${escapeHtml(t.label)}</span>${
+                typeof t.count === 'number' ? `<span class="tab-count-chip">${t.count}</span>` : ''
+              }</button>`
           )
           .join('')}
       </div>
@@ -1246,6 +1260,7 @@ async function loadAdminStatsAndMessages() {
 
     if (statsRes.settings) {
       els.selectRetentionHours.value = String(statsRes.settings.retentionHours || 168);
+      syncCustomDropdown(els.selectRetentionHours);
       els.checkAutoRegister.checked = Boolean(statsRes.settings.autoRegisterDomains);
       els.inputBlockedUsers.value = statsRes.settings.blockedUsernamesRaw || '';
     }
@@ -1364,7 +1379,7 @@ function renderAdminMailboxesTable() {
             <div style="font-size:0.74rem;color:var(--text-muted);white-space:nowrap;">Dibuat ${escapeHtml(formatRelativeTime(mb.createdAt))}</div>
           </td>
           <td>
-            <select class="select-input table-control" style="min-width:96px;" data-mailbox-status-id="${mb.id}">
+            <select class="select-input table-control" style="min-width:96px;" data-dd-kind="status" data-dd-title="Status Email" data-mailbox-status-id="${mb.id}">
               <option value="active" ${mb.status === 'active' ? 'selected' : ''}>Aktif</option>
               <option value="disabled" ${mb.status === 'disabled' ? 'selected' : ''}>Nonaktif</option>
             </select>
@@ -1387,6 +1402,8 @@ function renderAdminMailboxesTable() {
       `;
     })
     .join('');
+
+  syncCustomDropdowns(els.adminMailboxesTbody);
 }
 
 async function loadAdminDomains() {
@@ -1435,6 +1452,11 @@ function syncAdminDomainDropdowns() {
   if (prevBulk && usableDomains.some((d) => d.domain === prevBulk)) {
     els.selectNewMailboxDomain.value = prevBulk;
   }
+
+  syncCustomDropdown(els.adminFilterDomain);
+  syncCustomDropdown(els.adminMailboxFilterDomain);
+  syncCustomDropdown(els.selectQuickDomain);
+  syncCustomDropdown(els.selectNewMailboxDomain);
 }
 
 function renderAdminDomainsTable() {
@@ -1455,7 +1477,7 @@ function renderAdminDomainsTable() {
             </div>
           </td>
           <td>
-            <select class="select-input table-control" style="min-width:120px;" data-domain-status-id="${d.id}">
+            <select class="select-input table-control" style="min-width:120px;" data-dd-kind="status" data-dd-title="Status Domain" data-domain-status-id="${d.id}">
               <option value="active" ${d.status === 'active' ? 'selected' : ''}>Aktif</option>
               <option value="pending" ${d.status === 'pending' ? 'selected' : ''}>Pending</option>
               <option value="disabled" ${d.status === 'disabled' ? 'selected' : ''}>Nonaktif</option>
@@ -1479,6 +1501,8 @@ function renderAdminDomainsTable() {
       `;
     })
     .join('');
+
+  syncCustomDropdowns(els.adminDomainsTbody);
 }
 
 async function refreshPublicDomains() {
@@ -1617,6 +1641,7 @@ function bindEvents() {
     const dom = btn.dataset.pickDomain;
     if (els.selectDomain.querySelector(`option[value="${CSS.escape(dom)}"]`)) {
       els.selectDomain.value = dom;
+      syncCustomDropdown(els.selectDomain);
     }
     renderDomainPills();
     els.inputUsername.focus();
@@ -2105,10 +2130,395 @@ function bindEvents() {
   });
 }
 
+/* Custom AMC Dropdown Engine (order.amc.web.id sky blue design) */
+const dropdownRegistry = new WeakMap();
+let activeDropdown = null;
+let dropdownEngineInitialized = false;
+
+const DROPDOWN_ICONS = {
+  domain:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',
+  type:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>',
+  retention:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
+  sim:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>',
+  chevron:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="6 9 12 15 18 9"></polyline></svg>',
+  check:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+};
+
+function getDropdownPortal() {
+  let portal = document.getElementById('amc-dd-portal');
+  if (!portal) {
+    portal = document.createElement('div');
+    portal.id = 'amc-dd-portal';
+    portal.className = 'amc-dd-portal';
+    document.body.appendChild(portal);
+  }
+  return portal;
+}
+
+function parseDropdownOption(rawText, kind) {
+  const txt = String(rawText || '').trim();
+  if (txt.endsWith(' (Default)')) {
+    return { label: txt.slice(0, -10).trim(), tag: 'Default', dot: '' };
+  }
+  if (kind === 'domain') {
+    if (txt.endsWith(' (active)')) return { label: txt.slice(0, -9).trim(), tag: 'Aktif', dot: 'active' };
+    if (txt.endsWith(' (pending)')) return { label: txt.slice(0, -10).trim(), tag: 'Pending', dot: 'pending' };
+    if (txt.endsWith(' (disabled)')) return { label: txt.slice(0, -11).trim(), tag: 'Nonaktif', dot: 'disabled' };
+  }
+  return { label: txt, tag: '', dot: '' };
+}
+
+function getStatusKey(value) {
+  const v = String(value || '').toLowerCase();
+  if (v === 'active' || v === 'pending' || v === 'disabled') return v;
+  return '';
+}
+
+function renderDropdownLeading(kind, value, isTable) {
+  if (kind === 'status') {
+    const sk = getStatusKey(value) || 'active';
+    return `<span class="amc-dd-dot is-${sk}" aria-hidden="true"></span>`;
+  }
+  if (isTable) return '';
+  const svg = DROPDOWN_ICONS[kind] || DROPDOWN_ICONS.domain;
+  return `<span class="amc-dd-leading" aria-hidden="true">${svg}</span>`;
+}
+
+function closeActiveDropdown({ returnFocus = false } = {}) {
+  if (!activeDropdown) return;
+  const { wrapper, trigger, menu } = activeDropdown;
+  wrapper.classList.remove('is-open');
+  trigger.setAttribute('aria-expanded', 'false');
+  if (menu && menu.parentNode) menu.parentNode.removeChild(menu);
+  activeDropdown = null;
+  if (returnFocus && document.body.contains(trigger)) {
+    trigger.focus();
+  }
+}
+
+function positionDropdownMenu(trigger, menu, kind = 'type') {
+  const rect = trigger.getBoundingClientRect();
+  const preferredMin = kind === 'domain' || kind === 'sim' ? 276 : 228;
+  const minW = Math.max(rect.width, preferredMin);
+  const maxW = Math.min(368, window.innerWidth - 24);
+  menu.style.width = `${Math.min(Math.max(minW, rect.width), maxW)}px`;
+
+  const mRect = menu.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom - 12;
+  const spaceAbove = rect.top - 12;
+
+  let top = rect.bottom + 8;
+  menu.classList.remove('is-up');
+  if (spaceBelow < mRect.height && spaceAbove > spaceBelow) {
+    top = Math.max(12, rect.top - mRect.height - 8);
+    menu.classList.add('is-up');
+  } else if (top + mRect.height > window.innerHeight - 10) {
+    top = Math.max(12, window.innerHeight - mRect.height - 10);
+  }
+
+  const maxLeft = Math.max(12, window.innerWidth - mRect.width - 12);
+  const left = Math.min(Math.max(12, rect.left), maxLeft);
+
+  menu.style.top = `${Math.round(top)}px`;
+  menu.style.left = `${Math.round(left)}px`;
+}
+
+function enhanceSelect(selectEl) {
+  if (!selectEl || selectEl.tagName !== 'SELECT') return null;
+  if (dropdownRegistry.has(selectEl)) return dropdownRegistry.get(selectEl);
+
+  const isTable = selectEl.classList.contains('table-control');
+  const isHeroDomain = selectEl.classList.contains('domain-select');
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'amc-dropdown';
+  if (isTable) wrapper.classList.add('is-table');
+  if (isHeroDomain) wrapper.classList.add('is-domain-hero');
+
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'amc-dd-trigger';
+  trigger.setAttribute('aria-haspopup', 'listbox');
+  trigger.setAttribute('aria-expanded', 'false');
+  if (selectEl.id) {
+    trigger.dataset.ddFor = selectEl.id;
+  }
+
+  selectEl.parentNode.insertBefore(wrapper, selectEl);
+  wrapper.appendChild(selectEl);
+  wrapper.appendChild(trigger);
+
+  selectEl.classList.add('amc-native-select');
+  selectEl.setAttribute('tabindex', '-1');
+  selectEl.setAttribute('aria-hidden', 'true');
+
+  const entry = { selectEl, wrapper, trigger, isTable };
+  dropdownRegistry.set(selectEl, entry);
+
+  trigger.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (selectEl.disabled) return;
+    if (activeDropdown && activeDropdown.selectEl === selectEl) {
+      closeActiveDropdown({ returnFocus: true });
+    } else {
+      openDropdown(selectEl);
+    }
+  });
+
+  trigger.addEventListener('keydown', (e) => {
+    if (selectEl.disabled) return;
+    if (activeDropdown && activeDropdown.selectEl === selectEl) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openDropdown(selectEl);
+    }
+  });
+
+  selectEl.addEventListener('change', () => {
+    syncCustomDropdown(selectEl);
+  });
+
+  syncCustomDropdown(selectEl);
+  return entry;
+}
+
+function syncCustomDropdown(selectEl) {
+  if (!selectEl || selectEl.tagName !== 'SELECT') return;
+  const entry = dropdownRegistry.get(selectEl) || enhanceSelect(selectEl);
+  if (!entry) return;
+
+  const { trigger, isTable } = entry;
+  const kind = selectEl.dataset.ddKind || (selectEl.classList.contains('domain-select') ? 'domain' : 'type');
+  const title = selectEl.dataset.ddTitle || 'Pilih Opsi';
+  const selectedOpt = selectEl.options[selectEl.selectedIndex] || selectEl.options[0];
+  const rawLabel = selectedOpt ? selectedOpt.textContent : 'Memuat...';
+  const selectedVal = selectedOpt ? selectedOpt.value : '';
+  const parsed = parseDropdownOption(rawLabel, kind);
+
+  trigger.disabled = Boolean(selectEl.disabled);
+  trigger.setAttribute('aria-label', `${title}: ${parsed.label}`);
+  trigger.classList.remove('is-status-active', 'is-status-pending', 'is-status-disabled');
+  if (kind === 'status') {
+    const sk = getStatusKey(selectedVal);
+    if (sk) trigger.classList.add(`is-status-${sk}`);
+  }
+
+  const leadingHtml = renderDropdownLeading(kind, selectedVal, isTable);
+  const tagHtml = !isTable && parsed.tag ? `<span class="amc-dd-tag">${escapeHtml(parsed.tag)}</span>` : '';
+
+  trigger.innerHTML = `
+    <span class="amc-dd-trigger-main">
+      ${leadingHtml}
+      <span class="amc-dd-value">${escapeHtml(parsed.label)}</span>
+      ${tagHtml}
+    </span>
+    <span class="amc-dd-caret" aria-hidden="true">${DROPDOWN_ICONS.chevron}</span>
+  `;
+}
+
+function openDropdown(selectEl) {
+  const entry = dropdownRegistry.get(selectEl) || enhanceSelect(selectEl);
+  if (!entry) return;
+
+  closeActiveDropdown();
+
+  const { wrapper, trigger } = entry;
+  const kind = selectEl.dataset.ddKind || 'type';
+  const title = selectEl.dataset.ddTitle || 'Pilih Opsi';
+  const options = Array.from(selectEl.options);
+  if (options.length === 0) return;
+
+  const menu = document.createElement('div');
+  menu.className = 'amc-dd-menu';
+  menu.setAttribute('role', 'listbox');
+  menu.setAttribute('aria-label', title);
+
+  const head = document.createElement('div');
+  head.className = 'amc-dd-head';
+  head.innerHTML = `<span>${escapeHtml(title)}</span><span class="amc-dd-count">${options.length} opsi</span>`;
+  menu.appendChild(head);
+
+  const list = document.createElement('div');
+  list.className = 'amc-dd-list';
+
+  let selectedIdx = Math.max(0, selectEl.selectedIndex);
+
+  options.forEach((opt, idx) => {
+    const isSelected = idx === selectedIdx;
+    const parsed = parseDropdownOption(opt.textContent, kind);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `amc-dd-option ${isSelected ? 'is-selected is-focused' : ''}`;
+    btn.setAttribute('role', 'option');
+    btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+    btn.dataset.ddValue = opt.value;
+    btn.dataset.ddIndex = String(idx);
+    btn.disabled = Boolean(opt.disabled);
+
+    let leftIndicator = '';
+    if (kind === 'status') {
+      const sk = getStatusKey(opt.value) || 'active';
+      leftIndicator = `<span class="amc-dd-dot is-${sk}" aria-hidden="true"></span>`;
+    } else if (parsed.dot) {
+      leftIndicator = `<span class="amc-dd-dot is-${parsed.dot}" aria-hidden="true"></span>`;
+    }
+
+    const tagHtml = parsed.tag ? `<span class="amc-dd-tag">${escapeHtml(parsed.tag)}</span>` : '';
+
+    btn.innerHTML = `
+      <span class="amc-dd-option-main">
+        ${leftIndicator}
+        <span class="amc-dd-option-label">${escapeHtml(parsed.label)}</span>
+        ${tagHtml}
+      </span>
+      <span class="amc-dd-check" aria-hidden="true">${DROPDOWN_ICONS.check}</span>
+    `;
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      selectDropdownValue(selectEl, opt.value);
+    });
+
+    btn.addEventListener('mouseenter', () => {
+      setDropdownFocusIndex(idx);
+    });
+
+    list.appendChild(btn);
+  });
+
+  menu.appendChild(list);
+  getDropdownPortal().appendChild(menu);
+
+  wrapper.classList.add('is-open');
+  trigger.setAttribute('aria-expanded', 'true');
+  activeDropdown = { selectEl, wrapper, trigger, menu, list, focusedIndex: selectedIdx, openedAt: Date.now() };
+
+  positionDropdownMenu(trigger, menu, kind);
+  const activeBtn = list.children[selectedIdx];
+  if (activeBtn) {
+    const top = activeBtn.offsetTop;
+    const bottom = top + activeBtn.offsetHeight;
+    if (bottom > list.clientHeight) {
+      list.scrollTop = Math.max(0, top - 40);
+    }
+  }
+}
+
+function setDropdownFocusIndex(nextIdx) {
+  if (!activeDropdown) return;
+  const items = Array.from(activeDropdown.list.querySelectorAll('.amc-dd-option:not(:disabled)'));
+  if (items.length === 0) return;
+  const clamped = ((nextIdx % items.length) + items.length) % items.length;
+  activeDropdown.focusedIndex = clamped;
+  items.forEach((el, idx) => {
+    el.classList.toggle('is-focused', idx === clamped);
+  });
+  const el = items[clamped];
+  const list = activeDropdown.list;
+  if (el.offsetTop < list.scrollTop) {
+    list.scrollTop = el.offsetTop - 6;
+  } else if (el.offsetTop + el.offsetHeight > list.scrollTop + list.clientHeight) {
+    list.scrollTop = el.offsetTop + el.offsetHeight - list.clientHeight + 6;
+  }
+}
+
+function selectDropdownValue(selectEl, value) {
+  const prev = selectEl.value;
+  selectEl.value = value;
+  syncCustomDropdown(selectEl);
+  closeActiveDropdown({ returnFocus: true });
+  if (prev !== value) {
+    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+}
+
+function syncCustomDropdowns(root = document) {
+  const selects = root.querySelectorAll('select');
+  selects.forEach((sel) => syncCustomDropdown(sel));
+}
+
+function initCustomDropdownEngine() {
+  if (dropdownEngineInitialized) return;
+  dropdownEngineInitialized = true;
+
+  document.addEventListener('click', (e) => {
+    const lbl = e.target.closest('label[for]');
+    if (lbl) {
+      const target = document.getElementById(lbl.getAttribute('for'));
+      if (target && target.tagName === 'SELECT' && dropdownRegistry.has(target)) {
+        e.preventDefault();
+        const entry = dropdownRegistry.get(target);
+        entry.trigger.focus();
+        openDropdown(target);
+        return;
+      }
+    }
+
+    if (!activeDropdown) return;
+    if (activeDropdown.menu.contains(e.target) || activeDropdown.wrapper.contains(e.target)) {
+      return;
+    }
+    closeActiveDropdown();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!activeDropdown) return;
+    const items = Array.from(activeDropdown.list.querySelectorAll('.amc-dd-option:not(:disabled)'));
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeActiveDropdown({ returnFocus: true });
+    } else if (e.key === 'Tab') {
+      closeActiveDropdown();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setDropdownFocusIndex(activeDropdown.focusedIndex + 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setDropdownFocusIndex(activeDropdown.focusedIndex - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setDropdownFocusIndex(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setDropdownFocusIndex(items.length - 1);
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      const chosen = items[activeDropdown.focusedIndex];
+      if (chosen) selectDropdownValue(activeDropdown.selectEl, chosen.dataset.ddValue);
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const ch = e.key.toLowerCase();
+      const matchIdx = items.findIndex((el) => el.textContent.trim().toLowerCase().startsWith(ch));
+      if (matchIdx >= 0) setDropdownFocusIndex(matchIdx);
+    }
+  });
+
+  window.addEventListener('resize', () => closeActiveDropdown());
+  window.addEventListener(
+    'scroll',
+    (e) => {
+      if (!activeDropdown) return;
+      if (Date.now() - activeDropdown.openedAt < 180) return;
+      if (activeDropdown.menu.contains(e.target)) return;
+      closeActiveDropdown();
+    },
+    true
+  );
+}
+
 async function init() {
   els.footerYear.textContent = String(new Date().getFullYear());
   syncThemeUI();
   syncNavActiveStates();
+  initCustomDropdownEngine();
+  syncCustomDropdowns();
 
   try {
     state.adminToken = sessionStorage.getItem(STORAGE_KEYS.adminToken) || '';

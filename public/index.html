@@ -330,7 +330,7 @@
             <span class="at-divider" aria-hidden="true">@</span>
             <div class="builder-field">
               <label for="select-quick-domain" class="builder-label">Domain AMC</label>
-              <select id="select-quick-domain" class="domain-select"></select>
+              <select id="select-quick-domain" class="domain-select" data-dd-kind="domain" data-dd-title="Pilih Domain AMC"></select>
             </div>
             <div class="builder-field">
               <label for="input-quick-label" class="builder-label">Keterangan (opsional)</label>
@@ -342,7 +342,21 @@
           </form>
 
           <details class="bulk-details" id="bulk-create-details">
-            <summary>Buat banyak alamat email sekaligus (mode massal)</summary>
+            <summary class="bulk-summary">
+              <span class="bulk-summary-left">
+                <span class="bulk-summary-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                </span>
+                <span class="bulk-summary-text">
+                  <span class="bulk-summary-title">Buat banyak alamat email sekaligus</span>
+                  <span class="bulk-summary-sub">Tempel daftar username atau email dalam satu kali klik</span>
+                </span>
+                <span class="bulk-mode-pill">Mode Massal</span>
+              </span>
+              <span class="accordion-caret" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </span>
+            </summary>
             <form class="add-domain-form" id="admin-create-mailbox-form" style="margin-top:12px;margin-bottom:0;">
               <div class="form-field">
                 <label for="input-new-mailboxes">Daftar username atau email lengkap (satu per baris atau pisahkan koma)</label>
@@ -351,7 +365,7 @@
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div class="form-field">
                   <label for="select-new-mailbox-domain">Domain default (bila hanya tulis username)</label>
-                  <select id="select-new-mailbox-domain" class="select-input"></select>
+                  <select id="select-new-mailbox-domain" class="select-input" data-dd-kind="domain" data-dd-title="Domain Default"></select>
                 </div>
                 <div class="form-field">
                   <label for="input-new-mailbox-label">Label / keterangan bersama (opsional)</label>
@@ -375,10 +389,10 @@
             <button type="button" class="btn btn-soft btn-sm" id="btn-admin-refresh-mailboxes">Segarkan</button>
           </div>
 
-          <div class="admin-filter-row" style="grid-template-columns: auto minmax(180px, 1fr);">
+          <div class="admin-filter-row is-two-col">
             <div class="form-field">
               <label for="admin-mailbox-filter-domain">Filter Domain</label>
-              <select id="admin-mailbox-filter-domain" class="select-input">
+              <select id="admin-mailbox-filter-domain" class="select-input" data-dd-kind="domain" data-dd-title="Filter Domain">
                 <option value="all">Semua Domain</option>
               </select>
             </div>
@@ -411,13 +425,13 @@
           <div class="admin-filter-row" style="margin-bottom:0;">
             <div class="form-field">
               <label for="admin-filter-domain">Domain</label>
-              <select id="admin-filter-domain" class="select-input">
+              <select id="admin-filter-domain" class="select-input" data-dd-kind="domain" data-dd-title="Filter Domain">
                 <option value="all">Semua Domain</option>
               </select>
             </div>
             <div class="form-field">
               <label for="admin-filter-type">Tipe Pesan</label>
-              <select id="admin-filter-type" class="select-input">
+              <select id="admin-filter-type" class="select-input" data-dd-kind="type" data-dd-title="Tipe Pesan">
                 <option value="all">Semua Tipe</option>
                 <option value="bounce">Bounce / DSN Saja</option>
                 <option value="otp">OTP / Verifikasi</option>
@@ -478,7 +492,7 @@
             <div style="display:flex;flex-direction:column;gap:10px;">
               <div class="form-field">
                 <label for="select-new-domain-status">Status awal domain</label>
-                <select id="select-new-domain-status" class="select-input">
+                <select id="select-new-domain-status" class="select-input" data-dd-kind="status" data-dd-title="Status Awal Domain">
                   <option value="active">Aktif (tampil di pilihan)</option>
                   <option value="pending">Pending (belum ada akses registrar)</option>
                   <option value="disabled">Nonaktif sementara</option>
@@ -538,7 +552,7 @@
             <h2>Retensi dan Penerimaan Domain</h2>
             <div class="form-field">
               <label for="select-retention-hours">Simpan email masuk selama</label>
-              <select id="select-retention-hours" class="select-input">
+              <select id="select-retention-hours" class="select-input" data-dd-kind="retention" data-dd-title="Masa Simpan Email">
                 <option value="24">24 Jam</option>
                 <option value="72">3 Hari (72 Jam)</option>
                 <option value="168">7 Hari (168 Jam)</option>
@@ -571,7 +585,7 @@
             </div>
             <div class="form-field">
               <label for="select-admin-sim-type">Skenario uji</label>
-              <select id="select-admin-sim-type" class="select-input">
+              <select id="select-admin-sim-type" class="select-input" data-dd-kind="sim" data-dd-title="Skenario Uji Kirim">
                 <option value="hard_bounce">Hard Bounce: 550 5.1.1 User Unknown (DSN)</option>
                 <option value="soft_bounce">Soft Bounce: 452 4.2.2 Mailbox Full (DSN)</option>
                 <option value="policy_bounce">Policy Block: 550 5.7.1 DMARC Reject (DSN)</option>
@@ -640,7 +654,7 @@
 
             <div class="builder-field">
               <label for="select-domain" class="builder-label">Domain AMC</label>
-              <select id="select-domain" class="domain-select"></select>
+              <select id="select-domain" class="domain-select" data-dd-kind="domain" data-dd-title="Pilih Domain AMC"></select>
             </div>
 
             <div class="address-primary-actions">
@@ -693,16 +707,24 @@
 
             <div class="filter-tabs" role="tablist" aria-label="Filter jenis pesan">
               <button type="button" class="filter-tab is-active" data-filter="all" role="tab" aria-selected="true" id="tab-filter-all">
-                Semua <span class="filter-count" id="count-all">0</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                <span>Semua</span>
+                <span class="filter-count" id="count-all">0</span>
               </button>
               <button type="button" class="filter-tab" data-filter="inbox" role="tab" aria-selected="false" id="tab-filter-inbox">
-                Masuk <span class="filter-count" id="count-inbox">0</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                <span>Masuk</span>
+                <span class="filter-count" id="count-inbox">0</span>
               </button>
               <button type="button" class="filter-tab is-bounce-tab" data-filter="bounce" role="tab" aria-selected="false" id="tab-filter-bounce">
-                Bounce <span class="filter-count" id="count-bounce">0</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>Bounce</span>
+                <span class="filter-count" id="count-bounce">0</span>
               </button>
               <button type="button" class="filter-tab" data-filter="otp" role="tab" aria-selected="false" id="tab-filter-otp">
-                OTP <span class="filter-count" id="count-otp">0</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>OTP</span>
+                <span class="filter-count" id="count-otp">0</span>
               </button>
             </div>
 

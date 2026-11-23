@@ -8,7 +8,7 @@ Ultra-lightweight pure-white email reader, multi-domain mailbox manager, and SMT
 - **Signature `order.amc.web.id` Elements**:
   - `304px` fixed left desktop sidebar (`>= 1024px`) with `60x60px` rounded-`20px` white logo tile and `.logo-sweep-wrap` highlight sweep.
   - Rounded-`22px` `#f0f9ff` `.sidebar-user-card` with white `.sidebar-medal-icon` tile, `11px`/`900`/`0.18em` uppercase section labels, and `48px` rounded-`16px` sidebar nav links with `inset 4px 0 0 #38bdf8` active indicator.
-  - `.desktop-welcome-card` (`linear-gradient(135deg, #e0f2fe, #f0f9ff)`), 4-card `.desktop-stat-grid` with `.desktop-stat-icon` sky tiles, `.step-badge` numbered circles (`1`, `2`), rounded-`999px` pill category tabs, rounded-`16px` sky-blue gradient buttons, rounded-`24px` sky-header modal, circular mobile `.header-icon-btn`, and lightweight CSS custom blue glass desktop cursor.
+  - `.desktop-welcome-card` (`linear-gradient(135deg, #e0f2fe, #f0f9ff)`), 4-card `.desktop-stat-grid` with `.desktop-stat-icon` sky tiles, `.step-badge` numbered circles (`1`, `2`), segmented sky pill tab docks (2x2 inbox filter tabs & `.deposit-tab-nav`-style reader tabs with icons and count chips), custom sky-blue dropdown menus (`.amc-dropdown` with floating portal popover, uppercase menu header, status-tinted pills, and `.payment-method-check`-style gradient checkmarks), sky bulk accordion dropdown, rounded-`16px` sky-blue gradient buttons, rounded-`24px` sky-header modal, circular mobile `.header-icon-btn`, and lightweight CSS custom blue glass desktop cursor.
 - **Performance**: Pure HTML/CSS/ES module JS without external JS libraries or WebGL canvases.
 
 ## Verified Palette (WCAG AA >= 4.5:1)
