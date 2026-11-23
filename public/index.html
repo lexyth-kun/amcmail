@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>AMC Mail: Temporary Mail dan Bounce Monitor | Al Muthi Creative</title>
-  <meta name="description" content="Temporary mail multi-domain resmi Al Muthi Creative dengan pemantauan bounce SMTP, ekstraksi OTP otomatis, dan antarmuka 3D selaras dengan order.amc.web.id.">
+  <title>AMC Mail: Kotak Masuk &amp; Bounce Monitor | Al Muthi Creative</title>
+  <meta name="description" content="Layanan kotak masuk email multi-domain Al Muthi Creative untuk melihat pesan masuk, kode OTP, dan diagnostik bounce SMTP.">
   <meta name="author" content="Al Muthi Creative">
-  <meta name="theme-color" content="#38bdf8">
+  <meta name="theme-color" content="#ffffff">
 
   <link rel="icon" type="image/png" href="./assets/amc-logo.png">
   <link rel="apple-touch-icon" href="./assets/amc-logo.png">
@@ -31,13 +31,11 @@
 <body>
   <a href="#main-content" class="skip-link">Langsung ke kotak masuk</a>
 
-  <canvas id="ambient-3d-canvas" aria-hidden="true"></canvas>
-
-  <!-- Desktop Fixed Left Ice-Glass Sidebar (>= 1024px, matching order.amc.web.id) -->
+  <!-- Desktop Fixed Left Sidebar (>= 1024px) -->
   <aside class="desktop-app-sidebar" aria-label="Sidebar AMC Mail">
     <a href="./" class="sidebar-brand" id="sidebar-home-link">
-      <div class="sidebar-logo-tile logo-sweep-wrap">
-        <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="40" height="40" fetchpriority="high">
+      <div class="sidebar-logo-tile">
+        <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="38" height="38" fetchpriority="high">
       </div>
       <div>
         <span class="brand-title">AMC <span>Mail</span></span>
@@ -46,11 +44,11 @@
     </a>
 
     <div class="sidebar-mailbox-card">
-      <span class="sidebar-mailbox-label">Mailbox Aktif</span>
-      <span class="sidebar-mailbox-addr" id="sidebar-active-addr">...</span>
+      <span class="sidebar-mailbox-label">Email Dibuka</span>
+      <span class="sidebar-mailbox-addr" id="sidebar-active-addr">Belum dipilih</span>
       <div class="sidebar-mailbox-actions">
-        <button type="button" class="btn btn-primary btn-sm" id="btn-sidebar-copy" style="flex:1;">Salin</button>
-        <button type="button" class="btn btn-soft btn-sm" id="btn-sidebar-random">Acak</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-sidebar-copy" style="flex:1;" disabled>Salin</button>
+        <button type="button" class="btn btn-soft btn-sm hidden" id="btn-sidebar-create">Buat Baru</button>
       </div>
     </div>
 
@@ -122,12 +120,12 @@
     </div>
   </aside>
 
-  <!-- Mobile & Tablet Frosted Top Header (< 1024px) -->
+  <!-- Mobile & Tablet Header (< 1024px) -->
   <header class="mobile-header" id="site-header">
     <div class="mobile-header-inner">
       <a href="./" class="mobile-brand" id="brand-home-link">
-        <div class="mobile-logo-tile logo-sweep-wrap">
-          <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="30" height="30" fetchpriority="high">
+        <div class="mobile-logo-tile">
+          <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="28" height="28" fetchpriority="high">
         </div>
         <div>
           <span class="brand-title">AMC <span>Mail</span></span>
@@ -166,47 +164,40 @@
   </header>
 
   <main class="app-main" id="main-content">
-    <!-- Hero Welcome Card with Interactive Three.js 3D Mail Core -->
+    <!-- Clean White Mailbox Lookup Card -->
     <section class="amc-hero-card" aria-labelledby="main-heading">
-      <div class="hero-top-grid">
+      <div class="hero-header-row">
         <div class="hero-copy">
-          <h1 id="main-heading">AMC Temporary Mail &amp; Bounce Monitor</h1>
+          <h1 id="main-heading">AMC Mail &amp; Bounce Monitor</h1>
           <p class="hero-subtitle">
-            Buat alamat sementara acak atau kustom pada domain Al Muthi Creative, baca kode OTP sekali klik, dan pantau diagnostik bounce SMTP secara langsung.
+            Masukkan alamat email yang sudah dibuat Admin untuk melihat pesan masuk, kode OTP, dan diagnostik bounce SMTP.
           </p>
-          <div class="hero-live-strip">
-            <span class="hero-pill"><strong id="hero-domain-count">6</strong> Domain Aktif</span>
-            <span class="hero-pill"><strong id="hero-inbox-count">0</strong> Pesan</span>
-            <span class="hero-pill is-bounce"><strong id="hero-bounce-count">0</strong> Bounce</span>
-            <button type="button" class="poll-control" id="btn-toggle-autopoll" aria-pressed="true" title="Jeda atau lanjutkan pembaruan inbox otomatis">
-              <span class="dot" aria-hidden="true"></span>
-              <span id="poll-status-text">Otomatis 10d</span>
-            </button>
-          </div>
         </div>
 
-        <div class="hero-3d-stage" aria-label="Visualisasi 3D AMC Mail Core">
-          <canvas id="hero-3d-canvas" width="280" height="220"></canvas>
-          <div class="stage-3d-controls">
-            <span class="stage-3d-hint">Geser untuk putar 3D</span>
-            <button type="button" class="btn-3d-pause" id="btn-toggle-3d" aria-pressed="false">Jeda 3D</button>
-          </div>
+        <div class="hero-live-strip">
+          <span class="hero-pill"><strong id="hero-domain-count">6</strong> Domain</span>
+          <span class="hero-pill"><strong id="hero-inbox-count">0</strong> Pesan</span>
+          <span class="hero-pill is-bounce"><strong id="hero-bounce-count">0</strong> Bounce</span>
+          <button type="button" class="poll-control" id="btn-toggle-autopoll" aria-pressed="true" title="Jeda atau lanjutkan pembaruan inbox otomatis">
+            <span class="dot" aria-hidden="true"></span>
+            <span id="poll-status-text">Otomatis 10d</span>
+          </button>
         </div>
       </div>
 
       <div class="address-shell">
         <form class="address-builder" id="address-form" novalidate>
           <div class="builder-field">
-            <label for="input-username" class="builder-label">Username</label>
+            <label for="input-username" class="builder-label">Username atau Alamat Email</label>
             <input
               type="text"
               id="input-username"
               class="username-input"
-              placeholder="ketik.username"
+              placeholder="contoh: info atau cs@amc.web.id"
               autocomplete="off"
               autocapitalize="off"
               spellcheck="false"
-              maxlength="63"
+              maxlength="120"
             >
           </div>
 
@@ -218,16 +209,16 @@
           </div>
 
           <div class="address-primary-actions">
-            <button type="submit" class="btn btn-soft btn-apply-custom hidden" id="btn-apply-custom">
-              Pakai Alamat
+            <button type="submit" class="btn btn-primary btn-open-main" id="btn-open-inbox">
+              Buka Inbox
             </button>
 
-            <button type="button" class="btn btn-primary btn-copy-main" id="btn-copy-email">
+            <button type="button" class="btn btn-soft btn-copy-main" id="btn-copy-email" disabled>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <rect x="9" y="9" width="13" height="13" rx="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
-              <span id="btn-copy-label">Salin Email</span>
+              <span id="btn-copy-label">Salin</span>
             </button>
           </div>
         </form>
@@ -235,62 +226,28 @@
         <p class="builder-error hidden" id="builder-error" role="alert"></p>
 
         <div class="generator-toolbar">
-          <div class="toolbar-group">
-            <button type="button" class="btn btn-sm" id="btn-random-user">Acak Username</button>
-            <button type="button" class="btn btn-sm" id="btn-random-all">Ganti Email Baru</button>
-            <button type="button" class="btn btn-sm" id="btn-refresh-inbox">Periksa Inbox</button>
-          </div>
+          <p class="readonly-hint" id="readonly-notice">
+            Mode baca saja: hanya Admin yang dapat membuat alamat email baru.
+          </p>
 
           <div class="toolbar-group">
-            <div class="sim-menu-wrap hidden" id="sim-menu-wrap">
-              <button type="button" class="btn btn-sm btn-soft" id="btn-sim-menu" aria-expanded="false" aria-haspopup="menu">
-                Uji Kirim / Bounce
-              </button>
-
-              <div class="sim-dropdown hidden" id="sim-dropdown" role="menu">
-                <div class="sim-dropdown-title">Kirim simulasi ke alamat aktif</div>
-                <button type="button" class="sim-option" data-sim="hard_bounce" role="menuitem">
-                  <strong>Hard Bounce (550 5.1.1)</strong>
-                  <small>DSN Gmail: alamat tujuan tidak ditemukan</small>
-                </button>
-                <button type="button" class="sim-option" data-sim="soft_bounce" role="menuitem">
-                  <strong>Soft Bounce (452 4.2.2)</strong>
-                  <small>DSN Yahoo: kotak masuk tujuan penuh</small>
-                </button>
-                <button type="button" class="sim-option" data-sim="policy_bounce" role="menuitem">
-                  <strong>Policy Block (550 5.7.1)</strong>
-                  <small>Penolakan DMARC atau kebijakan keamanan</small>
-                </button>
-                <button type="button" class="sim-option" data-sim="otp" role="menuitem">
-                  <strong>Email Verifikasi OTP</strong>
-                  <small>Kode 6 digit diekstrak otomatis</small>
-                </button>
-                <button type="button" class="sim-option" data-sim="welcome" role="menuitem">
-                  <strong>Pesan HTML dan Lampiran</strong>
-                  <small>Uji tampilan HTML terisolasi dan unduh file</small>
-                </button>
-              </div>
-            </div>
+            <button type="button" class="btn btn-sm" id="btn-refresh-inbox" disabled>Periksa Inbox</button>
+            <button type="button" class="btn btn-primary btn-sm hidden" id="btn-hero-create-email">Buat Email Baru</button>
           </div>
-        </div>
-
-        <div class="mailbox-history hidden" id="mailbox-history">
-          <span class="history-label">Mailbox sesi ini:</span>
-          <div class="history-chips" id="history-chips"></div>
         </div>
       </div>
     </section>
 
-    <!-- Split-Pane Frosted Glass Mail Workspace -->
+    <!-- Split-Pane Mail Workspace -->
     <section class="mail-workspace" id="mail-workspace" aria-label="Kotak Masuk dan Pembaca Pesan">
       <aside class="inbox-pane" aria-label="Daftar Pesan Masuk">
         <div class="inbox-pane-header">
           <div class="inbox-title-row">
             <h2 class="inbox-heading">
               <span>Inbox</span>
-              <span class="inbox-heading-addr" id="inbox-active-label">...</span>
+              <span class="inbox-heading-addr" id="inbox-active-label">Belum dipilih</span>
             </h2>
-            <button type="button" class="btn btn-sm btn-danger-outline btn-icon" id="btn-clear-inbox" aria-label="Hapus semua pesan di alamat ini" title="Hapus semua pesan di alamat ini">
+            <button type="button" class="btn btn-sm btn-danger-outline btn-icon hidden" id="btn-clear-inbox" aria-label="Hapus semua pesan di alamat ini" title="Hapus semua pesan di alamat ini (Admin)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
@@ -334,7 +291,7 @@
         <div class="state-panel" id="reader-empty">
           <h3>Pilih Pesan untuk Membaca</h3>
           <p>
-            Email masuk, kode OTP, dan laporan hard atau soft bounce (DSN) yang dikirim ke alamat aktif akan ditampilkan lengkap di panel ini.
+            Pesan masuk, kode OTP, dan laporan bounce SMTP dari alamat email terdaftar akan ditampilkan lengkap di panel ini.
           </p>
         </div>
 
@@ -342,7 +299,7 @@
       </div>
     </section>
 
-    <!-- Active AMC Domains Glass Grid -->
+    <!-- Active AMC Domains Grid -->
     <section class="domains-section" id="domain-directory" aria-labelledby="domains-heading">
       <div class="domains-head">
         <h2 id="domains-heading">Domain Aktif Al Muthi Creative</h2>
@@ -356,7 +313,7 @@
     </footer>
   </main>
 
-  <!-- Mobile Bottom Navigation Bar (< 1024px, matching order.amc.web.id) -->
+  <!-- Mobile Bottom Navigation Bar (4 clean slots, < 1024px) -->
   <nav class="mobile-bottom-nav" aria-label="Navigasi bawah mobile">
     <div class="mobile-nav-grid">
       <button type="button" class="mobile-nav-item is-active" id="mob-nav-inbox" data-mob-action="inbox">
@@ -367,13 +324,6 @@
       <button type="button" class="mobile-nav-item" id="mob-nav-bounce" data-mob-action="bounce">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
         <span>Bounce</span>
-      </button>
-
-      <button type="button" class="mobile-nav-orb-btn" id="mob-nav-random" data-mob-action="random" aria-label="Buat email baru acak">
-        <span class="mobile-nav-orb" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
-        </span>
-        <span>Acak</span>
       </button>
 
       <a href="#domain-directory" class="mobile-nav-item" id="mob-nav-domains">
@@ -393,7 +343,7 @@
     <div class="modal-panel is-compact" id="admin-modal-panel">
       <div class="modal-head">
         <h2 class="modal-title" id="admin-modal-title">
-          <span class="modal-title-logo"><img src="./assets/amc-logo.png" alt="" width="24" height="24"></span>
+          <span class="modal-title-logo"><img src="./assets/amc-logo.png" alt="" width="22" height="22"></span>
           <span>Panel Admin AMC Mail</span>
         </h2>
         <div class="toolbar-group">
@@ -405,7 +355,7 @@
       <div class="modal-body">
         <form class="admin-login-box" id="admin-login-form">
           <p class="hero-subtitle" style="margin:0;">
-            Masukkan PIN Admin untuk mengelola domain AMC, memantau semua pesan masuk dan bounce (catch-all), serta mengatur retensi.
+            Masukkan PIN Admin untuk membuat alamat email baru, memantau seluruh kotak masuk dan bounce, serta mengelola domain AMC.
           </p>
           <div class="form-field">
             <label for="input-admin-pin">PIN Admin</label>
@@ -422,6 +372,10 @@
 
           <div class="admin-summary-strip" aria-label="Ringkasan data saat ini">
             <div class="summary-metric">
+              <strong id="kpi-total-mailboxes">0</strong>
+              <span>email dibuat (<span id="kpi-active-mailboxes">0</span> aktif)</span>
+            </div>
+            <div class="summary-metric">
               <strong id="kpi-total-emails">0</strong>
               <span>total pesan (<span id="kpi-emails-24h">0</span> / 24 jam)</span>
             </div>
@@ -433,19 +387,67 @@
               <strong id="kpi-active-domains">0</strong>
               <span>domain aktif (<span id="kpi-pending-domains">0</span> pending)</span>
             </div>
-            <div class="summary-metric">
-              <strong id="kpi-unique-mailboxes">0</strong>
-              <span>mailbox unik (<span id="kpi-total-otps">0</span> OTP)</span>
-            </div>
           </div>
 
           <div class="admin-tabs" role="tablist" aria-label="Menu Admin">
-            <button type="button" class="admin-tab is-active" data-admin-tab="monitor" role="tab" aria-selected="true">Monitor Semua Inbox &amp; Bounce</button>
+            <button type="button" class="admin-tab is-active" data-admin-tab="mailboxes" role="tab" aria-selected="true">Kelola Email</button>
+            <button type="button" class="admin-tab" data-admin-tab="monitor" role="tab" aria-selected="false">Monitor Semua Inbox &amp; Bounce</button>
             <button type="button" class="admin-tab" data-admin-tab="domains" role="tab" aria-selected="false">Kelola Domain</button>
             <button type="button" class="admin-tab" data-admin-tab="settings" role="tab" aria-selected="false">Pengaturan &amp; Uji Coba</button>
           </div>
 
-          <div id="admin-tab-monitor">
+          <!-- Tab 1: Kelola Email (Hanya Admin yang bisa membuat alamat email baru) -->
+          <div id="admin-tab-mailboxes">
+            <form class="add-domain-form" id="admin-create-mailbox-form">
+              <div class="form-field">
+                <label for="input-new-mailboxes">Buat alamat email baru (username saja atau alamat lengkap, satu per baris)</label>
+                <textarea id="input-new-mailboxes" class="textarea-input" placeholder="cs&#10;klien.budi&#10;tagihan@almuthicreative.my.id" required></textarea>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div class="form-field">
+                  <label for="select-new-mailbox-domain">Domain default (bila hanya tulis username)</label>
+                  <select id="select-new-mailbox-domain" class="select-input"></select>
+                </div>
+                <div class="form-field">
+                  <label for="input-new-mailbox-label">Label atau keterangan (opsional)</label>
+                  <input type="text" id="input-new-mailbox-label" class="text-input" placeholder="Misal: Akun Canva Klien / Order #12">
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-create-mailbox-submit">Buat Alamat Email</button>
+              </div>
+            </form>
+
+            <div class="admin-filter-row" style="grid-template-columns: auto minmax(180px, 1fr) auto;">
+              <div class="form-field">
+                <label for="admin-mailbox-filter-domain">Filter Domain</label>
+                <select id="admin-mailbox-filter-domain" class="select-input">
+                  <option value="all">Semua Domain</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="admin-mailbox-filter-search">Cari Email / Label</label>
+                <input type="search" id="admin-mailbox-filter-search" class="text-input" placeholder="Cari alamat email atau keterangan...">
+              </div>
+              <button type="button" class="btn btn-sm" id="btn-admin-refresh-mailboxes">Segarkan</button>
+            </div>
+
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Alamat Email</th>
+                    <th>Status</th>
+                    <th>Pesan / Bounce</th>
+                    <th>Keterangan</th>
+                    <th style="text-align:right;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-mailboxes-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 2: Monitor Catch-All -->
+          <div id="admin-tab-monitor" class="hidden">
             <div class="admin-filter-row">
               <div class="form-field">
                 <label for="admin-filter-domain">Domain</label>
@@ -485,6 +487,7 @@
             </div>
           </div>
 
+          <!-- Tab 3: Kelola Domain -->
           <div id="admin-tab-domains" class="hidden">
             <form class="add-domain-form" id="admin-add-domain-form">
               <div class="form-field">
@@ -495,7 +498,7 @@
                 <div class="form-field">
                   <label for="select-new-domain-status">Status awal domain</label>
                   <select id="select-new-domain-status" class="select-input">
-                    <option value="active">Aktif (tampil di pilihan user)</option>
+                    <option value="active">Aktif (tampil di pilihan)</option>
                     <option value="pending">Pending (belum ada akses registrar)</option>
                     <option value="disabled">Nonaktif sementara</option>
                   </select>
@@ -534,6 +537,7 @@
             </details>
           </div>
 
+          <!-- Tab 4: Pengaturan & Uji Coba -->
           <div id="admin-tab-settings" class="hidden">
             <div class="settings-grid">
               <form class="settings-card" id="admin-settings-form">
@@ -555,7 +559,7 @@
                 </label>
 
                 <div class="form-field">
-                  <label for="input-blocked-users">Username yang dibatasi untuk publik (pisahkan koma)</label>
+                  <label for="input-blocked-users">Username yang dibatasi (pisahkan koma)</label>
                   <input type="text" id="input-blocked-users" class="text-input mono" placeholder="Opsional: admin,root">
                 </div>
 

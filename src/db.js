@@ -552,11 +552,218 @@ export async function listAdminMessages(db, { domain = '', type = 'all', q = '',
   };
 }
 
+const ensuredDbs = new WeakSet();
+
+export async function ensureMailboxesTable(db) {
+  if (ensuredDbs.has(db)) return;
+  await db.batch([
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS mailboxes (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         address TEXT NOT NULL UNIQUE,
+         local_part TEXT NOT NULL,
+         domain TEXT NOT NULL,
+         label TEXT NOT NULL DEFAULT '',
+         status TEXT NOT NULL DEFAULT 'active',
+         created_at INTEGER NOT NULL,
+         updated_at INTEGER NOT NULL
+       )`
+    ),
+    db.prepare('CREATE INDEX IF NOT EXISTS idx_mailboxes_domain ON mailboxes (domain, created_at DESC)'),
+    db.prepare('CREATE INDEX IF NOT EXISTS idx_mailboxes_status ON mailboxes (status, created_at DESC)'),
+  ]);
+
+  // One-time migration backfill so already-received live emails remain readable
+  // until Admin edits or removes them.
+  const flag = await db.prepare("SELECT value FROM settings WHERE key = 'mailboxes_initialized'").first();
+  if (!flag) {
+    const now = Date.now();
+    const existing = await db
+      .prepare('SELECT DISTINCT recipient, domain FROM emails WHERE recipient IS NOT NULL AND domain IS NOT NULL')
+      .all();
+    const rows = existing.results || [];
+    for (const row of rows) {
+      const normalized = normalizeEmailAddress(row.recipient);
+      if (!normalized) continue;
+      await db
+        .prepare(
+          `INSERT OR IGNORE INTO mailboxes (address, local_part, domain, label, status, created_at, updated_at)
+           VALUES (?, ?, ?, 'Email terdaftar sebelum pembaruan', 'active', ?, ?)`
+        )
+        .bind(normalized.address, normalized.localPart, normalized.domain, now, now)
+        .run();
+    }
+    await db
+      .prepare(
+        "INSERT INTO settings (key, value, updated_at) VALUES ('mailboxes_initialized', '1', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at"
+      )
+      .bind(now)
+      .run();
+  }
+
+  ensuredDbs.add(db);
+}
+
+export async function getMailbox(db, rawAddress) {
+  await ensureMailboxesTable(db);
+  const normalized = normalizeEmailAddress(rawAddress);
+  if (!normalized) return null;
+  const row = await db
+    .prepare('SELECT id, address, local_part, domain, label, status, created_at, updated_at FROM mailboxes WHERE address = ?')
+    .bind(normalized.address)
+    .first();
+  if (!row) return null;
+  return {
+    id: row.id,
+    address: row.address,
+    localPart: row.local_part,
+    domain: row.domain,
+    label: row.label || '',
+    status: row.status || 'active',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function listAdminMailboxes(db, { domain = 'all', q = '' } = {}) {
+  await ensureMailboxesTable(db);
+  const conditions = ['1 = 1'];
+  const params = [];
+
+  if (domain && domain !== 'all') {
+    conditions.push('m.domain = ?');
+    params.push(normalizeDomain(domain));
+  }
+  if (q && q.trim()) {
+    const like = `%${q.trim().toLowerCase()}%`;
+    conditions.push('(LOWER(m.address) LIKE ? OR LOWER(m.label) LIKE ?)');
+    params.push(like, like);
+  }
+
+  const { results } = await db
+    .prepare(
+      `SELECT
+         m.id,
+         m.address,
+         m.local_part,
+         m.domain,
+         m.label,
+         m.status,
+         m.created_at,
+         m.updated_at,
+         COUNT(e.id) AS total_emails,
+         COALESCE(SUM(CASE WHEN e.is_bounce = 1 THEN 1 ELSE 0 END), 0) AS bounce_emails,
+         MAX(e.received_at) AS last_received_at
+       FROM mailboxes m
+       LEFT JOIN emails e ON e.recipient = m.address
+       WHERE ${conditions.join(' AND ')}
+       GROUP BY m.id
+       ORDER BY m.created_at DESC, m.address ASC`
+    )
+    .bind(...params)
+    .all();
+
+  return (results || []).map((r) => ({
+    id: r.id,
+    address: r.address,
+    localPart: r.local_part,
+    domain: r.domain,
+    label: r.label || '',
+    status: r.status || 'active',
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    totalEmails: Number(r.total_emails || 0),
+    bounceEmails: Number(r.bounce_emails || 0),
+    lastReceivedAt: r.last_received_at || null,
+  }));
+}
+
+export async function createMailboxes(db, rawEntries, { defaultDomain = '', label = '', status = 'active' } = {}) {
+  await ensureMailboxesTable(db);
+  const validStatus = ['active', 'disabled'].includes(status) ? status : 'active';
+  const cleanLabel = String(label || '').trim().slice(0, 160);
+  const fallbackDomain = normalizeDomain(defaultDomain);
+  const now = Date.now();
+
+  const added = [];
+  const skipped = [];
+  const invalid = [];
+
+  const uniqueInputs = [...new Set((rawEntries || []).map((item) => String(item || '').trim().toLowerCase()).filter(Boolean))];
+
+  for (const raw of uniqueInputs) {
+    const candidate = raw.includes('@') ? raw : fallbackDomain ? `${raw}@${fallbackDomain}` : '';
+    const normalized = normalizeEmailAddress(candidate);
+    if (!normalized) {
+      invalid.push(raw);
+      continue;
+    }
+
+    const domainRow = await db.prepare('SELECT id, status FROM domains WHERE domain = ?').bind(normalized.domain).first();
+    if (!domainRow || domainRow.status === 'disabled') {
+      invalid.push(normalized.address);
+      continue;
+    }
+
+    const existing = await db.prepare('SELECT id FROM mailboxes WHERE address = ?').bind(normalized.address).first();
+    if (existing) {
+      skipped.push(normalized.address);
+      continue;
+    }
+
+    await db
+      .prepare(
+        `INSERT INTO mailboxes (address, local_part, domain, label, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(normalized.address, normalized.localPart, normalized.domain, cleanLabel, validStatus, now, now)
+      .run();
+    added.push(normalized.address);
+  }
+
+  return { added, skipped, invalid };
+}
+
+export async function updateMailbox(db, id, patch) {
+  await ensureMailboxesTable(db);
+  const existing = await db.prepare('SELECT * FROM mailboxes WHERE id = ?').bind(id).first();
+  if (!existing) return null;
+
+  const now = Date.now();
+  const nextStatus = ['active', 'disabled'].includes(patch.status) ? patch.status : existing.status;
+  const nextLabel = patch.label !== undefined ? String(patch.label || '').trim().slice(0, 160) : existing.label;
+
+  await db
+    .prepare('UPDATE mailboxes SET status = ?, label = ?, updated_at = ? WHERE id = ?')
+    .bind(nextStatus, nextLabel, now, id)
+    .run();
+
+  return db.prepare('SELECT * FROM mailboxes WHERE id = ?').bind(id).first();
+}
+
+export async function deleteMailbox(db, id, { purgeMessages = false } = {}) {
+  await ensureMailboxesTable(db);
+  const existing = await db.prepare('SELECT * FROM mailboxes WHERE id = ?').bind(id).first();
+  if (!existing) return null;
+
+  if (purgeMessages) {
+    await db
+      .prepare('DELETE FROM attachments WHERE email_id IN (SELECT id FROM emails WHERE recipient = ?)')
+      .bind(existing.address)
+      .run();
+    await db.prepare('DELETE FROM emails WHERE recipient = ?').bind(existing.address).run();
+  }
+
+  await db.prepare('DELETE FROM mailboxes WHERE id = ?').bind(id).run();
+  return existing;
+}
+
 export async function getAdminStats(db) {
+  await ensureMailboxesTable(db);
   const now = Date.now();
   const last24h = now - 24 * 60 * 60 * 1000;
 
-  const [emailStats, domainStats] = await Promise.all([
+  const [emailStats, domainStats, mailboxStats] = await Promise.all([
     db
       .prepare(
         `SELECT
@@ -580,6 +787,14 @@ export async function getAdminStats(db) {
          FROM domains`
       )
       .first(),
+    db
+      .prepare(
+        `SELECT
+           COUNT(*) AS total_mailboxes,
+           COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) AS active_mailboxes
+         FROM mailboxes`
+      )
+      .first(),
   ]);
 
   return {
@@ -589,6 +804,8 @@ export async function getAdminStats(db) {
     emails24h: Number(emailStats?.emails_24h || 0),
     bounces24h: Number(emailStats?.bounces_24h || 0),
     uniqueMailboxes: Number(emailStats?.unique_mailboxes || 0),
+    totalMailboxes: Number(mailboxStats?.total_mailboxes || 0),
+    activeMailboxes: Number(mailboxStats?.active_mailboxes || 0),
     totalDomains: Number(domainStats?.total_domains || 0),
     activeDomains: Number(domainStats?.active_domains || 0),
     pendingDomains: Number(domainStats?.pending_domains || 0),

@@ -1,19 +1,13 @@
 # AMC Mail (Al Muthi Creative)
 
-Layanan temporary mail multi-domain dan pemantau bounce SMTP berbasis Cloudflare Workers, Cloudflare Email Routing, dan Cloudflare D1.
+Layanan kotak masuk email multi-domain dan pemantau bounce SMTP milik Al Muthi Creative berbasis Cloudflare Workers, Cloudflare Email Routing, dan Cloudflare D1.
 
-## Domain bawaan
+## Fitur utama
 
-Migrasi awal (`migrations/0001_init.sql`) sudah menyiapkan enam domain milik Al Muthi Creative:
-
-- `amc.web.id` (domain default)
-- `lexyth.my.id`
-- `rsykwnda.my.id`
-- `almuthicreative.my.id`
-- `jelupang.web.id`
-- `cilpa.biz.id`
-
-Domain tambahan yang belum bisa diakses saat ini dapat dicatat lewat Panel Admin dengan status `Pending`, lalu diaktifkan ketika Cloudflare Email Routing sudah terpasang.
+- **Pembuatan alamat email khusus Admin**: Hanya Admin (login PIN) yang dapat membuat, mengaktifkan, menonaktifkan, atau menghapus alamat email baru pada domain AMC.
+- **Mode baca saja untuk pengunjung publik**: Pengunjung lain hanya dapat memasukkan alamat email yang sudah dibuat Admin (atau membuka tautan langsung `?email=...`) untuk membaca pesan masuk, menyalin kode OTP, mengunduh lampiran, dan memeriksa laporan bounce SMTP tanpa bisa membuat alamat baru atau menghapus pesan.
+- **Ringan dan cepat**: Tampilan latar putih bersih tanpa 3D/WebGL, tanpa generator username acak, dengan opsi Mode Gelap.
+- **Panel Admin terpadu**: Kelola Email (buat tunggal/massal dan salin link inbox), Monitor Catch-All Inbox & Bounce, Kelola Domain, dan Pengaturan Retensi.
 
 ## Struktur folder siap deploy
 
@@ -26,7 +20,8 @@ amcmail/
 ├── .dev.vars.example
 ├── .gitignore
 ├── migrations/
-│   └── 0001_init.sql
+│   ├── 0001_init.sql
+│   └── 0002_mailboxes.sql
 ├── src/
 │   ├── worker.js
 │   ├── email-parser.js
@@ -38,51 +33,9 @@ amcmail/
     ├── manifest.json
     ├── assets/amc-logo.png
     ├── css/style.css
-    └── js/
-        ├── app.js
-        └── scene3d.js
+    └── js/app.js
 ```
 
-## Cara deploy ke Cloudflare
+## Catatan migrasi D1 otomatis
 
-### 1. Siapkan database D1
-
-Masuk ke folder `amcmail`, pasang dependensi, lalu buat database D1:
-
-```bash
-cd amcmail
-npm install
-npx wrangler login
-npx wrangler d1 create amcmail-db
-```
-
-Salin `database_id` dari hasil perintah di atas ke file `wrangler.toml`.
-
-### 2. Terapkan migrasi skema dan secret Admin
-
-```bash
-npm run db:migrate:remote
-npx wrangler secret put ADMIN_PIN
-npx wrangler secret put AUTH_SECRET
-```
-
-### 3. Deploy Worker dan aset statis
-
-```bash
-npm run deploy
-```
-
-Atau hubungkan folder `amcmail` ke repositori Git lalu pilih **Workers & Pages > Create Worker > Import a repository** di Cloudflare Dashboard (setelah `database_id` diisi di `wrangler.toml`, dan secret `ADMIN_PIN` serta `AUTH_SECRET` ditambahkan di Variables and Secrets).
-
-### 4. Pasang custom domain website
-
-Di Cloudflare Dashboard, buka Worker `amcmail`, masuk ke **Settings > Domains & Routes > Add > Custom Domain**, lalu masukkan subdomain tujuan (misalnya `mail.amc.web.id`).
-
-### 5. Hubungkan Email Routing Catch-All untuk setiap domain
-
-Ulangi langkah ini pada `amc.web.id`, `lexyth.my.id`, `rsykwnda.my.id`, `almuthicreative.my.id`, `jelupang.web.id`, `cilpa.biz.id`, dan domain baru di masa depan:
-
-1. Buka domain tersebut di Cloudflare Dashboard lalu masuk ke **Email > Email Routing**.
-2. Aktifkan Email Routing agar record MX dan TXT SPF terpasang otomatis.
-3. Buka tab **Routing rules**, edit **Catch-all address**, aktifkan statusnya, pilih aksi **Send to a Worker**, lalu pilih Worker `amcmail`.
-4. Simpan pengaturan. Seluruh email masuk, kode OTP, dan laporan bounce SMTP (`MAIL FROM: <>` / `MAILER-DAEMON`) akan langsung tercatat di D1.
+Tabel `mailboxes` otomatis dibuat oleh Worker (`CREATE TABLE IF NOT EXISTS mailboxes`) pada permintaan pertama, sehingga deploy ke database D1 produksi yang sudah berjalan tidak memerlukan langkah SQL manual.
