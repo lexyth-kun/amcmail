@@ -430,7 +430,9 @@ export async function parseIncomingEmail({ raw, envelopeFrom = '', envelopeTo = 
     : makeSnippet(textBody, htmlBody);
 
   // Exclude machine-readable delivery-status parts already captured in bounceInfo.rawDsn.
+  const MAX_CID_INLINE_BYTES = 450_000;
   const attachments = [];
+  const cidImageMap = new Map();
   for (const att of parsed.attachments || []) {
     const mimeType = String(att.mimeType || 'application/octet-stream').toLowerCase();
     if (mimeType === 'message/delivery-status' || mimeType === 'message/global-delivery-status') {
@@ -448,6 +450,12 @@ export async function parseIncomingEmail({ raw, envelopeFrom = '', envelopeTo = 
     }
 
     const attSize = attBytes.byteLength;
+    const base64Data = attSize <= MAX_INLINE_ATTACHMENT_BYTES ? bytesToBase64(attBytes) : null;
+    const rawCid = String(att.contentId || '').trim().replace(/^<|>$/g, '').trim();
+    if (rawCid && base64Data && attSize <= MAX_CID_INLINE_BYTES && /^image\/(png|jpe?g|gif|webp|avif|bmp|x-icon)$/i.test(mimeType)) {
+      cidImageMap.set(rawCid.toLowerCase(), `data:${mimeType};base64,${base64Data}`);
+    }
+
     const filename =
       att.filename ||
       (mimeType === 'message/rfc822' || mimeType === 'text/rfc822-headers'
@@ -459,7 +467,15 @@ export async function parseIncomingEmail({ raw, envelopeFrom = '', envelopeTo = 
       filename,
       mimeType,
       sizeBytes: attSize,
-      contentBase64: attSize <= MAX_INLINE_ATTACHMENT_BYTES ? bytesToBase64(attBytes) : null,
+      contentBase64: base64Data,
+    });
+  }
+
+  let resolvedHtmlBody = htmlBody;
+  if (resolvedHtmlBody && cidImageMap.size > 0) {
+    resolvedHtmlBody = resolvedHtmlBody.replace(/cid:([^"'\s)>]+)/gi, (match, cidRaw) => {
+      const key = String(cidRaw || '').trim().toLowerCase();
+      return cidImageMap.get(key) || match;
     });
   }
 
@@ -475,7 +491,7 @@ export async function parseIncomingEmail({ raw, envelopeFrom = '', envelopeTo = 
     subject,
     snippet,
     textBody,
-    htmlBody,
+    htmlBody: resolvedHtmlBody,
     messageType,
     isBounce,
     bounceInfo,

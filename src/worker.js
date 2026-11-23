@@ -263,11 +263,13 @@ async function handleApi(request, env, url) {
     }
 
     const bytes = base64ToUint8Array(att.content_base64);
+    const mime = att.mime_type || 'application/octet-stream';
+    const wantInline = searchParams.get('inline') === '1' && /^image\/(png|jpe?g|gif|webp|avif|bmp)$/i.test(mime);
     return new Response(bytes, {
       status: 200,
       headers: {
-        'Content-Type': att.mime_type || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${safeFilename(att.filename)}"`,
+        'Content-Type': mime,
+        'Content-Disposition': `${wantInline ? 'inline' : 'attachment'}; filename="${safeFilename(att.filename)}"`,
         'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'private, max-age=3600',
       },

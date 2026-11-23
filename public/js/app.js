@@ -50,7 +50,7 @@ const state = {
   selectedId: null,
   selectedDetail: null,
   readerTab: 'html',
-  allowExternalImages: false,
+  allowExternalImages: true,
 
   autoPoll: true,
   pollCountdown: POLL_INTERVAL_SEC,
@@ -67,7 +67,7 @@ const state = {
   adminSelectedId: null,
   adminSelectedDetail: null,
   adminReaderTab: 'html',
-  adminAllowImages: false,
+  adminAllowImages: true,
   lastFocusedBeforeModal: null,
 };
 
@@ -847,11 +847,48 @@ function renderReaderEmpty() {
   els.readerContent.innerHTML = '';
 }
 
-function sanitizeEmailHtml(html, { allowExternalImages = false } = {}) {
+function normalizeImageUrl(rawUrl) {
+  const val = String(rawUrl || '').trim();
+  if (!val) return '';
+  if (/^\/\//.test(val)) return `https:${val}`;
+  return val;
+}
+
+function normalizeSrcset(rawSrcset) {
+  return String(rawSrcset || '')
+    .split(',')
+    .map((entry) => {
+      const trimmed = entry.trim();
+      if (!trimmed) return '';
+      if (trimmed.startsWith('//')) return `https:${trimmed}`;
+      return trimmed;
+    })
+    .filter(Boolean)
+    .join(', ');
+}
+
+function sanitizeEmailCss(cssText) {
+  return String(cssText || '')
+    .replace(/<\/style/gi, '')
+    .replace(/@import\b[^;]*;?/gi, '')
+    .replace(/expression\s*\([^)]*\)/gi, '')
+    .replace(/url\s*\(\s*(['"]?)\s*javascript:[^)]*\)/gi, 'none')
+    .replace(/url\s*\(\s*(['"]?)\s*\/\//gi, 'url($1https://');
+}
+
+function sanitizeEmailHtml(html, { allowExternalImages = true } = {}) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html || '', 'text/html');
 
   doc.querySelectorAll('script, iframe, object, embed, form, meta[http-equiv="refresh"], base, link[rel="import"]').forEach((el) => el.remove());
+
+  const safeHeadStyles = [];
+  if (doc.head) {
+    doc.head.querySelectorAll('style').forEach((styleEl) => {
+      const cleaned = sanitizeEmailCss(styleEl.textContent || '');
+      if (cleaned.trim()) safeHeadStyles.push(cleaned);
+    });
+  }
 
   let blockedImageCount = 0;
   doc.querySelectorAll('*').forEach((el) => {
@@ -862,10 +899,21 @@ function sanitizeEmailHtml(html, { allowExternalImages = false } = {}) {
         el.removeAttribute(attr.name);
         continue;
       }
-      if ((name === 'href' || name === 'src' || name === 'action') && /^\s*(javascript|vbscript):/i.test(val)) {
+      if ((name === 'href' || name === 'src' || name === 'action' || name === 'background') && /^\s*(javascript|vbscript|data:text\/html)/i.test(val)) {
         el.removeAttribute(attr.name);
         continue;
       }
+      if (name === 'style' && val) {
+        const cleanedStyle = sanitizeEmailCss(val);
+        if (cleanedStyle !== val) el.setAttribute('style', cleanedStyle);
+      }
+      if (name === 'background' && /^\/\//.test(val)) {
+        el.setAttribute('background', `https:${val}`);
+      }
+    }
+
+    if (el.tagName === 'STYLE') {
+      el.textContent = sanitizeEmailCss(el.textContent || '');
     }
 
     if (el.tagName === 'A' && el.hasAttribute('href')) {
@@ -873,12 +921,26 @@ function sanitizeEmailHtml(html, { allowExternalImages = false } = {}) {
       el.setAttribute('rel', 'noopener noreferrer');
     }
 
+    if (el.tagName === 'SOURCE' && el.hasAttribute('srcset')) {
+      el.setAttribute('srcset', normalizeSrcset(el.getAttribute('srcset')));
+    }
+
     if (el.tagName === 'IMG') {
-      const src = el.getAttribute('src') || '';
+      let src = normalizeImageUrl(el.getAttribute('src') || el.getAttribute('data-src') || el.getAttribute('data-original') || '');
+      if (src) {
+        el.setAttribute('src', src);
+      }
+      if (el.hasAttribute('srcset')) {
+        el.setAttribute('srcset', normalizeSrcset(el.getAttribute('srcset')));
+      }
+      el.setAttribute('referrerpolicy', 'no-referrer');
+      el.setAttribute('loading', 'eager');
+
       if (/^https?:\/\//i.test(src) && !allowExternalImages) {
         blockedImageCount++;
         el.removeAttribute('src');
-        el.setAttribute('alt', `[Gambar eksternal diblokir: ${el.getAttribute('alt') || 'gambar'}]`);
+        el.removeAttribute('srcset');
+        el.setAttribute('alt', `[Gambar eksternal disembunyikan: ${el.getAttribute('alt') || 'gambar'}]`);
         el.style.border = '1px dashed #94a3b8';
         el.style.padding = '8px 10px';
         el.style.display = 'inline-block';
@@ -889,10 +951,12 @@ function sanitizeEmailHtml(html, { allowExternalImages = false } = {}) {
   });
 
   const cleanBody = doc.body ? doc.body.innerHTML : '';
+  const emailStylesMarkup = safeHeadStyles.length ? `<style>${safeHeadStyles.join('\n')}</style>` : '';
   const srcdoc = `<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<meta name="referrer" content="no-referrer">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   body {
@@ -913,6 +977,7 @@ function sanitizeEmailHtml(html, { allowExternalImages = false } = {}) {
   pre { overflow-x: auto; background: #f0f9ff; border: 1px solid #bae6fd; padding: 10px; border-radius: 12px; }
   table { max-width: 100%; }
 </style>
+${emailStylesMarkup}
 </head>
 <body>${cleanBody}</body>
 </html>`;
@@ -1026,26 +1091,20 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
 
   if (chosenTab === 'html') {
     const { srcdoc, blockedImageCount } = sanitizeEmailHtml(detail.htmlBody, { allowExternalImages });
-    const showPrivacyBar = blockedImageCount > 0 || allowExternalImages;
+    const showPrivacyBar = blockedImageCount > 0;
     bodyMarkup = `
       ${
         showPrivacyBar
           ? `<div class="privacy-bar">
-               <span>${
-                 allowExternalImages
-                   ? 'Gambar eksternal sedang ditampilkan.'
-                   : `${blockedImageCount} gambar eksternal diblokir otomatis demi privasi.`
-               }</span>
-               <button type="button" class="btn btn-sm" data-toggle-images="${mode}">
-                 ${allowExternalImages ? 'Blokir Gambar Eksternal' : 'Tampilkan Gambar Eksternal'}
-               </button>
+               <span>${blockedImageCount} gambar eksternal sedang disembunyikan.</span>
+               <button type="button" class="btn btn-sm" data-toggle-images="${mode}">Tampilkan Gambar</button>
              </div>`
           : ''
       }
       <iframe
         class="html-frame"
         width="800"
-        height="410"
+        height="460"
         sandbox="allow-popups allow-popups-to-escape-sandbox"
         referrerpolicy="no-referrer"
         title="Isi HTML email"
@@ -1178,7 +1237,7 @@ async function openMessage(emailId) {
   if (!addr || !emailId) return;
 
   state.selectedId = emailId;
-  state.allowExternalImages = false;
+  state.allowExternalImages = true;
   els.mailWorkspace.classList.add('is-reading');
   renderInboxList();
 
@@ -1370,7 +1429,7 @@ function renderAdminCatchallReader() {
 async function openAdminCatchallMessage(emailId) {
   if (!emailId) return;
   state.adminSelectedId = emailId;
-  state.adminAllowImages = false;
+  state.adminAllowImages = true;
   els.adminCatchallWorkspace.classList.add('is-reading');
   renderAdminCatchallList();
 
