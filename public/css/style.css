@@ -773,10 +773,10 @@ a:hover {
   gap: 11px;
 }
 
-/* Order-style 4-card Stat Grid */
+/* Order-style 3-card Stat Grid */
 .desktop-stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -2563,7 +2563,7 @@ button.badge-otp {
 /* Tablet breakpoint (821px - 1180px) */
 @media (max-width: 1180px) {
   .desktop-stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .address-builder {
     grid-template-columns: minmax(0, 1.15fr) auto minmax(160px, 210px) auto;
@@ -2594,7 +2594,7 @@ button.badge-otp {
     display: none;
   }
   .desktop-stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 10px;
   }
   .desktop-stat-card {
@@ -3415,7 +3415,7 @@ body.is-admin-mode .header-order-link {
   }
   .mail-workspace.is-simple-reader .filter-tabs {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
   }
   .mail-workspace.is-simple-reader .filter-tab {

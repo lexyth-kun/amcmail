@@ -1,7 +1,7 @@
 {
-  "name": "AMC Mail: Kotak Masuk dan Bounce Monitor",
+  "name": "AMC Mail",
   "short_name": "AMC Mail",
-  "description": "Layanan kotak masuk email multi-domain dan pemantau bounce SMTP Al Muthi Creative.",
+  "description": "Layanan kotak masuk email multi-domain Al Muthi Creative.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

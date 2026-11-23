@@ -1,13 +1,13 @@
 # AMC Mail (Al Muthi Creative)
 
-Layanan kotak masuk email multi-domain dan pemantau bounce SMTP milik Al Muthi Creative berbasis Cloudflare Workers, Cloudflare Email Routing, dan Cloudflare D1.
+Layanan kotak masuk email multi-domain milik Al Muthi Creative berbasis Cloudflare Workers, Cloudflare Email Routing, dan Cloudflare D1.
 
 ## Fitur utama
 
 - **Pembuatan alamat email khusus Admin**: Hanya Admin (login PIN) yang dapat membuat, mengaktifkan, menonaktifkan, atau menghapus alamat email baru pada domain AMC.
-- **Mode baca saja untuk pengunjung publik**: Pengunjung lain hanya dapat memasukkan alamat email yang sudah dibuat Admin (atau membuka tautan langsung `?email=...`) untuk membaca pesan masuk, menyalin kode OTP, mengunduh lampiran, dan memeriksa laporan bounce SMTP tanpa bisa membuat alamat baru atau menghapus pesan.
+- **Mode baca saja untuk pengunjung publik**: Pengunjung lain hanya dapat memasukkan alamat email yang sudah dibuat Admin (atau membuka tautan langsung `?email=...`) untuk membaca pesan masuk, menyalin kode OTP, dan mengunduh lampiran tanpa bisa membuat alamat baru atau menghapus pesan.
 - **Ringan dan cepat**: Tampilan latar putih bersih tanpa 3D/WebGL, tanpa generator username acak, dengan opsi Mode Gelap.
-- **Panel Admin terpadu**: Kelola Email (buat tunggal/massal dan salin link inbox), Monitor Catch-All Inbox & Bounce, Kelola Domain, dan Pengaturan Retensi.
+- **Workspace Admin terpadu**: Buat & Kelola Email (tunggal/massal dan salin link inbox), Semua Pesan (Catch-All), Kelola Domain, dan Pengaturan Retensi.
 
 ## Struktur folder siap deploy
 

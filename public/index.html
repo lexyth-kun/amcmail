@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>AMC Mail: Kotak Masuk &amp; Bounce Monitor | Al Muthi Creative</title>
-  <meta name="description" content="Layanan kotak masuk email multi-domain Al Muthi Creative selaras dengan order.amc.web.id.">
+  <title>AMC Mail | Al Muthi Creative</title>
+  <meta name="description" content="AMC Mail: layanan kotak masuk email multi-domain Al Muthi Creative.">
   <meta name="author" content="Al Muthi Creative">
   <meta name="theme-color" content="#38bdf8">
 
@@ -76,14 +76,6 @@
           <span class="sidebar-count" id="side-count-inbox">0</span>
         </button>
 
-        <button type="button" class="sidebar-link" data-nav-filter="bounce" id="side-nav-bounce">
-          <span class="sidebar-link-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            <span>Bounce &amp; DSN</span>
-          </span>
-          <span class="sidebar-count is-bounce" id="side-count-bounce">0</span>
-        </button>
-
         <button type="button" class="sidebar-link" data-nav-filter="otp" id="side-nav-otp">
           <span class="sidebar-link-left">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
@@ -149,9 +141,9 @@
         <button type="button" class="sidebar-link" data-admin-view="catchall" id="admin-nav-catchall">
           <span class="sidebar-link-left">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
-            <span>Semua Pesan &amp; Bounce</span>
+            <span>Semua Pesan</span>
           </span>
-          <span class="sidebar-count is-bounce" id="admin-side-messages">0</span>
+          <span class="sidebar-count" id="admin-side-messages">0</span>
         </button>
 
         <button type="button" class="sidebar-link" data-admin-view="reader" id="admin-nav-reader">
@@ -267,7 +259,7 @@
         </div>
       </header>
 
-      <!-- Order-style 4-card Stat Grid (clickable shortcuts) -->
+      <!-- Order-style 3-card Stat Grid (clickable shortcuts) -->
       <div class="desktop-stat-grid" aria-label="Ringkasan Workspace Admin">
         <button type="button" class="desktop-stat-card" data-admin-view="mailboxes">
           <span class="desktop-stat-icon" aria-hidden="true">
@@ -286,16 +278,6 @@
           <span class="stat-card-copy">
             <strong id="kpi-total-emails">0</strong>
             <span>Pesan (<span id="kpi-emails-24h">0</span> / 24j)</span>
-          </span>
-        </button>
-
-        <button type="button" class="desktop-stat-card is-bounce" data-admin-view="catchall" data-jump-bounce="true">
-          <span class="desktop-stat-icon is-bounce" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-          </span>
-          <span class="stat-card-copy">
-            <strong id="kpi-total-bounces">0</strong>
-            <span>Bounce (<span id="kpi-bounces-24h">0</span> / 24j)</span>
           </span>
         </button>
 
@@ -413,7 +395,7 @@
                 <tr>
                   <th>Alamat Email</th>
                   <th>Status</th>
-                  <th>Pesan / Bounce</th>
+                  <th>Pesan</th>
                   <th>Keterangan</th>
                   <th style="text-align:right;">Aksi</th>
                 </tr>
@@ -424,7 +406,7 @@
         </div>
       </section>
 
-      <!-- Admin View 2: Full-Page Split-Pane Catch-All Inbox & Bounce Reader -->
+      <!-- Admin View 2: Full-Page Split-Pane Catch-All Inbox Reader -->
       <section id="admin-view-catchall" class="admin-view-section hidden">
         <div class="admin-card" style="padding:16px 18px;">
           <div class="admin-filter-row" style="margin-bottom:0;">
@@ -438,14 +420,13 @@
               <label for="admin-filter-type">Tipe Pesan</label>
               <select id="admin-filter-type" class="select-input" data-dd-kind="type" data-dd-title="Tipe Pesan">
                 <option value="all">Semua Tipe</option>
-                <option value="bounce">Bounce / DSN Saja</option>
                 <option value="otp">OTP / Verifikasi</option>
                 <option value="inbox">Pesan Masuk Biasa</option>
               </select>
             </div>
             <div class="form-field">
               <label for="admin-filter-search">Cari Semua Inbox</label>
-              <input type="search" id="admin-filter-search" class="text-input" placeholder="Penerima, pengirim, subjek, kode SMTP...">
+              <input type="search" id="admin-filter-search" class="text-input" placeholder="Penerima, pengirim, subjek, OTP...">
             </div>
             <button type="button" class="btn btn-soft btn-sm" id="btn-admin-refresh-msgs">Segarkan</button>
           </div>
@@ -468,7 +449,7 @@
             <div class="state-panel" id="admin-catchall-empty">
               <h3>Pilih Pesan dari Daftar Catch-All</h3>
               <p>
-                Seluruh email masuk, kode OTP, dan laporan bounce SMTP dari semua domain AMC dapat dibaca penuh langsung di panel ini.
+                Seluruh email masuk dan kode OTP dari semua domain AMC dapat dibaca penuh langsung di panel ini.
               </p>
             </div>
             <div class="reader-content hidden" id="admin-catchall-reader"></div>
@@ -529,7 +510,7 @@
                 <tr>
                   <th>Domain</th>
                   <th>Status</th>
-                  <th>Pesan / Bounce</th>
+                  <th>Pesan</th>
                   <th>Catatan</th>
                   <th style="text-align:right;">Aksi</th>
                 </tr>
@@ -583,7 +564,7 @@
           </form>
 
           <form class="settings-card" id="admin-sim-form">
-            <h2>Kirim Uji Coba Email atau Bounce</h2>
+            <h2>Kirim Uji Coba Email</h2>
             <div class="form-field">
               <label for="input-admin-sim-to">Alamat tujuan</label>
               <input type="email" id="input-admin-sim-to" class="text-input mono" placeholder="nama@amc.web.id" required>
@@ -591,16 +572,9 @@
             <div class="form-field">
               <label for="select-admin-sim-type">Skenario uji</label>
               <select id="select-admin-sim-type" class="select-input" data-dd-kind="sim" data-dd-title="Skenario Uji Kirim">
-                <option value="hard_bounce">Hard Bounce: 550 5.1.1 User Unknown (DSN)</option>
-                <option value="soft_bounce">Soft Bounce: 452 4.2.2 Mailbox Full (DSN)</option>
-                <option value="policy_bounce">Policy Block: 550 5.7.1 DMARC Reject (DSN)</option>
                 <option value="otp">Email OTP Verifikasi 6 Digit</option>
                 <option value="welcome">Email HTML dengan Lampiran</option>
               </select>
-            </div>
-            <div class="form-field">
-              <label for="input-admin-sim-failed">Alamat gagal tujuan (khusus bounce, opsional)</label>
-              <input type="email" id="input-admin-sim-failed" class="text-input mono" placeholder="tujuan@domain.com">
             </div>
             <button type="submit" class="btn btn-primary btn-sm">Kirim Uji Coba</button>
           </form>
@@ -614,7 +588,7 @@
         <span>Anda membuka pembaca per alamat dalam <strong>Mode Admin</strong>.</span>
         <div class="toolbar-group">
           <button type="button" class="btn btn-sm btn-primary" data-admin-view="mailboxes">Kembali ke Daftar Email</button>
-          <button type="button" class="btn btn-sm btn-soft" data-admin-view="catchall">Semua Pesan &amp; Bounce</button>
+          <button type="button" class="btn btn-sm btn-soft" data-admin-view="catchall">Semua Pesan</button>
         </div>
       </div>
 
@@ -718,11 +692,6 @@
                   <span>Masuk</span>
                   <span class="filter-count" id="count-inbox">0</span>
                 </button>
-                <button type="button" class="filter-tab is-bounce-tab" data-filter="bounce" role="tab" aria-selected="false" id="tab-filter-bounce">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                  <span>Bounce</span>
-                  <span class="filter-count" id="count-bounce">0</span>
-                </button>
                 <button type="button" class="filter-tab" data-filter="otp" role="tab" aria-selected="false" id="tab-filter-otp">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                   <span>OTP</span>
@@ -747,7 +716,7 @@
           <div class="state-panel" id="reader-empty">
             <h3>Pilih Pesan untuk Membaca</h3>
             <p>
-              Klik salah satu pesan di kotak masuk untuk melihat isi email, kode OTP, atau laporan bounce.
+              Klik salah satu pesan di kotak masuk untuk melihat isi email atau kode OTP.
             </p>
           </div>
 
@@ -765,23 +734,13 @@
     </footer>
   </main>
 
-  <!-- Mobile Bottom Navigation: Public vs Admin (< 1024px) -->
+  <!-- Mobile Bottom Navigation: Admin (< 1024px) -->
   <nav class="mobile-bottom-nav" aria-label="Navigasi bawah mobile">
     <div class="mobile-nav-grid" id="mob-nav-public">
       <button type="button" class="mobile-nav-item is-active" id="mob-nav-inbox" data-mob-action="inbox">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
         <span>Inbox</span>
       </button>
-
-      <button type="button" class="mobile-nav-item" id="mob-nav-bounce" data-mob-action="bounce">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-        <span>Bounce</span>
-      </button>
-
-      <a href="#domain-directory" class="mobile-nav-item" id="mob-nav-domains">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-        <span>Domain</span>
-      </a>
 
       <button type="button" class="mobile-nav-item" id="mob-nav-admin" data-mob-action="admin">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
@@ -797,7 +756,7 @@
 
       <button type="button" class="mobile-nav-item" data-admin-view="catchall" id="mob-admin-catchall">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
-        <span>Catch-All</span>
+        <span>Semua</span>
       </button>
 
       <button type="button" class="mobile-nav-item" data-admin-view="domains" id="mob-admin-domains">
@@ -826,7 +785,7 @@
       <div class="modal-body">
         <form class="admin-login-box" id="admin-login-form">
           <p class="hero-subtitle" style="margin:0;">
-            Login dengan PIN Admin untuk membuka halaman Workspace Admin penuh: buat email baru, baca semua pesan &amp; bounce catch-all, dan kelola domain AMC.
+            Login dengan PIN Admin untuk membuka halaman Workspace Admin penuh: buat email baru, baca semua pesan masuk, dan kelola domain AMC.
           </p>
           <div class="form-field">
             <label for="input-admin-pin">PIN Admin</label>

@@ -13,8 +13,8 @@ const ADMIN_VIEW_META = {
     subtitle: 'Buat alamat email baru pada domain Al Muthi Creative, bagikan link kotak masuk baca-saja, atau kelola status aksesnya.',
   },
   catchall: {
-    title: 'Semua Pesan & Bounce (Catch-All)',
-    subtitle: 'Baca langsung seluruh email masuk, kode OTP, dan laporan bounce SMTP dari semua domain AMC dalam satu layar penuh.',
+    title: 'Semua Pesan (Catch-All)',
+    subtitle: 'Baca langsung seluruh email masuk dan kode OTP dari semua domain AMC dalam satu layar penuh.',
   },
   domains: {
     title: 'Kelola Domain AMC',
@@ -22,7 +22,7 @@ const ADMIN_VIEW_META = {
   },
   settings: {
     title: 'Pengaturan & Uji Kirim',
-    subtitle: 'Atur masa retensi email, pendaftaran otomatis domain baru, dan kirim simulasi email atau bounce SMTP.',
+    subtitle: 'Atur masa retensi email, pendaftaran otomatis domain baru, dan kirim email uji coba.',
   },
 };
 
@@ -40,7 +40,7 @@ const state = {
   filter: 'all',
   searchQuery: '',
   messages: [],
-  counts: { all: 0, inbox: 0, bounce: 0, otp: 0, unread: 0 },
+  counts: { all: 0, inbox: 0, otp: 0, unread: 0 },
   inboxLoading: false,
   inboxError: null,
   inboxErrorCode: null,
@@ -83,7 +83,6 @@ const els = {
   btnSidebarCopy: $('btn-sidebar-copy'),
   sideCountAll: $('side-count-all'),
   sideCountInbox: $('side-count-inbox'),
-  sideCountBounce: $('side-count-bounce'),
   sideCountOtp: $('side-count-otp'),
   sideDomainCount: $('side-domain-count'),
   btnSidebarAdmin: $('btn-sidebar-admin'),
@@ -106,7 +105,6 @@ const els = {
   mobNavPublic: $('mob-nav-public'),
   mobNavAdminBar: $('mob-nav-admin-bar'),
   mobNavInbox: $('mob-nav-inbox'),
-  mobNavBounce: $('mob-nav-bounce'),
   mobNavAdmin: $('mob-nav-admin'),
 
   adminWorkspaceShell: $('admin-workspace-shell'),
@@ -121,8 +119,6 @@ const els = {
   kpiActiveMailboxes: $('kpi-active-mailboxes'),
   kpiTotalEmails: $('kpi-total-emails'),
   kpiEmails24h: $('kpi-emails-24h'),
-  kpiTotalBounces: $('kpi-total-bounces'),
-  kpiBounces24h: $('kpi-bounces-24h'),
   kpiActiveDomains: $('kpi-active-domains'),
   kpiPendingDomains: $('kpi-pending-domains'),
 
@@ -169,11 +165,9 @@ const els = {
   adminSimForm: $('admin-sim-form'),
   inputAdminSimTo: $('input-admin-sim-to'),
   selectAdminSimType: $('select-admin-sim-type'),
-  inputAdminSimFailed: $('input-admin-sim-failed'),
 
   heroDomainCount: $('hero-domain-count'),
   heroInboxCount: $('hero-inbox-count'),
-  heroBounceCount: $('hero-bounce-count'),
   btnToggleAutoPoll: $('btn-toggle-autopoll'),
   pollStatusText: $('poll-status-text'),
 
@@ -194,9 +188,7 @@ const els = {
   inboxList: $('inbox-list'),
   countAll: $('count-all'),
   countInbox: $('count-inbox'),
-  countBounce: $('count-bounce'),
   countOtp: $('count-otp'),
-  tabFilterBounce: $('tab-filter-bounce'),
 
   readerEmpty: $('reader-empty'),
   readerContent: $('reader-content'),
@@ -433,14 +425,10 @@ function syncModeShell() {
   }
 }
 
-function switchAdminView(view, { filterBounce = false, focusQuickInput = false } = {}) {
+function switchAdminView(view, { focusQuickInput = false } = {}) {
   if (!state.adminAuthenticated) return;
   closeActiveDropdown();
   state.adminView = view;
-  if (filterBounce && view === 'catchall') {
-    els.adminFilterType.value = 'bounce';
-    syncCustomDropdown(els.adminFilterType);
-  }
   syncModeShell();
   window.scrollTo({ top: 0, behavior: 'auto' });
 
@@ -487,7 +475,7 @@ function setActiveAddress(localPart, domain, { pushUrl = true } = {}) {
   state.inboxError = null;
   state.inboxErrorCode = null;
   state.messages = [];
-  state.counts = { all: 0, inbox: 0, bounce: 0, otp: 0, unread: 0 };
+  state.counts = { all: 0, inbox: 0, otp: 0, unread: 0 };
 
   els.inputUsername.value = cleanUser;
   if (els.selectDomain.querySelector(`option[value="${CSS.escape(cleanDomain)}"]`)) {
@@ -562,18 +550,13 @@ function renderDomainPills() {
 function renderFilterCounts() {
   els.countAll.textContent = String(state.counts.all || 0);
   els.countInbox.textContent = String(state.counts.inbox || 0);
-  els.countBounce.textContent = String(state.counts.bounce || 0);
   els.countOtp.textContent = String(state.counts.otp || 0);
 
   if (els.sideCountAll) els.sideCountAll.textContent = String(state.counts.all || 0);
   if (els.sideCountInbox) els.sideCountInbox.textContent = String(state.counts.inbox || 0);
-  if (els.sideCountBounce) els.sideCountBounce.textContent = String(state.counts.bounce || 0);
   if (els.sideCountOtp) els.sideCountOtp.textContent = String(state.counts.otp || 0);
 
   if (els.heroInboxCount) els.heroInboxCount.textContent = String(state.counts.all || 0);
-  if (els.heroBounceCount) els.heroBounceCount.textContent = String(state.counts.bounce || 0);
-
-  els.tabFilterBounce.classList.toggle('has-items', (state.counts.bounce || 0) > 0);
 }
 
 function syncNavActiveStates() {
@@ -585,8 +568,7 @@ function syncNavActiveStates() {
   document.querySelectorAll('[data-nav-filter]').forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.navFilter === state.filter);
   });
-  if (els.mobNavInbox) els.mobNavInbox.classList.toggle('is-active', state.filter !== 'bounce');
-  if (els.mobNavBounce) els.mobNavBounce.classList.toggle('is-active', state.filter === 'bounce');
+  if (els.mobNavInbox) els.mobNavInbox.classList.add('is-active');
 }
 
 function setFilter(nextFilter, { scrollToInbox = false } = {}) {
@@ -603,9 +585,6 @@ function setFilter(nextFilter, { scrollToInbox = false } = {}) {
 }
 
 function getMessageAvatarMarkup(msg, senderLabel) {
-  if (msg.isBounce) {
-    return `<span class="msg-avatar is-bounce" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>`;
-  }
   if (msg.otpCode) {
     return `<span class="msg-avatar is-otp" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>`;
   }
@@ -615,16 +594,7 @@ function getMessageAvatarMarkup(msg, senderLabel) {
 }
 
 function renderMessageCard(msg, { selected, showRecipient = false, openAttr = 'data-open-id', variant = 'compact' }) {
-  const bounce = msg.bounceSummary || msg.bounceInfo;
   const badges = [];
-
-  if (msg.isBounce) {
-    const isHard = bounce?.severity !== 'soft';
-    const codeText = [bounce?.smtpCode, bounce?.enhancedStatus].filter(Boolean).join(' ');
-    badges.push(
-      `<span class="badge ${isHard ? 'badge-hard' : 'badge-soft'}">${isHard ? 'HARD BOUNCE' : 'SOFT BOUNCE'}${codeText ? `: ${escapeHtml(codeText)}` : ''}</span>`
-    );
-  }
 
   if (msg.otpCode) {
     badges.push(
@@ -640,7 +610,7 @@ function renderMessageCard(msg, { selected, showRecipient = false, openAttr = 'd
 
   if (variant === 'simple') {
     return `
-      <article class="message-item is-simple-row ${selected ? 'is-selected' : ''} ${msg.isRead ? '' : 'is-unread'} ${msg.isBounce ? 'is-bounce' : ''}" data-msg-id="${escapeHtml(msg.id)}">
+      <article class="message-item is-simple-row ${selected ? 'is-selected' : ''} ${msg.isRead ? '' : 'is-unread'}" data-msg-id="${escapeHtml(msg.id)}">
         <button type="button" class="message-open-btn is-simple-open" ${openAttr}="${escapeHtml(msg.id)}" aria-current="${selected ? 'true' : 'false'}">
           ${getMessageAvatarMarkup(msg, senderLabel)}
           <span class="msg-simple-body">
@@ -664,7 +634,7 @@ function renderMessageCard(msg, { selected, showRecipient = false, openAttr = 'd
   }
 
   return `
-    <article class="message-item ${selected ? 'is-selected' : ''} ${msg.isRead ? '' : 'is-unread'} ${msg.isBounce ? 'is-bounce' : ''}" data-msg-id="${escapeHtml(msg.id)}">
+    <article class="message-item ${selected ? 'is-selected' : ''} ${msg.isRead ? '' : 'is-unread'}" data-msg-id="${escapeHtml(msg.id)}">
       <button type="button" class="message-open-btn" ${openAttr}="${escapeHtml(msg.id)}" aria-current="${selected ? 'true' : 'false'}">
         ${showRecipient ? `<span class="catchall-rcpt-tag">Ke: ${escapeHtml(msg.recipient)}</span>` : ''}
         <div class="msg-row-top">
@@ -730,13 +700,11 @@ function renderInboxList() {
 
   if (state.messages.length === 0) {
     const emptyMsg =
-      state.filter === 'bounce'
-        ? 'Belum ada laporan bounce SMTP atau DSN untuk alamat ini.'
-        : state.filter === 'otp'
-          ? 'Belum ada email kode OTP untuk alamat ini.'
-          : state.searchQuery
-            ? `Tidak ada pesan yang cocok dengan kata kunci "${escapeHtml(state.searchQuery)}".`
-            : 'Belum ada pesan masuk di alamat ini. Halaman akan memperbarui secara otomatis saat email tiba.';
+      state.filter === 'otp'
+        ? 'Belum ada email kode OTP untuk alamat ini.'
+        : state.searchQuery
+          ? `Tidak ada pesan yang cocok dengan kata kunci "${escapeHtml(state.searchQuery)}".`
+          : 'Belum ada pesan masuk di alamat ini. Halaman akan memperbarui secara otomatis saat email tiba.';
 
     els.inboxList.innerHTML = `
       <div class="state-panel">
@@ -799,10 +767,7 @@ async function fetchInbox({ silent = false } = {}) {
       const newlyArrived = incoming.filter((m) => !prevIds.has(m.id));
       if (newlyArrived.length > 0) {
         const firstNew = newlyArrived[0];
-        if (firstNew.isBounce) {
-          const bSum = firstNew.bounceSummary || firstNew.bounceInfo;
-          showToast(`Bounce baru diterima: ${bSum?.smtpCode || 'DSN'}`, 'error');
-        } else if (firstNew.otpCode) {
+        if (firstNew.otpCode) {
           showToast(`Kode OTP baru masuk: ${firstNew.otpCode}`, 'success');
         } else {
           showToast(`${newlyArrived.length} pesan baru masuk di ${addr}`);
@@ -813,7 +778,7 @@ async function fetchInbox({ silent = false } = {}) {
     for (const m of incoming) state.knownMessageIds.add(m.id);
     state.hasLoadedInitialInbox = true;
     state.messages = incoming;
-    state.counts = res.counts || { all: 0, inbox: 0, bounce: 0, otp: 0, unread: 0 };
+    state.counts = res.counts || { all: 0, inbox: 0, otp: 0, unread: 0 };
 
     if (state.selectedId && !incoming.some((m) => m.id === state.selectedId) && !state.searchQuery && state.filter === 'all') {
       state.selectedId = null;
@@ -827,7 +792,7 @@ async function fetchInbox({ silent = false } = {}) {
     if (err.code === 'MAILBOX_NOT_FOUND' || err.code === 'MAILBOX_DISABLED') {
       state.activeMailboxValid = false;
       state.messages = [];
-      state.counts = { all: 0, inbox: 0, bounce: 0, otp: 0, unread: 0 };
+      state.counts = { all: 0, inbox: 0, otp: 0, unread: 0 };
       state.selectedId = null;
       state.selectedDetail = null;
       renderReaderEmpty();
@@ -986,7 +951,6 @@ ${emailStylesMarkup}
 }
 
 function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode = 'public' }) {
-  const b = detail.bounceInfo;
   const auth = detail.authResults || {};
   const canDelete = mode === 'admin' || state.adminAuthenticated;
   const addrParam = mode === 'public' ? `?address=${encodeURIComponent(detail.recipient)}` : '';
@@ -1014,67 +978,9 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
     `;
   }
 
-  let bounceMarkup = '';
-  if (detail.isBounce && b) {
-    const isSoft = b.severity === 'soft';
-    const codeLabel = [b.smtpCode, b.enhancedStatus].filter(Boolean).join(' / ') || 'DSN';
-    const titleText = b.label || b.title || 'Laporan Bounce SMTP';
-    const descText = b.explanation || b.description || '';
-    const failedTarget = b.finalRecipient || b.failedRecipient || '-';
-    const diagText = b.diagnostic || b.diagnosticCode || '';
-    bounceMarkup = `
-      <section class="bounce-card ${isSoft ? 'is-soft' : ''}" aria-label="Diagnostik Bounce SMTP">
-        <div class="bounce-card-head">
-          <div>
-            <div class="bounce-card-title">${escapeHtml(titleText)}</div>
-            <div class="bounce-card-desc">${escapeHtml(descText)}</div>
-          </div>
-          <span class="bounce-code-pill">${escapeHtml(codeLabel)}</span>
-        </div>
-        <div class="bounce-card-body">
-          <div class="bounce-grid">
-            <div class="meta-item">
-              <span class="meta-label">Alamat Tujuan Gagal</span>
-              <span class="meta-value mono">${escapeHtml(failedTarget)}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Aksi DSN</span>
-              <span class="meta-value mono">${escapeHtml((b.action || 'failed').toUpperCase())}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Server Pelapor (Reporting MTA)</span>
-              <span class="meta-value mono">${escapeHtml(b.reportingMta || '-')}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Server Tujuan (Remote MTA)</span>
-              <span class="meta-value mono">${escapeHtml(b.remoteMta || '-')}</span>
-            </div>
-            ${
-              b.originalSubject
-                ? `<div class="meta-item">
-                     <span class="meta-label">Subjek Email Asli</span>
-                     <span class="meta-value">${escapeHtml(b.originalSubject)}</span>
-                   </div>`
-                : ''
-            }
-          </div>
-          ${
-            diagText
-              ? `<div class="meta-item">
-                   <span class="meta-label">Pesan Diagnostik SMTP</span>
-                   <div class="bounce-diag-box">${escapeHtml(diagText)}</div>
-                 </div>`
-              : ''
-          }
-        </div>
-      </section>
-    `;
-  }
-
   const tabIcons = {
     html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line></svg>',
     text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>',
-    dsn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>',
     headers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>',
     raw: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>',
   };
@@ -1082,7 +988,6 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
   const availableTabs = [];
   if (detail.htmlBody) availableTabs.push({ id: 'html', label: 'Tampilan HTML', icon: tabIcons.html });
   availableTabs.push({ id: 'text', label: 'Teks Polos', icon: tabIcons.text });
-  if (b?.rawDsn) availableTabs.push({ id: 'dsn', label: 'Laporan DSN', icon: tabIcons.dsn });
   availableTabs.push({ id: 'headers', label: 'Header', count: (detail.headers || []).length, icon: tabIcons.headers });
   availableTabs.push({ id: 'raw', label: 'Raw EML', icon: tabIcons.raw });
 
@@ -1113,8 +1018,6 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
     `;
   } else if (chosenTab === 'text') {
     bodyMarkup = `<pre class="plain-pre">${escapeHtml(detail.textBody || '(Tidak ada isi teks polos)')}</pre>`;
-  } else if (chosenTab === 'dsn') {
-    bodyMarkup = `<pre class="plain-pre">${escapeHtml(b?.rawDsn || '(Tidak ada bagian message/delivery-status)')}</pre>`;
   } else if (chosenTab === 'headers') {
     const rows = (detail.headers || [])
       .map((h) => `<tr><th>${escapeHtml(h.key || h.name || '')}</th><td>${escapeHtml(h.value)}</td></tr>`)
@@ -1182,7 +1085,7 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
       <div class="reader-meta-grid">
         <div class="meta-item">
           <span class="meta-label">Dari</span>
-          <span class="meta-value">${escapeHtml(detail.fromName ? `${detail.fromName} <${detail.fromAddress || detail.sender}>` : detail.fromAddress || detail.sender || '(Null Sender <>)')}</span>
+          <span class="meta-value">${escapeHtml(detail.fromName ? `${detail.fromName} <${detail.fromAddress || detail.sender}>` : detail.fromAddress || detail.sender || '(Tanpa Pengirim)')}</span>
         </div>
         <div class="meta-item">
           <span class="meta-label">Kepada (Penerima)</span>
@@ -1198,7 +1101,6 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
     </div>
 
     ${otpMarkup}
-    ${bounceMarkup}
 
     <div class="reader-tabs">
       <div class="reader-tab-list" role="tablist">
@@ -1252,7 +1154,7 @@ async function openMessage(emailId) {
     );
     if (state.selectedId !== emailId) return;
     state.selectedDetail = res.email;
-    state.readerTab = res.email.isBounce && res.email.bounceInfo?.rawDsn ? 'dsn' : res.email.htmlBody ? 'html' : 'text';
+    state.readerTab = res.email.htmlBody ? 'html' : 'text';
 
     const listItem = state.messages.find((m) => m.id === emailId);
     if (listItem) listItem.isRead = true;
@@ -1360,8 +1262,6 @@ async function loadAdminStatsAndMessages() {
     els.kpiActiveMailboxes.textContent = String(st.activeMailboxes || 0);
     els.kpiTotalEmails.textContent = String(st.totalEmails || 0);
     els.kpiEmails24h.textContent = String(st.emails24h || 0);
-    els.kpiTotalBounces.textContent = String(st.totalBounces || 0);
-    els.kpiBounces24h.textContent = String(st.bounces24h || 0);
     els.kpiActiveDomains.textContent = String(st.activeDomains || 0);
     els.kpiPendingDomains.textContent = String(st.pendingDomains || 0);
 
@@ -1441,7 +1341,7 @@ async function openAdminCatchallMessage(emailId) {
     const res = await apiFetch(`/api/emails/${encodeURIComponent(emailId)}`, { admin: true });
     if (state.adminSelectedId !== emailId) return;
     state.adminSelectedDetail = res.email;
-    state.adminReaderTab = res.email.isBounce && res.email.bounceInfo?.rawDsn ? 'dsn' : res.email.htmlBody ? 'html' : 'text';
+    state.adminReaderTab = res.email.htmlBody ? 'html' : 'text';
     renderAdminCatchallReader();
   } catch (err) {
     els.adminCatchallReader.innerHTML = `
@@ -1496,7 +1396,7 @@ function renderAdminMailboxesTable() {
             </select>
           </td>
           <td class="mono" style="white-space:nowrap;">
-            ${mb.totalEmails} pesan / <span style="color:var(--bounce-hard);">${mb.bounceEmails} bounce</span>
+            ${mb.totalEmails} pesan
           </td>
           <td>
             <input type="text" class="text-input table-control" style="min-width:116px;max-width:146px;" value="${escapeHtml(mb.label)}" placeholder="Keterangan..." data-mailbox-label-id="${mb.id}">
@@ -1595,7 +1495,7 @@ function renderAdminDomainsTable() {
             </select>
           </td>
           <td class="mono" style="white-space:nowrap;">
-            ${d.totalEmails} pesan / <span style="color:var(--bounce-hard);">${d.bounceEmails} bounce</span>
+            ${d.totalEmails} pesan
           </td>
           <td>
             <input type="text" class="text-input table-control" style="min-width:150px;" value="${escapeHtml(d.notes)}" placeholder="Catatan..." data-domain-notes-id="${d.id}">
@@ -1697,8 +1597,7 @@ function bindEvents() {
     const viewTrigger = e.target.closest('[data-admin-view]');
     if (viewTrigger && state.adminAuthenticated) {
       const targetView = viewTrigger.dataset.adminView;
-      const jumpBounce = viewTrigger.dataset.jumpBounce === 'true';
-      switchAdminView(targetView, { filterBounce: jumpBounce });
+      switchAdminView(targetView);
     }
   });
 
@@ -1708,9 +1607,8 @@ function bindEvents() {
     });
   });
 
-  els.mobNavInbox.addEventListener('click', () => setFilter('all', { scrollToInbox: true }));
-  els.mobNavBounce.addEventListener('click', () => setFilter('bounce', { scrollToInbox: true }));
-  els.mobNavAdmin.addEventListener('click', openAdminLoginModal);
+  if (els.mobNavInbox) els.mobNavInbox.addEventListener('click', () => setFilter('all', { scrollToInbox: true }));
+  if (els.mobNavAdmin) els.mobNavAdmin.addEventListener('click', openAdminLoginModal);
 
   els.btnToggleAutoPoll.addEventListener('click', () => {
     state.autoPoll = !state.autoPoll;
@@ -2236,13 +2134,12 @@ function bindEvents() {
     e.preventDefault();
     const to = els.inputAdminSimTo.value.trim().toLowerCase();
     const scenario = els.selectAdminSimType.value;
-    const failedTarget = els.inputAdminSimFailed.value.trim();
     if (!to) return;
     try {
       await apiFetch('/api/simulate', {
         method: 'POST',
         admin: true,
-        body: JSON.stringify({ recipient: to, scenario, failedTarget: failedTarget || undefined }),
+        body: JSON.stringify({ recipient: to, scenario }),
       });
       showToast(`Uji coba ${scenario} terkirim ke ${to}`, 'success');
       await Promise.all([loadAdminStatsAndMessages(), loadAdminMailboxes()]);

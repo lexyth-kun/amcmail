@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "AMC Mail: multi-domain temporary mail and SMTP bounce monitor for Al Muthi Creative on Cloudflare Workers, Email Routing, and D1.",
+  "description": "AMC Mail: multi-domain inbox service for Al Muthi Creative on Cloudflare Workers, Email Routing, and D1.",
   "scripts": {
     "db:migrate:local": "wrangler d1 migrations apply amcmail-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply amcmail-db --remote",

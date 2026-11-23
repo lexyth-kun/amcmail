@@ -252,7 +252,7 @@ export function buildSimulatedEmail(scenario, recipientAddress, custom = {}) {
     `<p style="font-size:14px;line-height:1.65;color:#334155;">Email ini berhasil diterima untuk alamat <strong>${recipientAddress}</strong>.</p>`,
     '<ul style="font-size:14px;line-height:1.7;color:#334155;padding-left:20px;">',
     '<li>Menerima pesan di seluruh domain aktif AMC.</li>',
-    '<li>Memisahkan laporan hard bounce, soft bounce, dan DSN RFC 3464.</li>',
+    '<li>Menampilkan pesan HTML beserta gambar dan teks polos dengan aman.</li>',
     '<li>Mengekstrak kode OTP secara otomatis untuk disalin langsung.</li>',
     '<li>Menyediakan lampiran file dan unduhan sumber mentah <code>.eml</code>.</li>',
     '</ul>',
