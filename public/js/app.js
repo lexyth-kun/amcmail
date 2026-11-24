@@ -85,6 +85,13 @@ const state = {
   msSelectedDetail: null,
   msReaderTab: 'html',
   msAllowImages: true,
+  msMode: 'login',
+  msTransport: 'graph',
+  msPassword: '',
+  msImapHost: '',
+  msImapPort: 993,
+  msDevice: null,
+  msDevicePollTimer: null,
 
   adminToken: '',
   adminAuthenticated: false,
@@ -119,8 +126,12 @@ const els = {
 
   btnSidebarTheme: $('btn-sidebar-theme'),
   sidebarThemeLabel: $('sidebar-theme-label'),
+  sidebarThemeSub: $('sidebar-theme-sub'),
+  sidebarBlobVisual: $('sidebar-blob-visual'),
   btnSidebarLogout: $('btn-sidebar-logout'),
 
+  publicToolNav: $('public-tool-nav'),
+  publicNavBlob: $('public-nav-blob'),
   btnThemeToggle: $('btn-theme-toggle'),
   btnOpenAdmin: $('btn-open-admin'),
   btnMobileLogout: $('btn-mobile-logout'),
@@ -244,6 +255,26 @@ const els = {
   msmailConnectForm: $('msmail-connect-form'),
   inputMsCombo: $('input-ms-combo'),
   btnMsConnect: $('btn-ms-connect'),
+  inputMsEmail: $('input-ms-email'),
+  inputMsPassword: $('input-ms-password'),
+  btnMsTogglePass: $('btn-ms-toggle-pass'),
+  btnMsImapToggle: $('btn-ms-imap-toggle'),
+  msImapAdvRow: $('ms-imap-adv-row'),
+  inputMsImapHost: $('input-ms-imap-host'),
+  inputMsImapPort: $('input-ms-imap-port'),
+  btnMsConnectLabel: $('btn-ms-connect-label'),
+  msPanelLogin: $('ms-panel-login'),
+  msPanelDevice: $('ms-panel-device'),
+  msPanelCombo: $('ms-panel-combo'),
+  btnMsStartDevice: $('btn-ms-start-device'),
+  btnMsStartDeviceLabel: $('btn-ms-start-device-label'),
+  btnMsOpenDeviceLink: $('btn-ms-open-device-link'),
+  btnMsCopyDeviceCode: $('btn-ms-copy-device-code'),
+  msDeviceCode: $('ms-device-code'),
+  msDeviceCodeWrap: $('ms-device-code-wrap'),
+  msDeviceTitle: $('ms-device-title'),
+  msDeviceDesc: $('ms-device-desc'),
+  btnMsCopyAddr: $('btn-ms-copy-addr'),
   btnMsDisconnect: $('btn-ms-disconnect'),
   msDetectEmail: $('ms-detect-email'),
   msDetectClient: $('ms-detect-client'),
@@ -320,17 +351,206 @@ function formatRetentionLabel(hours) {
   return `${Math.round(h / 24)} hari`;
 }
 
-function showToast(message, variant = 'default') {
-  const div = document.createElement('div');
-  div.className = `toast ${variant === 'error' ? 'is-error' : variant === 'success' ? 'is-success' : ''}`;
-  div.textContent = message;
-  els.toastStack.appendChild(div);
-  setTimeout(() => {
-    div.remove();
-  }, 3000);
+const copyBtnStateMap = new WeakMap();
+const refreshBtnBusySet = new WeakSet();
+let lastClickedButton = null;
+let navBlobGlideTimer = null;
+
+function prefersReducedMotion() {
+  return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 }
 
-async function copyText(text, successMsg = 'Disalin ke clipboard') {
+function waitMs(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function triggerClassAnim(el, className, durationMs = 620) {
+  if (!el || prefersReducedMotion()) return;
+  el.classList.remove(className);
+  void el.offsetWidth;
+  el.classList.add(className);
+  setTimeout(() => {
+    el.classList.remove(className);
+  }, durationMs);
+}
+
+function spawnSkySparkles(targetEl, count = 5, palette = 'sky') {
+  if (!targetEl || prefersReducedMotion()) return;
+  const rect = targetEl.getBoundingClientRect();
+  if (!rect.width && !rect.height) return;
+
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const burst = document.createElement('div');
+  burst.className = `amc-sparkle-burst is-${palette}`;
+  burst.style.left = `${Math.round(cx)}px`;
+  burst.style.top = `${Math.round(cy)}px`;
+
+  const halfW = Math.min(rect.width * 0.42, 46);
+  const halfH = Math.min(rect.height * 0.42, 22);
+
+  for (let i = 0; i < count; i++) {
+    const star = document.createElement('i');
+    const angle = (Math.PI * 2 * i) / count - Math.PI / 2 + (i % 2 === 0 ? 0.18 : -0.18);
+    const dist = 14 + (i % 3) * 6;
+    const ox = Math.cos(angle) * (halfW * 0.55);
+    const oy = Math.sin(angle) * (halfH * 0.55);
+    const tx = Math.cos(angle) * (halfW * 0.55 + dist);
+    const ty = Math.sin(angle) * (halfH * 0.55 + dist) - 3;
+    star.style.setProperty('--ox', `${ox.toFixed(1)}px`);
+    star.style.setProperty('--oy', `${oy.toFixed(1)}px`);
+    star.style.setProperty('--tx', `${tx.toFixed(1)}px`);
+    star.style.setProperty('--ty', `${ty.toFixed(1)}px`);
+    star.style.setProperty('--sdelay', `${i * 32}ms`);
+    star.style.setProperty('--ssize', `${i % 2 === 0 ? 8 : 6}px`);
+    burst.appendChild(star);
+  }
+
+  document.body.appendChild(burst);
+  setTimeout(() => burst.remove(), 720);
+}
+
+function triggerCopyFeedback(btnEl) {
+  if (!btnEl || !(btnEl instanceof HTMLElement)) return;
+
+  let labelEl = btnEl.querySelector('span:not(.amc-jelly-ripple)');
+  if (!labelEl) {
+    const textNodes = Array.from(btnEl.childNodes).filter(
+      (n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim().length > 0
+    );
+    if (textNodes.length > 0) {
+      const wrap = document.createElement('span');
+      wrap.className = 'btn-copy-text';
+      wrap.textContent = textNodes.map((n) => n.textContent).join('').trim();
+      textNodes.forEach((n) => n.remove());
+      btnEl.appendChild(wrap);
+      labelEl = wrap;
+    }
+  }
+
+  let checkSvg = btnEl.querySelector('.amc-copy-check-icon');
+  if (!checkSvg) {
+    checkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    checkSvg.setAttribute('viewBox', '0 0 24 24');
+    checkSvg.setAttribute('fill', 'none');
+    checkSvg.setAttribute('stroke', 'currentColor');
+    checkSvg.setAttribute('stroke-width', '2.6');
+    checkSvg.setAttribute('stroke-linecap', 'round');
+    checkSvg.setAttribute('stroke-linejoin', 'round');
+    checkSvg.setAttribute('aria-hidden', 'true');
+    checkSvg.classList.add('amc-copy-check-icon');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    poly.setAttribute('points', '20 6 9 17 4 12');
+    checkSvg.appendChild(poly);
+    btnEl.insertBefore(checkSvg, btnEl.firstChild);
+  }
+
+  let saved = copyBtnStateMap.get(btnEl);
+  if (!saved) {
+    const rect = btnEl.getBoundingClientRect();
+    saved = {
+      origLabel: labelEl ? labelEl.textContent : '',
+      origMinWidth: btnEl.style.minWidth || '',
+      lockedWidth: rect.width > 0 ? `${Math.ceil(rect.width)}px` : '',
+      timer: null,
+    };
+    copyBtnStateMap.set(btnEl, saved);
+  } else if (saved.timer) {
+    clearTimeout(saved.timer);
+  }
+
+  if (saved.lockedWidth) {
+    btnEl.style.minWidth = saved.lockedWidth;
+  }
+
+  if (labelEl && saved.origLabel) {
+    const isOtpPill = btnEl.hasAttribute('data-quick-otp') || btnEl.hasAttribute('data-copy-otp');
+    labelEl.textContent = isOtpPill ? 'OTP Tersalin!' : 'Tersalin!';
+  }
+
+  btnEl.classList.remove('is-copied', 'is-copy-pop');
+  void btnEl.offsetWidth;
+  btnEl.classList.add('is-copied', 'is-copy-pop');
+  spawnSkySparkles(btnEl, 6, 'mint');
+
+  saved.timer = setTimeout(() => {
+    btnEl.classList.remove('is-copied', 'is-copy-pop');
+    if (labelEl && saved.origLabel) {
+      labelEl.textContent = saved.origLabel;
+    }
+    btnEl.style.minWidth = saved.origMinWidth;
+    copyBtnStateMap.delete(btnEl);
+  }, 1600);
+}
+
+async function runRefreshWithAnim(btnEl, asyncAction) {
+  if (!btnEl) {
+    return typeof asyncAction === 'function' ? asyncAction() : undefined;
+  }
+  if (refreshBtnBusySet.has(btnEl)) return undefined;
+  refreshBtnBusySet.add(btnEl);
+
+  btnEl.classList.remove('is-refresh-done');
+  btnEl.classList.add('is-refreshing');
+
+  try {
+    const minSpin = prefersReducedMotion() ? Promise.resolve() : waitMs(680);
+    const [res] = await Promise.all([
+      Promise.resolve().then(() => (typeof asyncAction === 'function' ? asyncAction() : undefined)),
+      minSpin,
+    ]);
+    btnEl.classList.remove('is-refreshing');
+    if (!prefersReducedMotion()) {
+      btnEl.classList.add('is-refresh-done');
+      spawnSkySparkles(btnEl, 4, 'sky');
+      setTimeout(() => btnEl.classList.remove('is-refresh-done'), 560);
+    }
+    return res;
+  } catch (err) {
+    btnEl.classList.remove('is-refreshing');
+    throw err;
+  } finally {
+    refreshBtnBusySet.delete(btnEl);
+  }
+}
+
+function pulseCodeElement(el) {
+  if (!el) return;
+  triggerClassAnim(el, 'is-code-pop', 520);
+}
+
+function showToast(message, variant = 'default') {
+  const div = document.createElement('div');
+  const vClass = variant === 'error' ? 'is-error' : variant === 'success' ? 'is-success' : 'is-info';
+  div.className = `toast ${vClass}`;
+
+  const iconSvg =
+    variant === 'success'
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+      : variant === 'error'
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.2L19 10l-5.1 1.8L12 17l-1.9-5.2L5 10l5.1-1.8L12 3z"></path></svg>';
+
+  const badge = document.createElement('span');
+  badge.className = 'toast-blob-icon';
+  badge.innerHTML = iconSvg;
+
+  const textSpan = document.createElement('span');
+  textSpan.className = 'toast-msg';
+  textSpan.textContent = message;
+
+  div.appendChild(badge);
+  div.appendChild(textSpan);
+  els.toastStack.appendChild(div);
+
+  setTimeout(() => {
+    div.classList.add('is-leaving');
+    setTimeout(() => div.remove(), 280);
+  }, 2900);
+}
+
+async function copyText(text, successMsg = 'Disalin ke clipboard', triggerEl = null) {
+  const targetBtn = triggerEl || lastClickedButton;
   try {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
@@ -343,6 +563,9 @@ async function copyText(text, successMsg = 'Disalin ke clipboard') {
       ta.select();
       document.execCommand('copy');
       ta.remove();
+    }
+    if (targetBtn && targetBtn.isConnected) {
+      triggerCopyFeedback(targetBtn);
     }
     if (successMsg) showToast(successMsg, 'success');
     return true;
@@ -375,15 +598,28 @@ async function apiFetch(path, options = {}) {
 
 function syncThemeUI() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  els.btnThemeToggle.setAttribute('aria-checked', String(isDark));
-  els.btnThemeToggle.setAttribute('aria-label', isDark ? 'Mode terang' : 'Mode gelap');
-  els.btnThemeToggle.classList.toggle('is-asleep', isDark);
-  els.sidebarThemeLabel.textContent = isDark ? 'Mode Terang' : 'Mode Gelap';
+  if (els.btnThemeToggle) {
+    els.btnThemeToggle.setAttribute('aria-checked', String(isDark));
+    els.btnThemeToggle.setAttribute('aria-label', isDark ? 'Mode terang' : 'Mode gelap');
+    els.btnThemeToggle.classList.toggle('is-asleep', isDark);
+  }
+  if (els.btnSidebarTheme) {
+    els.btnSidebarTheme.setAttribute('aria-checked', String(isDark));
+  }
+  if (els.sidebarBlobVisual) {
+    els.sidebarBlobVisual.classList.toggle('is-asleep', isDark);
+  }
+  if (els.sidebarThemeLabel) {
+    els.sidebarThemeLabel.textContent = isDark ? 'Mode Gelap' : 'Mode Terang';
+  }
+  if (els.sidebarThemeSub) {
+    els.sidebarThemeSub.textContent = isDark ? 'Blob tidur lelap' : 'Blob bangun cerah';
+  }
 }
 
 let blobAnimTimer = null;
 
-function toggleTheme() {
+function toggleTheme(e) {
   const root = document.documentElement;
   root.classList.add('theme-switching');
   const isDark = root.getAttribute('data-theme') === 'dark';
@@ -394,12 +630,23 @@ function toggleTheme() {
     root.setAttribute('data-theme', 'dark');
     try { localStorage.setItem(STORAGE_KEYS.theme, 'dark'); } catch {}
   }
-  const btn = els.btnThemeToggle;
-  btn.classList.remove('is-rolling');
-  void btn.offsetWidth;
-  btn.classList.add('is-rolling');
+
+  const switches = [els.btnThemeToggle, els.sidebarBlobVisual].filter(Boolean);
+  switches.forEach((sw) => {
+    sw.classList.remove('is-rolling');
+    void sw.offsetWidth;
+    sw.classList.add('is-rolling');
+  });
   clearTimeout(blobAnimTimer);
-  blobAnimTimer = setTimeout(() => btn.classList.remove('is-rolling'), 700);
+  blobAnimTimer = setTimeout(() => {
+    switches.forEach((sw) => sw.classList.remove('is-rolling'));
+  }, 700);
+
+  const clickedEl = e?.currentTarget || els.btnThemeToggle;
+  if (clickedEl) {
+    spawnSkySparkles(clickedEl, 5, 'sky');
+  }
+
   syncThemeUI();
   void root.offsetHeight;
   requestAnimationFrame(() => root.classList.remove('theme-switching'));
@@ -442,7 +689,44 @@ function resolveToolFromLocation() {
   return 'inbox';
 }
 
-function syncPublicToolPanels() {
+function syncPublicNavBlob({ animate = false } = {}) {
+  const nav = els.publicToolNav;
+  const blob = els.publicNavBlob;
+  if (!nav || !blob) return;
+
+  const activeLink = nav.querySelector('.public-tool-link.is-active');
+  if (!activeLink || nav.offsetParent === null) {
+    nav.classList.remove('has-blob-ready');
+    return;
+  }
+
+  const x = activeLink.offsetLeft;
+  const y = activeLink.offsetTop;
+  const w = activeLink.offsetWidth;
+  const h = activeLink.offsetHeight;
+  if (!w || !h) return;
+
+  if (!animate) {
+    blob.classList.add('is-instant');
+  }
+  blob.style.width = `${w}px`;
+  blob.style.height = `${h}px`;
+  blob.style.translate = `${x}px ${y}px`;
+  nav.classList.add('has-blob-ready');
+
+  if (!animate) {
+    requestAnimationFrame(() => blob.classList.remove('is-instant'));
+  } else if (!prefersReducedMotion()) {
+    blob.classList.remove('is-gliding');
+    void blob.offsetWidth;
+    blob.classList.add('is-gliding');
+    clearTimeout(navBlobGlideTimer);
+    navBlobGlideTimer = setTimeout(() => blob.classList.remove('is-gliding'), 560);
+    triggerClassAnim(activeLink, 'is-tab-pop', 480);
+  }
+}
+
+function syncPublicToolPanels({ animateNav = false } = {}) {
   const tool = state.publicTool || 'inbox';
   if (els.toolPanelInbox) els.toolPanelInbox.classList.toggle('hidden', tool !== 'inbox');
   if (els.toolPanel2fa) els.toolPanel2fa.classList.toggle('hidden', tool !== '2fa');
@@ -454,10 +738,13 @@ function syncPublicToolPanels() {
     if (active) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   });
+
+  requestAnimationFrame(() => syncPublicNavBlob({ animate: animateNav }));
 }
 
 function setPublicTool(tool, { pushHistory = true } = {}) {
   const nextTool = ['inbox', '2fa', 'msmail'].includes(tool) ? tool : 'inbox';
+  const changed = state.publicTool !== nextTool;
   closeActiveDropdown();
   state.publicTool = nextTool;
 
@@ -485,13 +772,13 @@ function setPublicTool(tool, { pushHistory = true } = {}) {
     window.history.pushState({}, '', url.toString());
   }
 
-  syncModeShell();
+  syncModeShell({ animateNav: changed });
   if (nextTool === '2fa') {
     refreshTwoFaCodes();
   }
 }
 
-function syncModeShell() {
+function syncModeShell({ animateNav = false } = {}) {
   const isAdmin = state.adminAuthenticated;
   document.body.classList.toggle('is-admin-mode', isAdmin);
 
@@ -548,7 +835,7 @@ function syncModeShell() {
     els.publicViewerShell.classList.remove('hidden');
   }
 
-  syncPublicToolPanels();
+  syncPublicToolPanels({ animateNav });
   updateAddressActionButtons();
   if (state.selectedDetail) {
     renderPublicReader();
@@ -699,7 +986,7 @@ function renderMessageCard(msg, { selected, showRecipient = false, openAttr = 'd
 
   if (msg.otpCode) {
     badges.push(
-      `<button type="button" class="badge badge-otp mono" data-quick-otp="${escapeHtml(msg.otpCode)}" title="Klik untuk menyalin kode OTP">Salin OTP ${escapeHtml(msg.otpCode)}</button>`
+      `<button type="button" class="badge badge-otp mono btn-copy-anim" data-quick-otp="${escapeHtml(msg.otpCode)}" title="Klik untuk menyalin kode OTP"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="width:12px;height:12px;"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Salin OTP ${escapeHtml(msg.otpCode)}</span></button>`
     );
   }
 
@@ -795,11 +1082,11 @@ function renderInboxList() {
         <h3 class="state-error-title">${title}</h3>
         <div class="state-addr-box">${escapeHtml(addr)}</div>
         <p>${escapeHtml(state.inboxError)}</p>
-        ${!isNotRegistered && !isDisabled ? '<button type="button" class="btn btn-sm" id="btn-retry-inbox">Coba Lagi</button>' : ''}
+        ${!isNotRegistered && !isDisabled ? '<button type="button" class="btn btn-soft btn-sm btn-refresh-anim" id="btn-retry-inbox"><svg class="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg><span>Coba Lagi</span></button>' : ''}
       </div>
     `;
     const retryBtn = $('btn-retry-inbox');
-    if (retryBtn) retryBtn.addEventListener('click', () => fetchInbox({ silent: false }));
+    if (retryBtn) retryBtn.addEventListener('click', () => runRefreshWithAnim(retryBtn, () => fetchInbox({ silent: false })));
     return;
   }
 
@@ -1087,7 +1374,10 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
           <div class="otp-label">Kode OTP / Verifikasi Terdeteksi</div>
           <div class="otp-value">${escapeHtml(detail.otpCode)}</div>
         </div>
-        <button type="button" class="btn btn-primary btn-sm" data-copy-otp="${escapeHtml(detail.otpCode)}">Salin Kode OTP</button>
+        <button type="button" class="btn btn-primary btn-sm btn-copy-anim" data-copy-otp="${escapeHtml(detail.otpCode)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Salin Kode OTP</span>
+        </button>
       </div>
     `;
   }
@@ -1148,7 +1438,10 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
   } else if (chosenTab === 'raw') {
     bodyMarkup = `
       <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
-        <button type="button" class="btn btn-sm" data-copy-raw="${mode}">Salin Raw EML</button>
+        <button type="button" class="btn btn-soft btn-sm btn-copy-anim" data-copy-raw="${mode}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Salin Raw EML</span>
+        </button>
       </div>
       <pre class="plain-pre">${escapeHtml(detail.rawSource || '')}</pre>
     `;
@@ -1693,8 +1986,10 @@ async function activateTwoFaEntry(entry, { hideShareUrl = true } = {}) {
   }
 
   const code = await computeClientTotpCode(state.twoFaActive.secret, state.twoFaActive);
+  const changed = state.twoFaCurrentCode !== code;
   state.twoFaCurrentCode = code;
   els.twofaCurrentCode.textContent = formatOtpDigits(code);
+  if (changed) pulseCodeElement(els.twofaCurrentCode);
   els.twofaActiveTitle.textContent = state.twoFaActive.label;
   els.twofaStatusPill.textContent = 'Kode Aktif';
   els.btnCopy2faCode.disabled = false;
@@ -1753,7 +2048,7 @@ async function renderSavedTwoFaList() {
           </div>
           <div class="twofa-saved-right">
             <span class="twofa-saved-live mono">${escapeHtml(formatOtpDigits(item.liveCode))}</span>
-            <button type="button" class="btn btn-primary btn-sm" data-2fa-copy="${escapeHtml(item.liveCode)}" data-2fa-name="${escapeHtml(item.label || 'Akun 2FA')}">Salin</button>
+            <button type="button" class="btn btn-primary btn-sm btn-copy-anim" data-2fa-copy="${escapeHtml(item.liveCode)}" data-2fa-name="${escapeHtml(item.label || 'Akun 2FA')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Salin</span></button>
             <button type="button" class="btn btn-soft btn-sm" data-2fa-use="${escapeHtml(item.id)}">Buka</button>
             <button type="button" class="btn btn-sm btn-danger-outline" data-2fa-delete="${escapeHtml(item.id)}">Hapus</button>
           </div>
@@ -1786,7 +2081,7 @@ function renderTwoFaSharesList() {
             <div style="font-size:0.72rem;color:var(--text-muted);">Aktif s/d ${escapeHtml(formatFullDateTime(s.expiresAt))}</div>
           </div>
           <div class="toolbar-group">
-            <button type="button" class="btn btn-soft btn-sm" data-share-copy="${escapeHtml(shareUrl)}">Salin Link</button>
+            <button type="button" class="btn btn-soft btn-sm btn-copy-anim" data-share-copy="${escapeHtml(shareUrl)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Salin Link</span></button>
             <button type="button" class="btn btn-sm btn-danger-outline" data-share-revoke="${escapeHtml(s.id)}">Cabut</button>
           </div>
         </div>
@@ -1800,11 +2095,15 @@ async function loadSharedTwoFaFromUrl(shareId, { silent = false } = {}) {
   if (!cleanId) return;
   try {
     const res = await apiFetch(`/api/2fa/share/${encodeURIComponent(cleanId)}`);
+    const prevCode = state.twoFaSharedView?.code || '';
     state.twoFaSharedView = res.share;
     els.twofaSharedCard.classList.remove('hidden');
     els.twofaSharedLabel.textContent = res.share.label || 'Akun 2FA Bersama';
     els.twofaSharedExp.textContent = `Berlaku hingga ${formatFullDateTime(res.share.expiresAt)} | Setup key rahasia disembunyikan`;
     els.twofaSharedCode.textContent = formatOtpDigits(res.share.code);
+    if (res.share.code && res.share.code !== prevCode) {
+      pulseCodeElement(els.twofaSharedCode);
+    }
   } catch (err) {
     state.twoFaSharedView = null;
     els.twofaSharedCard.classList.add('hidden');
@@ -1872,8 +2171,10 @@ async function refreshTwoFaCodes() {
   if (state.twoFaActive) {
     try {
       const code = await computeClientTotpCode(state.twoFaActive.secret, state.twoFaActive);
+      const changed = state.twoFaCurrentCode !== code;
       state.twoFaCurrentCode = code;
       els.twofaCurrentCode.textContent = formatOtpDigits(code);
+      if (changed) pulseCodeElement(els.twofaCurrentCode);
     } catch {}
   }
   if (state.twoFaSaved.length > 0) {
@@ -1914,102 +2215,81 @@ function detectMsComboClient(rawCombo) {
     .find(Boolean) || '';
 
   if (!line) {
-    return { email: '', clientId: '', refreshToken: '', ready: false };
+    return { email: '', password: '', clientId: '', refreshToken: '', ready: false };
   }
 
-  let tokens = [];
+  let tokens;
   if (line.includes('|')) tokens = line.split('|');
   else if (line.includes('----')) tokens = line.split('----');
   else if (line.includes('\t')) tokens = line.split('\t');
   else if (line.includes(';')) tokens = line.split(';');
-  else if (line.includes(':')) tokens = line.split(':');
-  else tokens = line.split(/\s+/);
+  else if (line.includes(':')) {
+    const i = line.indexOf(':');
+    tokens = MS_UUID_ANY_REGEX.test(line) ? line.split(':') : [line.slice(0, i), line.slice(i + 1)];
+  } else tokens = line.split(/\s+/);
 
   tokens = tokens.map((t) => t.trim()).filter(Boolean);
 
   let email = '';
   let clientId = '';
   const rest = [];
-
   for (const tok of tokens) {
-    if (!clientId && MS_UUID_REGEX.test(tok)) {
-      clientId = tok.toLowerCase();
-      continue;
-    }
-    if (!email && MS_EMAIL_REGEX.test(tok)) {
-      email = tok.toLowerCase();
-      continue;
-    }
+    if (!clientId && MS_UUID_REGEX.test(tok)) { clientId = tok.toLowerCase(); continue; }
+    if (!email && MS_EMAIL_REGEX.test(tok)) { email = tok.toLowerCase(); continue; }
     rest.push(tok);
-  }
-
-  if (!clientId) {
-    const m = line.match(MS_UUID_ANY_REGEX);
-    if (m) clientId = m[0].toLowerCase();
   }
   if (!email) {
     const m = line.match(MS_EMAIL_ANY_REGEX);
     if (m) email = m[0].toLowerCase();
   }
 
-  const candidates = rest
-    .filter((t) => t.toLowerCase() !== clientId && t.toLowerCase() !== email)
-    .sort((a, b) => {
-      const score = (s) => s.length + (/^(?:M\.|0\.|1\.|OAQ|Ew)/i.test(s) ? 500 : 0);
-      return score(b) - score(a);
-    });
+  const tokenIdx = rest.findIndex((t) => /^(?:M\.|0\.A|1\.A|OAQ|Ew)/i.test(t) && t.length >= 24);
+  const refreshToken = tokenIdx >= 0 ? rest[tokenIdx] : '';
+  const others = rest.filter((_, i) => i !== tokenIdx);
+  const password = others[0] || '';
 
-  const refreshToken = candidates.length > 0 && candidates[0].length >= 24 ? candidates[0] : '';
-  return {
-    email,
-    clientId,
-    refreshToken,
-    ready: Boolean(clientId && refreshToken),
-  };
+  return { email, password, clientId, refreshToken, ready: Boolean(email && (password || refreshToken)) };
 }
 
-function updateMsDetectStrip(rawCombo) {
-  const det = detectMsComboClient(rawCombo);
+function updateMsDetectStrip() {
+  let email = '';
+  let method = 'Email & Password';
+  let ready = false;
 
-  if (det.email) {
-    els.msDetectEmail.textContent = `Email: ${det.email}`;
-    els.msDetectEmail.classList.add('is-ready');
-  } else if (det.ready) {
-    els.msDetectEmail.textContent = 'Email: Otomatis dari Graph';
-    els.msDetectEmail.classList.add('is-ready');
+  if (state.msMode === 'combo') {
+    const det = detectMsComboClient(els.inputMsCombo.value);
+    email = det.email;
+    ready = det.ready;
+    if (det.refreshToken) method = 'OAuth Token';
+  } else if (state.msMode === 'device') {
+    email = els.inputMsEmail.value.trim();
+    method = 'Login Resmi Microsoft';
+    ready = true;
   } else {
-    els.msDetectEmail.textContent = 'Email: Menunggu input';
-    els.msDetectEmail.classList.remove('is-ready');
+    email = els.inputMsEmail.value.trim();
+    ready = Boolean(email && els.inputMsPassword.value);
   }
 
-  if (det.clientId) {
-    els.msDetectClient.textContent = `Client ID: ${det.clientId.slice(0, 8)}...`;
-    els.msDetectClient.classList.add('is-ready');
-  } else {
-    els.msDetectClient.textContent = 'Client ID: Menunggu UUID';
-    els.msDetectClient.classList.remove('is-ready');
-  }
-
-  if (det.refreshToken) {
-    els.msDetectToken.textContent = `Refresh Token: Siap (${det.refreshToken.length} kar)`;
-    els.msDetectToken.classList.add('is-ready');
-  } else {
-    els.msDetectToken.textContent = 'Refresh Token: Menunggu token';
-    els.msDetectToken.classList.remove('is-ready');
-  }
+  els.msDetectEmail.textContent = email ? `Email: ${email}` : 'Email: Siap diisi';
+  els.msDetectEmail.classList.toggle('is-ready', Boolean(email));
+  els.msDetectClient.textContent = `Metode: ${method}`;
+  els.msDetectClient.classList.toggle('is-ready', ready);
 }
-
 function persistMsSession() {
   if (!state.msConnected) return;
   try {
     sessionStorage.setItem(
       STORAGE_KEYS.msSession,
       JSON.stringify({
+        transport: state.msTransport,
         email: state.msEmail,
         displayName: state.msDisplayName,
         clientId: state.msClientId,
         accessToken: state.msAccessToken,
         refreshToken: state.msRefreshToken,
+        password: state.msPassword,
+        imapHost: state.msImapHost,
+        imapPort: state.msImapPort,
         folder: state.msFolder,
       })
     );
@@ -2121,11 +2401,49 @@ function renderMsReader() {
   });
 }
 
-async function connectMsMailbox({ combo = '', email = '', refreshToken = '', clientId = '', folder = 'all_incoming', silentRestore = false } = {}) {
+function applyMsConnection(res, fallback = {}) {
+  state.msConnected = true;
+  state.msTransport = res.transport || 'graph';
+  state.msEmail = res.email || fallback.email || 'Outlook Mailbox';
+  state.msDisplayName = res.displayName || state.msEmail;
+  state.msClientId = res.clientId || fallback.clientId || '';
+  state.msAccessToken = res.accessToken || '';
+  state.msRefreshToken = res.refreshToken || fallback.refreshToken || '';
+  state.msPassword = state.msTransport === 'imap-password' ? fallback.password || '' : '';
+  state.msImapHost = res.imapHost || fallback.imapHost || '';
+  state.msImapPort = Number(res.imapPort || fallback.imapPort || 993);
+  state.msFolders = res.folders || [];
+  state.msFolder = res.folder || fallback.folder || 'all_incoming';
+  state.msMessages = res.messages || [];
+  state.msSelectedId = null;
+  state.msSelectedDetail = null;
+  els.msmailWorkspace.classList.remove('is-reading');
+
+  els.msmailActiveLabel.textContent = state.msEmail;
+  els.btnMsRefresh.disabled = false;
+  els.btnMsCopyAddr.classList.remove('hidden');
+  els.btnMsDisconnect.classList.remove('hidden');
+
+  persistMsSession();
+  syncMsFolderOptions();
+  renderMsReader();
+}
+
+async function connectMsMailbox({
+  combo = '',
+  email = '',
+  password = '',
+  refreshToken = '',
+  clientId = '',
+  imapHost = '',
+  imapPort = 993,
+  folder = 'all_incoming',
+  silentRestore = false,
+} = {}) {
   els.msmailError.classList.add('hidden');
   state.msLoading = true;
   els.btnMsConnect.disabled = true;
-  els.btnMsConnect.textContent = 'Menghubungkan...';
+  els.btnMsConnectLabel.textContent = 'Menghubungkan...';
   renderMsMessagesList();
 
   let autoOpenId = null;
@@ -2133,35 +2451,25 @@ async function connectMsMailbox({ combo = '', email = '', refreshToken = '', cli
   try {
     const res = await apiFetch('/api/ms-mail/connect', {
       method: 'POST',
-      body: JSON.stringify({
-        combo,
-        email,
-        refreshToken,
-        clientId,
-        folder,
-      }),
+      body: JSON.stringify({ combo, email, password, refreshToken, clientId, imapHost, imapPort, folder }),
     });
 
-    state.msConnected = true;
-    state.msEmail = res.email || email || 'Outlook Mailbox';
-    state.msDisplayName = res.displayName || state.msEmail;
-    state.msClientId = res.clientId || clientId;
-    state.msAccessToken = res.accessToken || '';
-    state.msRefreshToken = res.refreshToken || refreshToken;
-    state.msFolders = res.folders || [];
-    state.msFolder = res.folder || folder || 'all_incoming';
-    state.msMessages = res.messages || [];
-    state.msSelectedId = null;
-    state.msSelectedDetail = null;
-    els.msmailWorkspace.classList.remove('is-reading');
+    if (res.requiresDeviceAuth && res.deviceAuth) {
+      setMsMode('device');
+      showMsDeviceCode(res.deviceAuth, res.message);
+      showToast('Selesaikan login resmi Microsoft dengan kode di bawah.');
+      return;
+    }
 
-    els.msmailActiveLabel.textContent = state.msEmail;
-    els.btnMsRefresh.disabled = false;
-    els.btnMsDisconnect.classList.remove('hidden');
-
-    persistMsSession();
-    syncMsFolderOptions();
-    renderMsReader();
+    applyMsConnection(res, {
+      email: email || parseMsEmailFromCombo(combo),
+      password: password || parseMsPasswordFromCombo(combo),
+      refreshToken,
+      clientId,
+      imapHost,
+      imapPort,
+      folder,
+    });
 
     if (state.msMessages.length > 0 && isDesktopSplitViewport()) {
       autoOpenId = state.msMessages[0].id;
@@ -2180,13 +2488,160 @@ async function connectMsMailbox({ combo = '', email = '', refreshToken = '', cli
   } finally {
     state.msLoading = false;
     els.btnMsConnect.disabled = false;
-    els.btnMsConnect.textContent = 'Hubungkan & Buka Inbox';
+    els.btnMsConnectLabel.textContent = 'Masuk & Buka Inbox';
     renderMsMessagesList();
   }
 
   if (autoOpenId) {
     openMsMessage(autoOpenId);
   }
+}
+
+function parseMsEmailFromCombo(combo) {
+  return detectMsComboClient(combo).email || '';
+}
+
+function parseMsPasswordFromCombo(combo) {
+  return detectMsComboClient(combo).password || '';
+}
+
+function msAuthPayload() {
+  return {
+    transport: state.msTransport,
+    accessToken: state.msAccessToken,
+    refreshToken: state.msRefreshToken,
+    clientId: state.msClientId,
+    email: state.msEmail,
+    password: state.msPassword,
+    imapHost: state.msImapHost,
+    imapPort: state.msImapPort,
+  };
+}
+
+function restoreMsSession(saved) {
+  state.msTransport = saved.transport || 'graph';
+  state.msEmail = saved.email || '';
+  state.msAccessToken = saved.accessToken || '';
+  state.msRefreshToken = saved.refreshToken || '';
+  state.msClientId = saved.clientId || '';
+  state.msPassword = saved.password || '';
+  state.msImapHost = saved.imapHost || '';
+  state.msImapPort = Number(saved.imapPort || 993);
+  state.msConnected = true;
+  state.msFolder = saved.folder || 'all_incoming';
+  els.btnMsRefresh.disabled = false;
+  els.btnMsDisconnect.classList.remove('hidden');
+  els.btnMsCopyAddr.classList.remove('hidden');
+  els.msmailActiveLabel.textContent = state.msEmail || 'Outlook Mailbox';
+  fetchMsMessages({ silent: false }).then(() => {
+    if (state.msMessages.length === 0 && state.msMessages !== null && !state.msLoading) {
+      /* keep session; user may refresh manually */
+    }
+  });
+}
+
+/* ---- Microsoft official device-code login (works for personal Hotmail/Outlook & MFA) ---- */
+function setMsMode(mode) {
+  const next = ['login', 'device', 'combo'].includes(mode) ? mode : 'login';
+  state.msMode = next;
+  document.querySelectorAll('[data-ms-mode]').forEach((btn) => {
+    const active = btn.getAttribute('data-ms-mode') === next;
+    btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-selected', String(active));
+    if (active) btn.classList.add('is-jelly-pop');
+    setTimeout(() => btn.classList.remove('is-jelly-pop'), 460);
+  });
+  els.msPanelLogin.classList.toggle('hidden', next !== 'login');
+  els.msPanelDevice.classList.toggle('hidden', next !== 'device');
+  els.msPanelCombo.classList.toggle('hidden', next !== 'combo');
+  els.msmailError.classList.add('hidden');
+  updateMsDetectStrip();
+}
+
+function stopMsDevicePolling() {
+  if (state.msDevicePollTimer) clearTimeout(state.msDevicePollTimer);
+  state.msDevicePollTimer = null;
+  els.msPanelDevice?.querySelector('.ms-device-card')?.classList.remove('is-waiting');
+}
+
+function showMsDeviceCode(device, message = '') {
+  state.msDevice = device;
+  els.msDeviceCode.textContent = device.userCode;
+  els.msDeviceCodeWrap.classList.remove('hidden');
+  els.btnMsCopyDeviceCode.classList.remove('hidden');
+  els.btnMsOpenDeviceLink.classList.remove('hidden');
+  els.msDeviceTitle.textContent = 'Menunggu Anda login di Microsoft...';
+  if (message) els.msDeviceDesc.textContent = message;
+  els.msPanelDevice.querySelector('.ms-device-card').classList.add('is-waiting');
+  els.btnMsStartDeviceLabel.textContent = 'Buat Kode Baru';
+  spawnSkySparkles(els.msDeviceCodeWrap, 5, 'sky');
+  scheduleMsDevicePoll(Number(device.interval || 5) * 1000);
+}
+
+function scheduleMsDevicePoll(delayMs) {
+  if (state.msDevicePollTimer) clearTimeout(state.msDevicePollTimer);
+  const device = state.msDevice;
+  if (!device) return;
+  const deadline = (device.startedAt || Date.now()) + Number(device.expiresIn || 900) * 1000;
+  device.startedAt = device.startedAt || Date.now();
+
+  state.msDevicePollTimer = setTimeout(async () => {
+    if (Date.now() > deadline) {
+      stopMsDevicePolling();
+      els.msDeviceTitle.textContent = 'Kode kedaluwarsa. Buat kode baru.';
+      return;
+    }
+    try {
+      const res = await apiFetch('/api/ms-mail/device-poll', {
+        method: 'POST',
+        body: JSON.stringify({
+          deviceCode: device.deviceCode,
+          clientId: device.clientId,
+          tenant: device.tenant,
+          email: device.emailHint || '',
+          folder: state.msFolder || 'all_incoming',
+        }),
+      });
+      if (res.pending) {
+        scheduleMsDevicePoll((Number(device.interval || 5) + (res.slowDown ? 5 : 0)) * 1000);
+        return;
+      }
+      stopMsDevicePolling();
+      state.msDevice = null;
+      applyMsConnection(res, { email: device.emailHint || '', folder: state.msFolder });
+      els.msDeviceTitle.textContent = 'Login Resmi Microsoft Tanpa Token';
+      els.msDeviceCodeWrap.classList.add('hidden');
+      els.btnMsCopyDeviceCode.classList.add('hidden');
+      els.btnMsOpenDeviceLink.classList.add('hidden');
+      els.btnMsStartDeviceLabel.textContent = 'Buat Kode Login Microsoft';
+      showToast(`Terhubung ke ${state.msEmail}`, 'success');
+      renderMsMessagesList();
+      if (state.msMessages.length > 0 && isDesktopSplitViewport()) openMsMessage(state.msMessages[0].id);
+    } catch (err) {
+      stopMsDevicePolling();
+      els.msmailError.textContent = err.message;
+      els.msmailError.classList.remove('hidden');
+      els.msDeviceTitle.textContent = 'Login gagal. Coba buat kode baru.';
+    }
+  }, delayMs);
+}
+
+async function startMsDeviceLogin() {
+  els.msmailError.classList.add('hidden');
+  stopMsDevicePolling();
+  await runRefreshWithAnim(els.btnMsStartDevice, async () => {
+    try {
+      const res = await apiFetch('/api/ms-mail/device-start', {
+        method: 'POST',
+        body: JSON.stringify({ email: els.inputMsEmail.value.trim() }),
+      });
+      res.startedAt = Date.now();
+      showMsDeviceCode(res);
+    } catch (err) {
+      els.msmailError.textContent = err.message;
+      els.msmailError.classList.remove('hidden');
+    }
+  });
 }
 
 async function fetchMsMessages({ silent = false } = {}) {
@@ -2202,10 +2657,7 @@ async function fetchMsMessages({ silent = false } = {}) {
     const res = await apiFetch('/api/ms-mail/messages', {
       method: 'POST',
       body: JSON.stringify({
-        accessToken: state.msAccessToken,
-        refreshToken: state.msRefreshToken,
-        clientId: state.msClientId,
-        email: state.msEmail,
+        ...msAuthPayload(),
         folder: state.msFolder,
         top: 40,
       }),
@@ -2256,10 +2708,7 @@ async function openMsMessage(messageId) {
     const res = await apiFetch('/api/ms-mail/message', {
       method: 'POST',
       body: JSON.stringify({
-        accessToken: state.msAccessToken,
-        refreshToken: state.msRefreshToken,
-        clientId: state.msClientId,
-        email: state.msEmail,
+        ...msAuthPayload(),
         messageId,
       }),
     });
@@ -2287,12 +2736,17 @@ async function openMsMessage(messageId) {
 }
 
 function disconnectMsMailbox() {
+  stopMsDevicePolling();
   state.msConnected = false;
   state.msEmail = '';
   state.msDisplayName = '';
   state.msClientId = '';
   state.msAccessToken = '';
   state.msRefreshToken = '';
+  state.msPassword = '';
+  state.msTransport = 'graph';
+  state.msImapHost = '';
+  state.msImapPort = 993;
   state.msFolders = [];
   state.msFolder = 'all_incoming';
   state.msSearchQuery = '';
@@ -2303,14 +2757,17 @@ function disconnectMsMailbox() {
   try { sessionStorage.removeItem(STORAGE_KEYS.msSession); } catch {}
 
   els.inputMsCombo.value = '';
+  els.inputMsEmail.value = '';
+  els.inputMsPassword.value = '';
   els.inputMsSearch.value = '';
   els.msmailError.classList.add('hidden');
   els.msmailActiveLabel.textContent = 'Belum terhubung';
   els.btnMsRefresh.disabled = true;
+  els.btnMsCopyAddr.classList.add('hidden');
   els.btnMsDisconnect.classList.add('hidden');
   els.msmailWorkspace.classList.remove('is-reading');
 
-  updateMsDetectStrip('');
+  updateMsDetectStrip();
   syncMsFolderOptions();
   renderMsMessagesList();
   renderMsReader();
@@ -2368,8 +2825,8 @@ function renderAdminMailboxesTable() {
           <td style="text-align:right;white-space:nowrap;">
             <div class="table-actions">
               <button type="button" class="btn btn-sm btn-primary" data-mailbox-open="${escapeHtml(mb.address)}">Buka Inbox</button>
-              <button type="button" class="btn btn-sm" data-mailbox-copy-addr="${escapeHtml(mb.address)}">Salin</button>
-              <button type="button" class="btn btn-sm btn-soft" data-mailbox-copy-link="${escapeHtml(mb.address)}">Salin Link</button>
+              <button type="button" class="btn btn-sm btn-copy-anim" data-mailbox-copy-addr="${escapeHtml(mb.address)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Salin</span></button>
+              <button type="button" class="btn btn-sm btn-soft btn-copy-anim" data-mailbox-copy-link="${escapeHtml(mb.address)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Salin Link</span></button>
               <button type="button" class="btn btn-sm btn-danger-outline" data-mailbox-delete="${mb.id}" data-mailbox-addr="${escapeHtml(mb.address)}">Hapus</button>
             </div>
           </td>
@@ -2511,16 +2968,11 @@ function logoutAdmin() {
   showToast('Anda keluar dari Workspace Admin.');
 }
 
-async function copyActiveEmailAction() {
+async function copyActiveEmailAction(e) {
   const full = getActiveAddress();
   if (!full) return;
-  const ok = await copyText(full, `Disalin: ${full}`);
-  if (ok) {
-    els.btnCopyLabel.textContent = 'Tersalin';
-    setTimeout(() => {
-      els.btnCopyLabel.textContent = 'Salin';
-    }, 1500);
-  }
+  const triggerBtn = e?.currentTarget || els.btnCopyEmail;
+  await copyText(full, `Disalin: ${full}`, triggerBtn);
 }
 
 async function handleCreateMailboxes(rawEntries, defaultDomain, label) {
@@ -2554,6 +3006,81 @@ function bindEvents() {
   els.btnSidebarLogout.addEventListener('click', logoutAdmin);
   els.btnMobileLogout.addEventListener('click', logoutAdmin);
 
+  // Global Sleepy-Blob tactile jelly ripple & button pop delegation
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      const btn = e.target.closest('button:not(:disabled), .btn:not([aria-disabled="true"]), .header-order-link, .public-tool-link');
+      if (!btn) return;
+      if (btn.tagName === 'BUTTON') {
+        lastClickedButton = btn;
+      }
+      if (
+        prefersReducedMotion() ||
+        btn.classList.contains('blob-toggle') ||
+        btn.classList.contains('sidebar-theme-row') ||
+        btn.classList.contains('message-open-btn') ||
+        btn.classList.contains('amc-dd-option')
+      ) {
+        return;
+      }
+      if (
+        btn.classList.contains('btn') ||
+        btn.classList.contains('owner-login-icon') ||
+        btn.classList.contains('header-order-link') ||
+        btn.classList.contains('domain-card-btn') ||
+        btn.classList.contains('ms-format-chip')
+      ) {
+        const rect = btn.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          const ripple = document.createElement('span');
+          ripple.className = 'amc-jelly-ripple';
+          const size = Math.max(rect.width, rect.height) * 1.35;
+          const rx = e.clientX ? e.clientX - rect.left : rect.width / 2;
+          const ry = e.clientY ? e.clientY - rect.top : rect.height / 2;
+          ripple.style.width = `${Math.round(size)}px`;
+          ripple.style.height = `${Math.round(size)}px`;
+          ripple.style.left = `${Math.round(rx - size / 2)}px`;
+          ripple.style.top = `${Math.round(ry - size / 2)}px`;
+          btn.appendChild(ripple);
+          setTimeout(() => ripple.remove(), 560);
+        }
+      }
+    },
+    { passive: true }
+  );
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest(
+      '.btn:not(:disabled), .owner-login-icon, .domain-card-btn, .ms-format-chip, .reader-tab, .sidebar-link, .mobile-nav-item'
+    );
+    if (
+      btn &&
+      !btn.classList.contains('btn-copy-anim') &&
+      !btn.classList.contains('btn-refresh-anim') &&
+      !btn.classList.contains('is-copied') &&
+      !btn.classList.contains('is-refreshing')
+    ) {
+      triggerClassAnim(btn, 'is-jelly-pop', 460);
+    }
+  });
+
+  if (els.checkAutoRegister) {
+    els.checkAutoRegister.addEventListener('change', () => {
+      const miniSwitch = els.checkAutoRegister.parentElement?.querySelector('.blob-mini-switch');
+      if (miniSwitch) {
+        triggerClassAnim(miniSwitch, 'is-rolling', 620);
+        if (els.checkAutoRegister.checked) {
+          spawnSkySparkles(miniSwitch, 4, 'sky');
+        }
+      }
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    syncPublicNavBlob({ animate: false });
+  });
+
   els.btnSidebarQuickCreate.addEventListener('click', () => {
     switchAdminView('mailboxes', { focusQuickInput: true });
   });
@@ -2579,7 +3106,7 @@ function bindEvents() {
       if (state.publicTool === '2fa') state.adminView = 'tool-2fa';
       else if (state.publicTool === 'msmail') state.adminView = 'tool-msmail';
     }
-    syncModeShell();
+    syncModeShell({ animateNav: true });
     const shareParam = new URLSearchParams(window.location.search).get('share') || '';
     if (state.publicTool === '2fa' && shareParam) {
       loadSharedTwoFaFromUrl(shareParam);
@@ -2599,6 +3126,7 @@ function bindEvents() {
       els.inputUsername.focus();
       return;
     }
+    triggerClassAnim(els.btnOpenInbox, 'is-jelly-pop', 500);
     setActiveAddress(parsed.localPart, parsed.domain);
   });
 
@@ -2610,7 +3138,7 @@ function bindEvents() {
   els.btnCopyEmail.addEventListener('click', copyActiveEmailAction);
 
   els.btnRefreshInbox.addEventListener('click', () => {
-    fetchInbox({ silent: false });
+    runRefreshWithAnim(els.btnRefreshInbox, () => fetchInbox({ silent: false }));
   });
 
   if (els.domainPills) {
@@ -2676,7 +3204,7 @@ function bindEvents() {
     const otpBtn = e.target.closest('[data-quick-otp]');
     if (otpBtn) {
       e.stopPropagation();
-      copyText(otpBtn.dataset.quickOtp, `Kode OTP ${otpBtn.dataset.quickOtp} disalin`);
+      copyText(otpBtn.dataset.quickOtp, `Kode OTP ${otpBtn.dataset.quickOtp} disalin`, otpBtn);
       return;
     }
     const openBtn = e.target.closest('[data-open-id]');
@@ -2689,7 +3217,7 @@ function bindEvents() {
     const otpBtn = e.target.closest('[data-quick-otp]');
     if (otpBtn) {
       e.stopPropagation();
-      copyText(otpBtn.dataset.quickOtp, `Kode OTP ${otpBtn.dataset.quickOtp} disalin`);
+      copyText(otpBtn.dataset.quickOtp, `Kode OTP ${otpBtn.dataset.quickOtp} disalin`, otpBtn);
       return;
     }
     const openBtn = e.target.closest('[data-admin-open-id]');
@@ -2713,22 +3241,28 @@ function bindEvents() {
 
     const otpBtn = e.target.closest('[data-copy-otp]');
     if (otpBtn) {
-      copyText(otpBtn.dataset.copyOtp, `Kode OTP ${otpBtn.dataset.copyOtp} disalin`);
+      copyText(otpBtn.dataset.copyOtp, `Kode OTP ${otpBtn.dataset.copyOtp} disalin`, otpBtn);
       return;
     }
 
     const tabBtn = e.target.closest('[data-reader-tab]');
     if (tabBtn) {
+      const chosenId = tabBtn.dataset.readerTab;
+      let container = els.readerContent;
       if (tabBtn.dataset.tabMode === 'admin') {
-        state.adminReaderTab = tabBtn.dataset.readerTab;
+        state.adminReaderTab = chosenId;
         renderAdminCatchallReader();
+        container = els.adminCatchallReader;
       } else if (tabBtn.dataset.tabMode === 'msmail') {
-        state.msReaderTab = tabBtn.dataset.readerTab;
+        state.msReaderTab = chosenId;
         renderMsReader();
+        container = els.msmailReader;
       } else {
-        state.readerTab = tabBtn.dataset.readerTab;
+        state.readerTab = chosenId;
         renderPublicReader();
       }
+      const newlyActive = container?.querySelector(`.reader-tab[data-reader-tab="${CSS.escape(chosenId)}"]`);
+      if (newlyActive) triggerClassAnim(newlyActive, 'is-tab-pop', 460);
       return;
     }
 
@@ -2753,7 +3287,7 @@ function bindEvents() {
         copyRawBtn.dataset.copyRaw === 'admin'
           ? state.adminSelectedDetail?.rawSource || ''
           : state.selectedDetail?.rawSource || '';
-      copyText(src, 'Raw EML disalin ke clipboard');
+      copyText(src, 'Raw EML disalin ke clipboard', copyRawBtn);
       return;
     }
 
@@ -2813,6 +3347,7 @@ function bindEvents() {
     if (!els.input2faLabel.value.trim() && parsed.label) {
       els.input2faLabel.value = parsed.label;
     }
+    spawnSkySparkles(els.btn2faGenerate, 5, 'sky');
     await activateTwoFaEntry(parsed);
   });
 
@@ -2841,6 +3376,7 @@ function bindEvents() {
     els.input2faSecret.value = SAMPLE_2FA_KEY;
     const parsed = parseClientTotpInput(SAMPLE_2FA_KEY, 'Contoh Akun AMC');
     if (parsed.valid) {
+      spawnSkySparkles(els.btn2faSample, 4, 'sky');
       await activateTwoFaEntry(parsed);
     }
   });
@@ -2871,25 +3407,26 @@ function bindEvents() {
       });
     }
     persistSavedTwoFa();
+    spawnSkySparkles(els.btn2faSave, 5, 'sky');
     await activateTwoFaEntry({ ...parsed, label });
     showToast(`Kunci 2FA "${label}" disimpan di perangkat ini.`, 'success');
   });
 
   els.btnCopy2faCode.addEventListener('click', () => {
     if (!state.twoFaCurrentCode) return;
-    copyText(state.twoFaCurrentCode, `Kode 2FA ${state.twoFaCurrentCode} disalin`);
+    copyText(state.twoFaCurrentCode, `Kode 2FA ${state.twoFaCurrentCode} disalin`, els.btnCopy2faCode);
   });
 
   els.btn2faCreateShare.addEventListener('click', handleCreateTwoFaShare);
 
   els.btnCopy2faShareUrl.addEventListener('click', () => {
     if (!els.input2faShareUrl.value) return;
-    copyText(els.input2faShareUrl.value, 'Link privat 2FA disalin ke clipboard');
+    copyText(els.input2faShareUrl.value, 'Link privat 2FA disalin ke clipboard', els.btnCopy2faShareUrl);
   });
 
   els.btnCopyShared2fa.addEventListener('click', () => {
     if (!state.twoFaSharedView?.code) return;
-    copyText(state.twoFaSharedView.code, `Kode 2FA ${state.twoFaSharedView.code} disalin`);
+    copyText(state.twoFaSharedView.code, `Kode 2FA ${state.twoFaSharedView.code} disalin`, els.btnCopyShared2fa);
   });
 
   els.btnExitShared2fa.addEventListener('click', () => {
@@ -2906,7 +3443,7 @@ function bindEvents() {
     const copyBtn = e.target.closest('[data-2fa-copy]');
     if (copyBtn) {
       const code = copyBtn.getAttribute('data-2fa-copy') || '';
-      copyText(code, `Kode 2FA ${code} disalin`);
+      copyText(code, `Kode 2FA ${code} disalin`, copyBtn);
       return;
     }
 
@@ -2935,7 +3472,7 @@ function bindEvents() {
   els.twofaSharesList.addEventListener('click', (e) => {
     const copyBtn = e.target.closest('[data-share-copy]');
     if (copyBtn) {
-      copyText(copyBtn.getAttribute('data-share-copy'), 'Link privat 2FA disalin');
+      copyText(copyBtn.getAttribute('data-share-copy'), 'Link privat 2FA disalin', copyBtn);
       return;
     }
     const revBtn = e.target.closest('[data-share-revoke]');
@@ -2944,42 +3481,94 @@ function bindEvents() {
     }
   });
 
-  /* Microsoft / Outlook Inbox Mail Reader Events */
-  document.querySelectorAll('[data-ms-example]').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const fmt = chip.getAttribute('data-ms-example');
-      if (fmt === 'colon') {
-        els.inputMsCombo.placeholder = 'email@outlook.com:sandi:M.C509_...:9e5f94bc-e8a4-4e73-b8be-63364c29d753';
-        showToast('Format titik dua aktif. Tempel combo email:sandi:refresh_token:client_id.');
-      } else {
-        els.inputMsCombo.placeholder = 'email@outlook.com|sandi|M.C509_...|9e5f94bc-e8a4-4e73-b8be-63364c29d753';
-        showToast('Format pipe aktif. Tempel combo email|sandi|refresh_token|client_id.');
-      }
-      els.inputMsCombo.focus();
-    });
+  /* Microsoft / Outlook Mail Reader Events (Email + Password) */
+  document.querySelectorAll('[data-ms-mode]').forEach((btn) => {
+    btn.addEventListener('click', () => setMsMode(btn.getAttribute('data-ms-mode')));
   });
 
+  els.btnMsTogglePass.addEventListener('click', () => {
+    const show = els.inputMsPassword.type === 'password';
+    els.inputMsPassword.type = show ? 'text' : 'password';
+    els.btnMsTogglePass.classList.toggle('is-awake', show);
+    els.btnMsTogglePass.setAttribute('aria-pressed', String(show));
+  });
+
+  els.btnMsImapToggle.addEventListener('click', () => {
+    const hiddenNow = els.msImapAdvRow.classList.toggle('hidden');
+    els.btnMsImapToggle.setAttribute('aria-expanded', String(!hiddenNow));
+  });
+
+  els.inputMsEmail.addEventListener('input', () => {
+    els.msmailError.classList.add('hidden');
+    const v = els.inputMsEmail.value;
+    if (/[|;\t]|----/.test(v) || (v.includes(':') && v.includes('@'))) {
+      const det = detectMsComboClient(v);
+      if (det.email && det.password) {
+        els.inputMsEmail.value = det.email;
+        els.inputMsPassword.value = det.password;
+        showToast('Email & password terisi otomatis.');
+      }
+    }
+    updateMsDetectStrip();
+  });
+  els.inputMsPassword.addEventListener('input', () => {
+    els.msmailError.classList.add('hidden');
+    updateMsDetectStrip();
+  });
   els.inputMsCombo.addEventListener('input', () => {
     els.msmailError.classList.add('hidden');
-    updateMsDetectStrip(els.inputMsCombo.value);
+    updateMsDetectStrip();
   });
 
   els.msmailConnectForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const raw = els.inputMsCombo.value.trim();
-    if (!raw) {
-      els.msmailError.textContent = 'Tempel combo Microsoft terlebih dahulu.';
-      els.msmailError.classList.remove('hidden');
-      els.inputMsCombo.focus();
+    if (state.msMode === 'device') {
+      startMsDeviceLogin();
       return;
     }
-    connectMsMailbox({ combo: raw, folder: state.msFolder || 'all_incoming' });
+    if (state.msMode === 'combo') {
+      const raw = els.inputMsCombo.value.trim();
+      if (!raw) {
+        els.msmailError.textContent = 'Tempel email:password terlebih dahulu.';
+        els.msmailError.classList.remove('hidden');
+        els.inputMsCombo.focus();
+        return;
+      }
+      connectMsMailbox({ combo: raw, folder: state.msFolder || 'all_incoming' });
+      return;
+    }
+    const email = els.inputMsEmail.value.trim();
+    const password = els.inputMsPassword.value;
+    if (!email || !password) {
+      els.msmailError.textContent = 'Isi Email dan Password terlebih dahulu.';
+      els.msmailError.classList.remove('hidden');
+      (email ? els.inputMsPassword : els.inputMsEmail).focus();
+      return;
+    }
+    connectMsMailbox({
+      email,
+      password,
+      imapHost: els.inputMsImapHost.value.trim(),
+      imapPort: Number(els.inputMsImapPort.value || 993),
+      folder: state.msFolder || 'all_incoming',
+    });
+  });
+
+  els.btnMsStartDevice.addEventListener('click', () => startMsDeviceLogin());
+  els.btnMsOpenDeviceLink.addEventListener('click', () => {
+    if (state.msDevice?.verificationUri) window.open(state.msDevice.verificationUri, '_blank', 'noopener');
+  });
+  els.btnMsCopyDeviceCode.addEventListener('click', () => {
+    if (state.msDevice?.userCode) copyText(state.msDevice.userCode, 'Kode login Microsoft disalin', els.btnMsCopyDeviceCode);
+  });
+  els.btnMsCopyAddr.addEventListener('click', () => {
+    if (state.msEmail) copyText(state.msEmail, `Disalin: ${state.msEmail}`, els.btnMsCopyAddr);
   });
 
   els.btnMsDisconnect.addEventListener('click', disconnectMsMailbox);
 
   els.btnMsRefresh.addEventListener('click', () => {
-    fetchMsMessages({ silent: false });
+    runRefreshWithAnim(els.btnMsRefresh, () => fetchMsMessages({ silent: false }));
   });
 
   els.selectMsFolder.addEventListener('change', () => {
@@ -3004,7 +3593,7 @@ function bindEvents() {
     const otpBtn = e.target.closest('[data-quick-otp]');
     if (otpBtn) {
       e.stopPropagation();
-      copyText(otpBtn.dataset.quickOtp, `Kode OTP ${otpBtn.dataset.quickOtp} disalin`);
+      copyText(otpBtn.dataset.quickOtp, `Kode OTP ${otpBtn.dataset.quickOtp} disalin`, otpBtn);
       return;
     }
     const openBtn = e.target.closest('[data-ms-open-id]');
@@ -3061,6 +3650,7 @@ function bindEvents() {
       if (res.added?.length) {
         els.inputQuickUsername.value = '';
         els.inputQuickLabel.value = '';
+        spawnSkySparkles($('btn-quick-create-submit'), 5, 'sky');
       }
     } catch (err) {
       showToast(`Gagal membuat alamat email: ${err.message}`, 'error');
@@ -3089,7 +3679,9 @@ function bindEvents() {
     clearTimeout(mbSearchTimer);
     mbSearchTimer = setTimeout(loadAdminMailboxes, 220);
   });
-  els.btnAdminRefreshMailboxes.addEventListener('click', loadAdminMailboxes);
+  els.btnAdminRefreshMailboxes.addEventListener('click', () => {
+    runRefreshWithAnim(els.btnAdminRefreshMailboxes, () => loadAdminMailboxes());
+  });
 
   els.adminMailboxesTbody.addEventListener('change', async (e) => {
     const statusSel = e.target.closest('[data-mailbox-status-id]');
@@ -3141,7 +3733,7 @@ function bindEvents() {
 
     const copyAddrBtn = e.target.closest('[data-mailbox-copy-addr]');
     if (copyAddrBtn) {
-      copyText(copyAddrBtn.dataset.mailboxCopyAddr, `Disalin: ${copyAddrBtn.dataset.mailboxCopyAddr}`);
+      copyText(copyAddrBtn.dataset.mailboxCopyAddr, `Disalin: ${copyAddrBtn.dataset.mailboxCopyAddr}`, copyAddrBtn);
       return;
     }
 
@@ -3149,7 +3741,7 @@ function bindEvents() {
     if (copyLinkBtn) {
       const addr = copyLinkBtn.dataset.mailboxCopyLink;
       const link = `${window.location.origin}/?email=${encodeURIComponent(addr)}`;
-      copyText(link, `Link inbox ${addr} disalin`);
+      copyText(link, `Link inbox ${addr} disalin`, copyLinkBtn);
       return;
     }
 
@@ -3178,7 +3770,9 @@ function bindEvents() {
     clearTimeout(adminSearchTimer);
     adminSearchTimer = setTimeout(() => loadAdminStatsAndMessages(), 250);
   });
-  els.btnAdminRefreshMsgs.addEventListener('click', () => loadAdminStatsAndMessages());
+  els.btnAdminRefreshMsgs.addEventListener('click', () => {
+    runRefreshWithAnim(els.btnAdminRefreshMsgs, () => loadAdminStatsAndMessages());
+  });
 
   // Admin Domains
   els.adminAddDomainForm.addEventListener('submit', async (e) => {
@@ -3302,6 +3896,8 @@ function bindEvents() {
         }),
       });
       await refreshPublicDomains();
+      const saveBtn = els.adminSettingsForm.querySelector('button[type="submit"]');
+      if (saveBtn) spawnSkySparkles(saveBtn, 5, 'sky');
       showToast('Pengaturan berhasil disimpan.', 'success');
     } catch (err) {
       showToast(`Gagal menyimpan pengaturan: ${err.message}`, 'error');
@@ -3309,17 +3905,19 @@ function bindEvents() {
   });
 
   els.btnAdminPurge.addEventListener('click', async () => {
-    try {
-      const res = await apiFetch('/api/admin/purge', {
-        method: 'POST',
-        admin: true,
-        body: JSON.stringify({}),
-      });
-      showToast(`${res.purged || 0} pesan kedaluwarsa dibersihkan.`);
-      await Promise.all([loadAdminStatsAndMessages(), loadAdminMailboxes()]);
-    } catch (err) {
-      showToast(`Gagal membersihkan pesan: ${err.message}`, 'error');
-    }
+    await runRefreshWithAnim(els.btnAdminPurge, async () => {
+      try {
+        const res = await apiFetch('/api/admin/purge', {
+          method: 'POST',
+          admin: true,
+          body: JSON.stringify({}),
+        });
+        showToast(`${res.purged || 0} pesan kedaluwarsa dibersihkan.`);
+        await Promise.all([loadAdminStatsAndMessages(), loadAdminMailboxes()]);
+      } catch (err) {
+        showToast(`Gagal membersihkan pesan: ${err.message}`, 'error');
+      }
+    });
   });
 
   els.adminSimForm.addEventListener('submit', async (e) => {
@@ -3327,12 +3925,14 @@ function bindEvents() {
     const to = els.inputAdminSimTo.value.trim().toLowerCase();
     const scenario = els.selectAdminSimType.value;
     if (!to) return;
+    const simBtn = els.adminSimForm.querySelector('button[type="submit"]');
     try {
       await apiFetch('/api/simulate', {
         method: 'POST',
         admin: true,
         body: JSON.stringify({ recipient: to, scenario }),
       });
+      if (simBtn) spawnSkySparkles(simBtn, 5, 'sky');
       showToast(`Uji coba ${scenario} terkirim ke ${to}`, 'success');
       await Promise.all([loadAdminStatsAndMessages(), loadAdminMailboxes()]);
     } catch (err) {
@@ -3755,14 +4355,8 @@ async function init() {
   try {
     savedMs = JSON.parse(sessionStorage.getItem(STORAGE_KEYS.msSession) || 'null');
   } catch {}
-  if (savedMs && savedMs.clientId && savedMs.refreshToken) {
-    connectMsMailbox({
-      email: savedMs.email || '',
-      refreshToken: savedMs.refreshToken,
-      clientId: savedMs.clientId,
-      folder: savedMs.folder || 'all_incoming',
-      silentRestore: true,
-    });
+  if (savedMs && (savedMs.refreshToken || savedMs.accessToken || savedMs.password)) {
+    restoreMsSession(savedMs);
   }
 
   try {

@@ -55,7 +55,13 @@
             <span class="sidebar-mailbox-addr" id="sidebar-active-addr">Belum dipilih</span>
           </div>
         </div>
-        <button type="button" class="btn btn-primary btn-sm" id="btn-sidebar-copy" style="width:100%;" disabled>Salin Alamat</button>
+        <button type="button" class="btn btn-primary btn-sm btn-copy-anim" id="btn-sidebar-copy" style="width:100%;" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>Salin Alamat</span>
+        </button>
       </div>
     </div>
 
@@ -147,11 +153,30 @@
     </div>
 
     <div class="sidebar-footer">
-      <button type="button" class="btn btn-soft btn-sm" id="btn-sidebar-theme">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-        <span id="sidebar-theme-label">Mode Gelap</span>
+      <button type="button" class="sidebar-theme-row" id="btn-sidebar-theme" role="switch" aria-checked="false" aria-label="Ganti tema terang atau gelap">
+        <span class="sidebar-theme-copy">
+          <span class="sidebar-theme-title" id="sidebar-theme-label">Mode Terang</span>
+          <span class="sidebar-theme-sub" id="sidebar-theme-sub">Blob bangun cerah</span>
+        </span>
+        <span class="blob-toggle is-compact is-visual" id="sidebar-blob-visual" aria-hidden="true">
+          <span class="blob-track">
+            <span class="blob-sky-glow"></span>
+            <span class="blob-stars"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="blob-sparkles"><i></i><i></i><i></i></span>
+          </span>
+          <span class="blob-ball">
+            <span class="blob-arm is-left"></span>
+            <span class="blob-arm is-right"></span>
+            <span class="blob-face">
+              <span class="blob-eye is-left"></span>
+              <span class="blob-eye is-right"></span>
+              <span class="blob-mouth"></span>
+              <span class="blob-cheek is-left"></span>
+              <span class="blob-cheek is-right"></span>
+            </span>
+          </span>
+          <span class="blob-zzz"><i>z</i><i>z</i><i>Z</i></span>
+        </span>
       </button>
       <button type="button" class="btn btn-sm btn-danger-outline hidden" id="btn-sidebar-logout">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -179,6 +204,7 @@
 
       <!-- Segmented Sky Tool Navigation (Kotak Masuk | 2FA | Microsoft Reader) -->
       <nav class="public-tool-nav" id="public-tool-nav" aria-label="Menu fitur utama">
+        <span class="seg-blob-thumb" id="public-nav-blob" aria-hidden="true"></span>
         <a href="/" class="public-tool-link is-active" data-public-nav="inbox" id="nav-tool-inbox">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
             <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
@@ -220,6 +246,8 @@
             <span class="blob-sparkles"><i></i><i></i><i></i></span>
           </span>
           <span class="blob-ball" aria-hidden="true">
+            <span class="blob-arm is-left"></span>
+            <span class="blob-arm is-right"></span>
             <span class="blob-face">
               <span class="blob-eye is-left"></span>
               <span class="blob-eye is-right"></span>
@@ -234,7 +262,7 @@
         <button type="button" class="owner-login-icon" id="btn-open-admin" aria-label="Login Admin" title="Login Admin">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="4" y="11" width="16" height="10" rx="2.5"></rect>
-            <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+            <path class="padlock-shackle" d="M8 11V7a4 4 0 0 1 8 0v4"></path>
             <circle cx="12" cy="16" r="1"></circle>
           </svg>
         </button>
@@ -381,7 +409,14 @@
                 <p class="card-sub">Klik <strong>Buka Inbox</strong> untuk membaca pesan, atau <strong>Salin Link</strong> untuk dibagikan ke pengguna lain.</p>
               </div>
             </div>
-            <button type="button" class="btn btn-soft btn-sm" id="btn-admin-refresh-mailboxes">Segarkan</button>
+            <button type="button" class="btn btn-soft btn-sm btn-refresh-anim" id="btn-admin-refresh-mailboxes">
+              <svg class="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>Segarkan</span>
+            </button>
           </div>
 
           <div class="admin-filter-row is-two-col">
@@ -428,7 +463,14 @@
               <label for="admin-filter-search">Cari Semua Pesan &amp; OTP</label>
               <input type="search" id="admin-filter-search" class="text-input" placeholder="Penerima, pengirim, subjek, atau kode OTP...">
             </div>
-            <button type="button" class="btn btn-soft btn-sm" id="btn-admin-refresh-msgs">Segarkan</button>
+            <button type="button" class="btn btn-soft btn-sm btn-refresh-anim" id="btn-admin-refresh-msgs">
+              <svg class="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>Segarkan</span>
+            </button>
           </div>
         </div>
 
@@ -547,9 +589,21 @@
               </select>
             </div>
 
-            <label class="checkbox-row" for="check-auto-register">
-              <input type="checkbox" id="check-auto-register">
-              <span>Otomatis daftarkan domain baru saat ada email masuk lewat Cloudflare Email Routing</span>
+            <label class="checkbox-row blob-switch-row" for="check-auto-register">
+              <input type="checkbox" id="check-auto-register" class="blob-switch-input">
+              <span class="blob-mini-switch" aria-hidden="true">
+                <span class="blob-mini-track">
+                  <span class="blob-mini-sparkles"><i></i><i></i></span>
+                </span>
+                <span class="blob-mini-ball">
+                  <span class="blob-mini-eye is-left"></span>
+                  <span class="blob-mini-eye is-right"></span>
+                  <span class="blob-mini-mouth"></span>
+                  <span class="blob-mini-cheek is-left"></span>
+                  <span class="blob-mini-cheek is-right"></span>
+                </span>
+              </span>
+              <span class="blob-switch-text">Otomatis daftarkan domain baru saat ada email masuk lewat Cloudflare Email Routing</span>
             </label>
 
             <div class="form-field">
@@ -630,7 +684,7 @@
                   Buka Inbox
                 </button>
 
-                <button type="button" class="btn btn-soft btn-copy-main" id="btn-copy-email" disabled>
+                <button type="button" class="btn btn-soft btn-copy-main btn-copy-anim" id="btn-copy-email" disabled>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <rect x="9" y="9" width="13" height="13" rx="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -656,8 +710,8 @@
                 </div>
 
                 <div class="inbox-head-actions">
-                  <button type="button" class="btn btn-soft btn-sm" id="btn-refresh-inbox" disabled>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:15px;height:15px;">
+                  <button type="button" class="btn btn-soft btn-sm btn-refresh-anim" id="btn-refresh-inbox" disabled>
+                    <svg class="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true" style="width:15px;height:15px;">
                       <polyline points="23 4 23 10 17 10"></polyline>
                       <polyline points="1 20 1 14 7 14"></polyline>
                       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
@@ -723,7 +777,13 @@
               </div>
               <div class="twofa-code-stage">
                 <div class="twofa-code-digits mono" id="twofa-shared-code">--- ---</div>
-                <button type="button" class="btn btn-primary" id="btn-copy-shared-2fa">Salin Kode 2FA</button>
+                <button type="button" class="btn btn-primary btn-copy-anim" id="btn-copy-shared-2fa">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span>Salin Kode 2FA</span>
+                </button>
               </div>
             </section>
 
@@ -773,7 +833,7 @@
 
               <div class="twofa-code-stage">
                 <div class="twofa-code-digits mono" id="twofa-current-code">--- ---</div>
-                <button type="button" class="btn btn-primary btn-copy-2fa" id="btn-copy-2fa-code" disabled>
+                <button type="button" class="btn btn-primary btn-copy-2fa btn-copy-anim" id="btn-copy-2fa-code" disabled>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <rect x="9" y="9" width="13" height="13" rx="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -802,7 +862,13 @@
 
                 <div class="twofa-share-output hidden" id="twofa-share-output">
                   <input type="text" id="input-2fa-share-url" class="text-input mono" readonly aria-label="Tautan privat 2FA">
-                  <button type="button" class="btn btn-primary btn-sm" id="btn-copy-2fa-share-url">Salin Link</button>
+                  <button type="button" class="btn btn-primary btn-sm btn-copy-anim" id="btn-copy-2fa-share-url">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span>Salin Link</span>
+                  </button>
                 </div>
               </div>
             </section>
@@ -835,49 +901,220 @@
         <section class="desktop-welcome-card msmail-connect-bar" aria-labelledby="msmail-heading">
           <div class="msmail-bar-top">
             <div class="lookup-copy">
-              <h1 id="msmail-heading">Microsoft / Outlook Inbox Reader</h1>
+              <h1 id="msmail-heading">Microsoft / Outlook Mail Reader</h1>
               <p class="hero-subtitle">
-                Buka kotak masuk Outlook, Hotmail, dan Microsoft 365 menggunakan Refresh Token &amp; Client ID tanpa login akun.
+                Cukup masukkan <strong>Email &amp; Password</strong> untuk membuka Inbox dan Junk Email Outlook, Hotmail, Microsoft 365, atau IMAP tanpa wajib Refresh Token maupun Client ID.
               </p>
             </div>
 
-            <div class="msmail-format-pills">
-              <button type="button" class="badge badge-brand ms-format-chip" data-ms-example="pipe" title="Gunakan contoh format garis vertikal">
-                Format Pipe: email|sandi|refresh_token|client_id
-              </button>
-              <button type="button" class="badge badge-neutral ms-format-chip" data-ms-example="colon" title="Gunakan contoh format titik dua">
-                Format Titik Dua: email:sandi:refresh_token:client_id
-              </button>
+            <div class="msmail-top-actions">
+              <div class="ms-mode-nav" id="ms-mode-nav" role="tablist" aria-label="Metode Koneksi Microsoft Reader">
+                <span class="seg-blob-thumb" id="ms-mode-blob" aria-hidden="true"></span>
+                <button type="button" class="ms-mode-btn is-active" role="tab" aria-selected="true" data-ms-mode="login" id="tab-ms-mode-login">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="3"></rect>
+                    <polyline points="3 7 12 13 21 7"></polyline>
+                  </svg>
+                  <span>Email &amp; Sandi</span>
+                </button>
+                <button type="button" class="ms-mode-btn" role="tab" aria-selected="false" data-ms-mode="device" id="tab-ms-mode-device">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                  </svg>
+                  <span>Login Cepat MS</span>
+                </button>
+                <button type="button" class="ms-mode-btn" role="tab" aria-selected="false" data-ms-mode="combo" id="tab-ms-mode-combo">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1"></rect>
+                  </svg>
+                  <span>Combo</span>
+                </button>
+              </div>
+
               <button type="button" class="btn btn-sm btn-danger-outline hidden" id="btn-ms-disconnect">
-                Putus Koneksi
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true" style="width:14px;height:14px;">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span>Putus Koneksi</span>
               </button>
             </div>
           </div>
 
           <form class="msmail-connect-form" id="msmail-connect-form" novalidate>
-            <div class="msmail-combo-row">
-              <div class="builder-field" style="flex:1;">
-                <label for="input-ms-combo" class="builder-label">Combo Microsoft OAuth (email, refresh_token, dan client_id terdeteksi otomatis; sandi diabaikan)</label>
-                <input
-                  type="text"
-                  id="input-ms-combo"
-                  class="username-input mono"
-                  placeholder="email@outlook.com|sandi|M.C509_...|9e5f94bc-e8a4-4e73-b8be-63364c29d753"
-                  autocomplete="off"
-                  autocapitalize="off"
-                  spellcheck="false"
-                  required
-                >
+            <!-- MODE 1: SIMPLE EMAIL & PASSWORD (DEFAULT) -->
+            <div class="ms-mode-panel" id="ms-panel-login">
+              <div class="msmail-login-grid">
+                <div class="builder-field">
+                  <label for="input-ms-email" class="builder-label">Email Microsoft / Outlook / IMAP</label>
+                  <input
+                    type="text"
+                    inputmode="email"
+                    id="input-ms-email"
+                    class="username-input"
+                    placeholder="nama@outlook.com (bisa tempel email:sandi)"
+                    autocomplete="username"
+                    autocapitalize="off"
+                    spellcheck="false"
+                  >
+                </div>
+
+                <div class="builder-field">
+                  <div class="ms-label-row">
+                    <label for="input-ms-password" class="builder-label">Password / App Password</label>
+                    <button type="button" class="ms-adv-link" id="btn-ms-imap-toggle" aria-expanded="false">
+                      Server IMAP Kustom
+                    </button>
+                  </div>
+                  <div class="ms-pass-wrap">
+                    <input
+                      type="password"
+                      id="input-ms-password"
+                      class="username-input ms-pass-input"
+                      placeholder="Masukkan password akun email..."
+                      autocomplete="current-password"
+                    >
+                    <button
+                      type="button"
+                      class="ms-eye-btn"
+                      id="btn-ms-toggle-pass"
+                      aria-label="Tampilkan password"
+                      aria-pressed="false"
+                      title="Tampilkan / sembunyikan password"
+                    >
+                      <!-- Sleepy closed eye (hidden password) -->
+                      <svg class="eye-icon is-sleepy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 10.5c2.4 3.6 5.6 5.4 9 5.4s6.6-1.8 9-5.4"></path>
+                        <line x1="6.2" y1="14" x2="4.6" y2="16.6"></line>
+                        <line x1="12" y1="16" x2="12" y2="19"></line>
+                        <line x1="17.8" y1="14" x2="19.4" y2="16.6"></line>
+                      </svg>
+                      <!-- Awake sparkle eye (visible password) -->
+                      <svg class="eye-icon is-awake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"></path>
+                        <circle cx="12" cy="12" r="3.2" fill="currentColor"></circle>
+                        <circle cx="10.9" cy="10.9" r="1" fill="#ffffff" stroke="none"></circle>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-open-main" id="btn-ms-connect">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="width:16px;height:16px;">
+                    <path d="M22 12h-6l-2 3h-4l-2-3H2"></path>
+                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                  </svg>
+                  <span id="btn-ms-connect-label">Masuk &amp; Buka Inbox</span>
+                </button>
               </div>
-              <button type="submit" class="btn btn-primary btn-open-main" id="btn-ms-connect">
-                Hubungkan &amp; Buka Inbox
-              </button>
+
+              <div class="ms-imap-adv-row hidden" id="ms-imap-adv-row">
+                <div class="builder-field">
+                  <label for="input-ms-imap-host" class="builder-label">Host Server IMAPS (Opsional)</label>
+                  <input
+                    type="text"
+                    id="input-ms-imap-host"
+                    class="username-input mono"
+                    placeholder="Otomatis (mis. outlook.office365.com / imap.domain.com)"
+                    autocomplete="off"
+                    spellcheck="false"
+                  >
+                </div>
+                <div class="builder-field ms-imap-port-field">
+                  <label for="input-ms-imap-port" class="builder-label">Port TLS</label>
+                  <input
+                    type="number"
+                    id="input-ms-imap-port"
+                    class="username-input mono"
+                    value="993"
+                    min="1"
+                    max="65535"
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- MODE 2: 1-CLICK OFFICIAL MICROSOFT LOGIN (FOR PERSONAL HOTMAIL/OUTLOOK & MFA) -->
+            <div class="ms-mode-panel hidden" id="ms-panel-device">
+              <div class="ms-device-card">
+                <div class="ms-device-info">
+                  <div class="ms-device-badge-row">
+                    <span class="ms-live-blob-dot" aria-hidden="true"></span>
+                    <strong id="ms-device-title">Login Resmi Microsoft Tanpa Token</strong>
+                  </div>
+                  <p id="ms-device-desc">
+                    Cocok untuk semua akun personal <code>@hotmail.com</code> / <code>@outlook.com</code> maupun akun dengan 2FA. Cukup salin kode di samping, masukkan Email &amp; Password Anda di halaman resmi Microsoft, dan kotak masuk akan terbuka otomatis.
+                  </p>
+                </div>
+
+                <div class="ms-device-controls">
+                  <div class="ms-device-code-pill hidden" id="ms-device-code-wrap">
+                    <span class="ms-device-code-caption">Kode Verifikasi</span>
+                    <strong class="ms-device-code-value mono" id="ms-device-code">--------</strong>
+                  </div>
+
+                  <div class="ms-device-btns">
+                    <button type="button" class="btn btn-soft btn-sm btn-copy-anim hidden" id="btn-ms-copy-device-code">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:15px;height:15px;">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                      <svg class="amc-copy-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span data-copy-label>Salin Kode</span>
+                    </button>
+
+                    <button type="button" class="btn btn-primary btn-sm hidden" id="btn-ms-open-device-link">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="width:15px;height:15px;">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
+                      <span>Buka Login Microsoft</span>
+                    </button>
+
+                    <button type="button" class="btn btn-primary btn-sm btn-refresh-anim" id="btn-ms-start-device">
+                      <svg class="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true" style="width:15px;height:15px;">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                      </svg>
+                      <span id="btn-ms-start-device-label">Buat Kode Login Microsoft</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MODE 3: FLEXIBLE COMBO / OPTIONAL TOKEN PASTE -->
+            <div class="ms-mode-panel hidden" id="ms-panel-combo">
+              <div class="msmail-combo-row">
+                <div class="builder-field" style="flex:1;">
+                  <label for="input-ms-combo" class="builder-label">Tempel Combo Bebas (cukup <code>email:password</code> / <code>email|password</code>, atau sertakan <code>refresh_token</code> opsional)</label>
+                  <input
+                    type="text"
+                    id="input-ms-combo"
+                    class="username-input mono"
+                    placeholder="email@outlook.com:password123  atau  email|sandi|refresh_token"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                  >
+                </div>
+                <button type="submit" class="btn btn-primary btn-open-main" id="btn-ms-connect-combo">
+                  <span>Hubungkan &amp; Buka Inbox</span>
+                </button>
+              </div>
             </div>
 
             <div class="msmail-detect-strip" id="ms-detect-strip">
-              <span class="ms-detect-item" id="ms-detect-email">Email: Menunggu input</span>
-              <span class="ms-detect-item" id="ms-detect-client">Client ID: Menunggu UUID</span>
-              <span class="ms-detect-item" id="ms-detect-token">Refresh Token: Menunggu token</span>
+              <span class="ms-detect-item" id="ms-detect-email">Email: Siap diisi</span>
+              <span class="ms-detect-item" id="ms-detect-client">Metode: Email &amp; Password</span>
+              <span class="ms-detect-item hidden" id="ms-detect-token">OAuth Token: Opsional</span>
               <span class="ms-detect-item is-privacy">Privasi: Sesi tab lokal, tidak disimpan di server</span>
             </div>
 
@@ -897,8 +1134,19 @@
                 </div>
 
                 <div class="inbox-head-actions">
-                  <button type="button" class="btn btn-soft btn-sm" id="btn-ms-refresh" disabled>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:15px;height:15px;">
+                  <button type="button" class="btn btn-soft btn-sm btn-copy-anim hidden" id="btn-ms-copy-addr" title="Salin alamat email aktif">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:14px;height:14px;">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <svg class="amc-copy-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span data-copy-label>Salin</span>
+                  </button>
+
+                  <button type="button" class="btn btn-soft btn-sm btn-refresh-anim" id="btn-ms-refresh" disabled>
+                    <svg class="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true" style="width:15px;height:15px;">
                       <polyline points="23 4 23 10 17 10"></polyline>
                       <polyline points="1 20 1 14 7 14"></polyline>
                       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
@@ -930,7 +1178,7 @@
             <div class="inbox-list" id="msmail-list" aria-live="polite">
               <div class="state-panel">
                 <h3>Belum Ada Akun Terhubung</h3>
-                <p>Tempel combo Microsoft di atas lalu klik Hubungkan &amp; Buka Inbox untuk memuat pesan.</p>
+                <p>Masukkan Email &amp; Password di atas lalu klik <strong>Masuk &amp; Buka Inbox</strong> untuk membaca pesan.</p>
               </div>
             </div>
           </aside>
@@ -938,40 +1186,40 @@
           <div class="reader-pane" id="msmail-reader-pane" aria-live="polite">
             <div class="msmail-guide-stage" id="msmail-empty">
               <div class="msmail-guide-head">
-                <h3>Panduan Koneksi Microsoft Inbox Reader</h3>
-                <p>Buka email verifikasi dan pesan masuk dari Hotmail, Outlook, atau Microsoft 365 secara instan melalui Microsoft Graph API.</p>
+                <h3>Panduan Microsoft / Outlook Mail Reader</h3>
+                <p>Buka email masuk dan kode OTP dari Outlook, Hotmail, Microsoft 365, maupun server IMAP cukup dengan Email &amp; Password.</p>
               </div>
 
               <div class="msmail-guide-grid">
                 <div class="msmail-guide-item">
                   <span class="step-badge" aria-hidden="true">1</span>
                   <div>
-                    <h4>Deteksi Format Combo Otomatis</h4>
-                    <p>Mendukung pemisah garis vertikal (<code>|</code>), titik dua (<code>:</code>), maupun empat strip (<code>----</code>). Urutan <code>refresh_token</code> dan <code>client_id</code> dikenali otomatis.</p>
+                    <h4>Cukup Email &amp; Password</h4>
+                    <p>Tidak perlu mencari UUID <code>client_id</code> atau <code>refresh_token</code>. Anda juga bisa menempel <code>email:password</code> langsung ke kolom Email.</p>
                   </div>
                 </div>
 
                 <div class="msmail-guide-item">
                   <span class="step-badge" aria-hidden="true">2</span>
                   <div>
-                    <h4>Gabungan Inbox &amp; Junk Otomatis</h4>
-                    <p>Secara bawaan menggabungkan pesan dari folder <strong>Inbox</strong> dan <strong>Junk Email (Spam)</strong> agar email kode OTP tidak terlewat.</p>
+                    <h4>Mendukung Personal Hotmail &amp; 2FA</h4>
+                    <p>Untuk akun personal <code>@hotmail.com</code> / <code>@outlook.com</code> dengan proteksi Modern Auth, konfirmasi login resmi terbuka satu klik tanpa token manual.</p>
                   </div>
                 </div>
 
                 <div class="msmail-guide-item">
                   <span class="step-badge" aria-hidden="true">3</span>
                   <div>
-                    <h4>Salin Kode OTP Satu Klik</h4>
-                    <p>Kode verifikasi 4 sampai 8 digit pada subjek maupun isi email dideteksi otomatis dan siap disalin langsung dari daftar pesan.</p>
+                    <h4>Gabungan Inbox &amp; Junk + Salin OTP</h4>
+                    <p>Otomatis menggabungkan folder <strong>Inbox</strong> dan <strong>Junk Email (Spam)</strong> serta mendeteksi kode OTP 4–8 digit siap salin.</p>
                   </div>
                 </div>
 
                 <div class="msmail-guide-item">
                   <span class="step-badge" aria-hidden="true">4</span>
                   <div>
-                    <h4>Sesi Privat Tanpa Riwayat Server</h4>
-                    <p>Bagian sandi diabaikan sepenuhnya. Refresh token hanya dipakai untuk permintaan aktif ke Microsoft Graph dan bersih saat tab ditutup.</p>
+                    <h4>Privasi Sesi Lokal</h4>
+                    <p>Email dan sandi hanya digunakan pada sesi aktif tab browser Anda untuk mengambil pesan dan tidak pernah disimpan di database server.</p>
                   </div>
                 </div>
               </div>

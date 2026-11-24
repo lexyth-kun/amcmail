@@ -38,6 +38,8 @@ import {
   connectMicrosoftMailbox,
   getMicrosoftMessageDetail,
   listMicrosoftMessages,
+  pollMicrosoftDeviceAuth,
+  startMicrosoftDeviceAuth,
 } from './ms-mail.js';
 
 const APP_VERSION = '3.0.0';
@@ -395,6 +397,9 @@ async function handleApi(request, env, url) {
     }
   }
 
+  const allowMsMock =
+    isSimulatorAllowed(env) || url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+
   if (pathname === '/api/ms-mail/connect' && method === 'POST') {
     const body = await readJsonBody(request);
     if (!body) return errorJson('Body JSON tidak valid.', 400);
@@ -402,13 +407,44 @@ async function handleApi(request, env, url) {
     const res = await connectMicrosoftMailbox({
       combo: body.combo || '',
       email: body.email || '',
+      password: body.password || '',
       refreshToken: body.refreshToken || '',
       clientId: body.clientId || '',
+      imapHost: body.imapHost || '',
+      imapPort: Number(body.imapPort || 993),
       folder: body.folder || 'all_incoming',
-      allowMock: isSimulatorAllowed(env),
+      allowMock: allowMsMock,
     });
     if (!res.ok) {
       return errorJson(res.error, res.status || 400, res.code || 'MS_CONNECT_ERROR');
+    }
+    return json(res);
+  }
+
+  if (pathname === '/api/ms-mail/device-start' && method === 'POST') {
+    const body = (await readJsonBody(request)) || {};
+    const res = await startMicrosoftDeviceAuth({
+      email: body.email || '',
+    });
+    if (!res.ok) {
+      return errorJson(res.error, res.status || 502, 'MS_DEVICE_START_ERROR');
+    }
+    return json(res);
+  }
+
+  if (pathname === '/api/ms-mail/device-poll' && method === 'POST') {
+    const body = await readJsonBody(request);
+    if (!body) return errorJson('Body JSON tidak valid.', 400);
+
+    const res = await pollMicrosoftDeviceAuth({
+      deviceCode: body.deviceCode || '',
+      clientId: body.clientId || '',
+      tenant: body.tenant || 'common',
+      email: body.email || '',
+      folder: body.folder || 'all_incoming',
+    });
+    if (!res.ok) {
+      return errorJson(res.error, res.status || 400, 'MS_DEVICE_POLL_ERROR');
     }
     return json(res);
   }
@@ -418,13 +454,17 @@ async function handleApi(request, env, url) {
     if (!body) return errorJson('Body JSON tidak valid.', 400);
 
     const res = await listMicrosoftMessages({
+      transport: body.transport || 'graph',
       accessToken: body.accessToken || '',
       refreshToken: body.refreshToken || '',
       clientId: body.clientId || '',
       email: body.email || '',
+      password: body.password || '',
+      imapHost: body.imapHost || '',
+      imapPort: Number(body.imapPort || 993),
       folder: body.folder || 'all_incoming',
       top: Number(body.top || 35),
-      allowMock: isSimulatorAllowed(env),
+      allowMock: allowMsMock,
     });
     if (!res.ok) {
       return errorJson(res.error, res.status || 400, 'MS_LIST_ERROR');
@@ -437,12 +477,16 @@ async function handleApi(request, env, url) {
     if (!body) return errorJson('Body JSON tidak valid.', 400);
 
     const res = await getMicrosoftMessageDetail({
+      transport: body.transport || 'graph',
       accessToken: body.accessToken || '',
       refreshToken: body.refreshToken || '',
       clientId: body.clientId || '',
       email: body.email || '',
+      password: body.password || '',
+      imapHost: body.imapHost || '',
+      imapPort: Number(body.imapPort || 993),
       messageId: body.messageId || '',
-      allowMock: isSimulatorAllowed(env),
+      allowMock: allowMsMock,
     });
     if (!res.ok) {
       return errorJson(res.error, res.status || 400, 'MS_MESSAGE_ERROR');
