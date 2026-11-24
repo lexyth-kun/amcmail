@@ -122,8 +122,6 @@ const els = {
   btnSidebarLogout: $('btn-sidebar-logout'),
 
   btnThemeToggle: $('btn-theme-toggle'),
-  iconMoon: $('icon-moon'),
-  iconSun: $('icon-sun'),
   btnOpenAdmin: $('btn-open-admin'),
   btnMobileLogout: $('btn-mobile-logout'),
 
@@ -377,11 +375,13 @@ async function apiFetch(path, options = {}) {
 
 function syncThemeUI() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  els.iconMoon.classList.toggle('hidden', isDark);
-  els.iconSun.classList.toggle('hidden', !isDark);
-  els.btnThemeToggle.setAttribute('aria-pressed', String(isDark));
+  els.btnThemeToggle.setAttribute('aria-checked', String(isDark));
+  els.btnThemeToggle.setAttribute('aria-label', isDark ? 'Mode terang' : 'Mode gelap');
+  els.btnThemeToggle.classList.toggle('is-asleep', isDark);
   els.sidebarThemeLabel.textContent = isDark ? 'Mode Terang' : 'Mode Gelap';
 }
+
+let blobAnimTimer = null;
 
 function toggleTheme() {
   const root = document.documentElement;
@@ -394,6 +394,12 @@ function toggleTheme() {
     root.setAttribute('data-theme', 'dark');
     try { localStorage.setItem(STORAGE_KEYS.theme, 'dark'); } catch {}
   }
+  const btn = els.btnThemeToggle;
+  btn.classList.remove('is-rolling');
+  void btn.offsetWidth;
+  btn.classList.add('is-rolling');
+  clearTimeout(blobAnimTimer);
+  blobAnimTimer = setTimeout(() => btn.classList.remove('is-rolling'), 700);
   syncThemeUI();
   void root.offsetHeight;
   requestAnimationFrame(() => root.classList.remove('theme-switching'));

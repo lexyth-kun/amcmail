@@ -212,21 +212,23 @@
           <span>AMC Order</span>
         </a>
 
-        <button type="button" class="header-icon-btn" id="btn-theme-toggle" aria-label="Ganti tema terang atau gelap" title="Ganti tema">
-          <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
-          <svg id="icon-sun" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-          </svg>
+        <!-- Sleepy Blob theme switch (AMC sky blue): bangun = terang, tidur = gelap -->
+        <button type="button" class="blob-toggle" id="btn-theme-toggle" role="switch" aria-checked="false" aria-label="Mode gelap" title="Ganti tema terang atau gelap">
+          <span class="blob-track" aria-hidden="true">
+            <span class="blob-sky-glow"></span>
+            <span class="blob-stars"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="blob-sparkles"><i></i><i></i><i></i></span>
+          </span>
+          <span class="blob-ball" aria-hidden="true">
+            <span class="blob-face">
+              <span class="blob-eye is-left"></span>
+              <span class="blob-eye is-right"></span>
+              <span class="blob-mouth"></span>
+              <span class="blob-cheek is-left"></span>
+              <span class="blob-cheek is-right"></span>
+            </span>
+          </span>
+          <span class="blob-zzz" aria-hidden="true"><i>z</i><i>z</i><i>Z</i></span>
         </button>
 
         <button type="button" class="owner-login-icon" id="btn-open-admin" aria-label="Login Admin" title="Login Admin">

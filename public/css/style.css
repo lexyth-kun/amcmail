@@ -4143,3 +4143,312 @@ body.is-admin-mode .header-order-link {
     scroll-behavior: auto !important;
   }
 }
+
+/* ==========================================================================
+   Sleepy Blob Theme Switch (AMC sky blue)
+   Terang: blob bangun di kiri, langit biru cerah berkilau.
+   Gelap: blob menggelinding ke kanan lalu tertidur, langit malam sky dark berbintang.
+   Transisi dipaksa !important agar tetap jalan saat .theme-switching aktif.
+   ========================================================================== */
+.blob-toggle {
+  --blob-w: 80px;
+  --blob-h: 42px;
+  --blob-pad: 4px;
+  --blob-size: 30px;
+  --blob-ease: cubic-bezier(0.68, -0.35, 0.27, 1.35);
+  position: relative;
+  flex-shrink: 0;
+  width: var(--blob-w);
+  height: var(--blob-h);
+  padding: var(--blob-pad);
+  border-radius: 999px;
+  border: 1.5px solid #bae6fd;
+  background: linear-gradient(180deg, #ffffff, #f0f9ff);
+  box-shadow: 0 8px 18px rgba(14, 165, 233, 0.18), 0 2px 4px rgba(2, 132, 199, 0.08), inset 0 1px 0 #ffffff;
+  cursor: var(--cur-hover);
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.blob-toggle:hover {
+  box-shadow: 0 10px 24px rgba(56, 189, 248, 0.28), 0 2px 4px rgba(2, 132, 199, 0.1), inset 0 1px 0 #ffffff;
+}
+
+.blob-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--brand-ring), 0 8px 18px rgba(14, 165, 233, 0.18);
+}
+
+.blob-toggle:active .blob-ball {
+  scale: 1.08 0.92;
+}
+
+.blob-track {
+  position: absolute;
+  inset: var(--blob-pad);
+  border-radius: 999px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #e0f2fe 0%, #7dd3fc 58%, #38bdf8 100%);
+  box-shadow: inset 0 3px 6px rgba(2, 132, 199, 0.32), inset 0 -2px 4px rgba(255, 255, 255, 0.55);
+}
+
+.blob-sky-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 24% 50%, rgba(255, 255, 255, 0.7), transparent 55%);
+}
+
+.blob-track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 78% 40%, rgba(56, 189, 248, 0.45), transparent 60%),
+    linear-gradient(180deg, #0c4a6e 0%, #082f49 55%, #0b1220 100%);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+}
+
+/* Kilau kecil di sisi kanan saat terang */
+.blob-sparkles i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: #ffffff;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: blob-twinkle 2.4s ease-in-out infinite;
+  z-index: 1;
+}
+.blob-sparkles i:nth-child(1) { top: 7px; right: 12px; }
+.blob-sparkles i:nth-child(2) { top: 18px; right: 24px; width: 5px; height: 5px; animation-delay: 0.8s; }
+.blob-sparkles i:nth-child(3) { top: 5px; right: 30px; width: 4px; height: 4px; animation-delay: 1.5s; }
+
+/* Bintang di sisi kiri saat gelap */
+.blob-stars i {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  box-shadow: 0 0 4px rgba(186, 230, 253, 0.9);
+  opacity: 0;
+  z-index: 1;
+}
+.blob-stars i:nth-child(1) { top: 7px; left: 10px; }
+.blob-stars i:nth-child(2) { top: 20px; left: 17px; width: 3px; height: 3px; }
+.blob-stars i:nth-child(3) { top: 10px; left: 27px; }
+.blob-stars i:nth-child(4) { top: 24px; left: 34px; }
+.blob-stars i:nth-child(5) { top: 6px; left: 41px; width: 3px; height: 3px; }
+.blob-stars i:nth-child(6) { top: 17px; left: 6px; }
+
+.blob-ball {
+  position: absolute;
+  top: calc(50% - var(--blob-size) / 2);
+  left: calc(var(--blob-pad) + 2px);
+  width: var(--blob-size);
+  height: var(--blob-size);
+  border-radius: 50%;
+  z-index: 2;
+  background: radial-gradient(circle at 34% 28%, #ffffff 0%, #ffffff 38%, #eef8ff 70%, #cfeafc 100%);
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.35), inset -3px -4px 7px rgba(125, 211, 252, 0.4), inset 2px 2px 4px #ffffff;
+  translate: 0 0;
+  transform-origin: 50% 85%;
+}
+
+.blob-face {
+  position: absolute;
+  inset: 0;
+  rotate: 0deg;
+}
+
+.blob-eye {
+  position: absolute;
+  top: 12px;
+  width: 4px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0c4a6e;
+  animation: blob-blink 4.2s ease-in-out infinite;
+}
+.blob-eye.is-left { left: 8px; }
+.blob-eye.is-right { right: 8px; }
+
+.blob-mouth {
+  position: absolute;
+  top: 17px;
+  left: 50%;
+  width: 7px;
+  height: 4px;
+  margin-left: -3.5px;
+  border: 1.8px solid #0c4a6e;
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+.blob-cheek {
+  position: absolute;
+  top: 17px;
+  width: 6px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.55);
+  filter: blur(0.4px);
+}
+.blob-cheek.is-left { left: 4px; }
+.blob-cheek.is-right { right: 4px; }
+
+.blob-zzz {
+  position: absolute;
+  top: -6px;
+  right: 2px;
+  width: 22px;
+  height: 20px;
+  pointer-events: none;
+  z-index: 3;
+}
+.blob-zzz i {
+  position: absolute;
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 800;
+  color: #7dd3fc;
+  text-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+  opacity: 0;
+  line-height: 1;
+}
+.blob-zzz i:nth-child(1) { left: 0; bottom: 0; font-size: 8px; }
+.blob-zzz i:nth-child(2) { left: 7px; bottom: 6px; font-size: 9px; }
+.blob-zzz i:nth-child(3) { left: 14px; bottom: 12px; font-size: 11px; }
+
+/* Transisi (selalu aktif, termasuk saat .theme-switching) */
+.blob-toggle,
+.blob-toggle .blob-track::after,
+.blob-toggle .blob-sky-glow,
+.blob-toggle .blob-sparkles,
+.blob-toggle .blob-stars i,
+.blob-toggle .blob-eye,
+.blob-toggle .blob-mouth,
+.blob-toggle .blob-cheek {
+  transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease, opacity 0.5s ease,
+    width 0.35s ease, height 0.35s ease, border-radius 0.35s ease, top 0.35s ease !important;
+}
+.blob-toggle .blob-ball {
+  transition: translate 0.62s var(--blob-ease), box-shadow 0.5s ease, background 0.5s ease, scale 0.15s ease !important;
+}
+.blob-toggle .blob-face {
+  transition: rotate 0.62s var(--blob-ease), translate 0.62s var(--blob-ease) !important;
+}
+
+/* ---------- State: gelap (blob tidur) ---------- */
+.blob-toggle.is-asleep {
+  border-color: rgba(56, 189, 248, 0.42);
+  background: linear-gradient(180deg, #13223a, #0b1220);
+  box-shadow: 0 0 0 1px rgba(8, 47, 73, 0.6), 0 8px 22px rgba(56, 189, 248, 0.2), inset 0 1px 0 rgba(125, 211, 252, 0.18);
+}
+.blob-toggle.is-asleep:hover {
+  box-shadow: 0 0 0 1px rgba(8, 47, 73, 0.6), 0 10px 26px rgba(56, 189, 248, 0.32), inset 0 1px 0 rgba(125, 211, 252, 0.22);
+}
+.blob-toggle.is-asleep .blob-track::after { opacity: 1; }
+.blob-toggle.is-asleep .blob-sky-glow,
+.blob-toggle.is-asleep .blob-sparkles { opacity: 0; }
+.blob-toggle.is-asleep .blob-stars i {
+  opacity: 1;
+  animation: blob-twinkle 2.6s ease-in-out infinite;
+}
+.blob-toggle.is-asleep .blob-stars i:nth-child(2n) { animation-delay: 0.9s; }
+.blob-toggle.is-asleep .blob-stars i:nth-child(3n) { animation-delay: 1.6s; }
+
+.blob-toggle.is-asleep .blob-ball {
+  translate: calc(var(--blob-w) - var(--blob-size) - var(--blob-pad) * 2 - 7px) 0;
+  background: radial-gradient(circle at 34% 28%, #ffffff 0%, #f0f9ff 40%, #dbeefe 72%, #a5d8f7 100%);
+  box-shadow: 0 0 14px rgba(125, 211, 252, 0.55), 0 4px 10px rgba(0, 0, 0, 0.45), inset -3px -4px 7px rgba(56, 189, 248, 0.35), inset 2px 2px 4px #ffffff;
+  animation: blob-breathe 3.2s ease-in-out 0.7s infinite;
+}
+.blob-toggle.is-asleep .blob-face {
+  rotate: -8deg;
+  translate: -1px 1px;
+}
+.blob-toggle.is-asleep .blob-eye {
+  top: 13px;
+  width: 7px;
+  height: 4px;
+  border-radius: 0 0 8px 8px;
+  background: transparent;
+  box-shadow: inset 0 -1.8px 0 #0c4a6e;
+  animation: none;
+}
+.blob-toggle.is-asleep .blob-eye.is-left { left: 6px; }
+.blob-toggle.is-asleep .blob-eye.is-right { right: 6px; }
+.blob-toggle.is-asleep .blob-mouth {
+  top: 19px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border: 1.6px solid #0c4a6e;
+  border-radius: 50%;
+  opacity: 0.85;
+}
+.blob-toggle.is-asleep .blob-cheek { background: rgba(56, 189, 248, 0.7); }
+.blob-toggle.is-asleep .blob-zzz i {
+  animation: blob-zzz 2.4s ease-in-out infinite;
+}
+.blob-toggle.is-asleep .blob-zzz i:nth-child(2) { animation-delay: 0.6s; }
+.blob-toggle.is-asleep .blob-zzz i:nth-child(3) { animation-delay: 1.2s; }
+
+/* Efek menggelinding: blob gepeng lalu memantul */
+.blob-toggle.is-rolling .blob-ball {
+  animation: blob-squash 0.66s ease-out;
+}
+
+@keyframes blob-squash {
+  0% { scale: 1 1; }
+  18% { scale: 1.28 0.8; }
+  45% { scale: 0.9 1.12; }
+  68% { scale: 1.08 0.94; }
+  86% { scale: 0.98 1.02; }
+  100% { scale: 1 1; }
+}
+
+@keyframes blob-breathe {
+  0%, 100% { scale: 1 1; }
+  50% { scale: 1.05 0.95; }
+}
+
+@keyframes blob-blink {
+  0%, 92%, 100% { scale: 1 1; }
+  95% { scale: 1 0.12; }
+}
+
+@keyframes blob-twinkle {
+  0%, 100% { opacity: 0.35; scale: 0.7; }
+  50% { opacity: 1; scale: 1.1; }
+}
+
+@keyframes blob-zzz {
+  0% { opacity: 0; translate: -3px 5px; }
+  30% { opacity: 1; }
+  80% { opacity: 0.8; }
+  100% { opacity: 0; translate: 4px -6px; }
+}
+
+@media (max-width: 420px) {
+  .blob-toggle {
+    --blob-w: 70px;
+    --blob-h: 38px;
+    --blob-size: 26px;
+  }
+  .blob-eye { top: 10px; }
+  .blob-mouth { top: 15px; }
+  .blob-cheek { top: 15px; }
+  .blob-toggle.is-asleep .blob-eye { top: 11px; }
+  .blob-toggle.is-asleep .blob-mouth { top: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob-toggle *,
+  .blob-toggle *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
