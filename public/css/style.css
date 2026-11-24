@@ -6005,3 +6005,81 @@ button.badge-otp .amc-copy-check-icon {
 @media (prefers-reduced-motion: reduce) {
   .amc-trash-puff { display: none; }
 }
+
+
+/* ==========================================================================
+   10. AMC Confirm Dialog (pengganti pop up bawaan browser)
+   ========================================================================== */
+.amc-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.amc-confirm-backdrop.is-open { opacity: 1; }
+.amc-confirm-backdrop.is-closing { opacity: 0; }
+
+.amc-confirm-panel {
+  width: min(380px, 100%);
+  padding: 26px 24px 20px;
+  text-align: center;
+  background: var(--surface, #fff);
+  color: var(--text, #0f172a);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22), 0 0 0 6px rgba(125, 211, 252, 0.14);
+  transform: scale(0.8) translateY(14px);
+  transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+[data-theme="dark"] .amc-confirm-panel {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+.amc-confirm-backdrop.is-open .amc-confirm-panel { transform: none; }
+.amc-confirm-backdrop.is-closing .amc-confirm-panel { transform: scale(0.9) translateY(8px); }
+
+.amc-confirm-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 12px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  color: #0284c7;
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  animation: amc-gentle-float 2.6s ease-in-out infinite;
+}
+.amc-confirm-panel.is-danger .amc-confirm-icon {
+  color: #e11d48;
+  background: linear-gradient(135deg, #ffe4e6, #fecdd3);
+}
+[data-theme="dark"] .amc-confirm-icon { background: rgba(56, 189, 248, 0.16); color: #7dd3fc; }
+[data-theme="dark"] .amc-confirm-panel.is-danger .amc-confirm-icon { background: rgba(251, 113, 133, 0.16); color: #fb7185; }
+.amc-confirm-icon svg { width: 28px; height: 28px; overflow: visible; }
+.amc-confirm-backdrop.is-open .amc-trash-lid { animation: amc-trash-lid 1.6s ease-in-out 0.25s 2; }
+
+.amc-confirm-title { margin: 0 0 6px; font-size: 1.08rem; font-weight: 800; }
+.amc-confirm-msg { margin: 0 0 18px; font-size: 0.86rem; line-height: 1.55; color: var(--text-muted, #64748b); overflow-wrap: anywhere; }
+.amc-confirm-actions { display: flex; gap: 10px; }
+.amc-confirm-actions .btn { flex: 1; justify-content: center; }
+
+.btn-danger-solid {
+  color: #fff;
+  border: 1px solid #e11d48;
+  background: linear-gradient(180deg, #fb7185, #e11d48);
+  box-shadow: 0 6px 16px rgba(225, 29, 72, 0.28);
+}
+.btn-danger-solid:hover:not(:disabled) { filter: brightness(1.06); }
+.btn-danger-solid:active:not(:disabled) { transform: scale(0.94, 0.9); }
+
+@media (prefers-reduced-motion: reduce) {
+  .amc-confirm-icon, .amc-confirm-backdrop.is-open .amc-trash-lid { animation: none; }
+}

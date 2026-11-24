@@ -374,6 +374,60 @@ function triggerClassAnim(el, className, durationMs = 620) {
   }, durationMs);
 }
 
+/* ---- AMC Confirm Dialog: pengganti confirm() bawaan browser, sesuai tema ---- */
+function amcConfirm({
+  title = 'Konfirmasi',
+  message = '',
+  confirmText = 'Ya, Hapus',
+  cancelText = 'Batal',
+  danger = true,
+} = {}) {
+  return new Promise((resolve) => {
+    const prevFocus = document.activeElement;
+    const root = document.createElement('div');
+    root.className = 'amc-confirm-backdrop';
+    root.setAttribute('role', 'alertdialog');
+    root.setAttribute('aria-modal', 'true');
+    root.innerHTML = `
+      <div class="amc-confirm-panel ${danger ? 'is-danger' : ''}">
+        <div class="amc-confirm-icon">${danger ? TRASH_SVG : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg>'}</div>
+        <h3 class="amc-confirm-title">${escapeHtml(title)}</h3>
+        <p class="amc-confirm-msg">${escapeHtml(message)}</p>
+        <div class="amc-confirm-actions">
+          <button type="button" class="btn btn-soft" data-confirm-cancel>${escapeHtml(cancelText)}</button>
+          <button type="button" class="btn ${danger ? 'btn-danger-solid' : 'btn-primary'}" data-confirm-ok>${escapeHtml(confirmText)}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(root);
+    requestAnimationFrame(() => root.classList.add('is-open'));
+    const okBtn = root.querySelector('[data-confirm-ok]');
+    okBtn.focus();
+
+    let done = false;
+    const finish = (val) => {
+      if (done) return;
+      done = true;
+      document.removeEventListener('keydown', onKey, true);
+      root.classList.remove('is-open');
+      root.classList.add('is-closing');
+      setTimeout(() => {
+        root.remove();
+        if (prevFocus && prevFocus.focus) prevFocus.focus();
+      }, prefersReducedMotion() ? 0 : 220);
+      resolve(val);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
+      if (e.key === 'Enter' && document.activeElement?.hasAttribute('data-confirm-cancel')) { e.preventDefault(); finish(false); }
+    };
+    document.addEventListener('keydown', onKey, true);
+    root.addEventListener('click', (e) => {
+      if (e.target === root || e.target.closest('[data-confirm-cancel]')) finish(false);
+      else if (e.target.closest('[data-confirm-ok]')) finish(true);
+    });
+  });
+}
+
 /* ---- AMC Trash Motion: animasi buang/hapus (item menyusut, berputar, jatuh ke tong sampah) ---- */
 const TRASH_SVG =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="amc-trash-lid"><path d="M3 6h18"></path><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path></g><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path></svg>';
@@ -3258,7 +3312,7 @@ function bindEvents() {
       showToast('Inbox sudah kosong.');
       return;
     }
-    if (!confirm(`Hapus semua pesan di ${addr}?`)) return;
+    if (!(await amcConfirm({ title: 'Hapus semua pesan?', message: `Semua pesan di ${addr} akan dibuang permanen.`, confirmText: 'Ya, Buang Semua' }))) return;
     try {
       await apiFetch(`/api/inbox?address=${encodeURIComponent(addr)}`, { method: 'DELETE', admin: true });
       await animateRemoveMany(els.inboxList.querySelectorAll('[data-open-id]'));
@@ -3824,7 +3878,7 @@ function bindEvents() {
     if (delBtn) {
       const id = delBtn.dataset.mailboxDelete;
       const addr = delBtn.dataset.mailboxAddr;
-      if (!confirm(`Hapus akses alamat ${addr} dari daftar email terdaftar?`)) return;
+      if (!(await amcConfirm({ title: 'Hapus alamat email?', message: `Alamat ${addr} akan dihapus dari daftar email terdaftar.` }))) return;
       try {
         const res = await apiFetch(`/api/admin/mailboxes/${id}`, { method: 'DELETE', admin: true });
         await animateRemove(delBtn.closest('tr'));
@@ -3944,7 +3998,7 @@ function bindEvents() {
     if (delBtn) {
       const id = delBtn.dataset.domainDelete;
       const name = delBtn.dataset.domainName;
-      if (!confirm(`Hapus domain ${name} dari daftar? Email lama tetap aman di arsip.`)) return;
+      if (!(await amcConfirm({ title: 'Hapus domain?', message: `Domain ${name} akan dihapus dari daftar. Email lama tetap aman di arsip.` }))) return;
       try {
         const res = await apiFetch(`/api/admin/domains/${id}`, { method: 'DELETE', admin: true });
         await animateRemove(delBtn.closest('tr'));
