@@ -3,9 +3,14 @@ const STORAGE_KEYS = {
   theme: 'amc_mail_theme',
   activeAddress: 'amc_mail_active_address',
   adminToken: 'amc_mail_admin_token',
+  saved2fa: 'amc_mail_saved_2fa',
+  twoFaShares: 'amc_mail_2fa_shares',
+  msSession: 'amc_mail_ms_session',
 };
 
 const LOCAL_PART_REGEX = /^[a-z0-9][a-z0-9._+-]{0,62}$/;
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const SAMPLE_2FA_KEY = 'JBSWY3DPEHPK3PXP';
 
 const ADMIN_VIEW_META = {
   mailboxes: {
@@ -14,7 +19,7 @@ const ADMIN_VIEW_META = {
   },
   catchall: {
     title: 'Semua Pesan (Catch-All)',
-    subtitle: 'Baca langsung seluruh email masuk dan kode OTP dari semua domain AMC dalam satu layar penuh.',
+    subtitle: 'Baca langsung seluruh email masuk dan kode OTP dari semua domain AMC dalam satu kotak masuk terpadu.',
   },
   domains: {
     title: 'Kelola Domain AMC',
@@ -27,6 +32,8 @@ const ADMIN_VIEW_META = {
 };
 
 const state = {
+  publicTool: 'inbox',
+
   domains: [],
   defaultDomain: 'amc.web.id',
   blockedUsernames: [],
@@ -52,9 +59,32 @@ const state = {
   readerTab: 'html',
   allowExternalImages: true,
 
-  autoPoll: true,
-  pollCountdown: POLL_INTERVAL_SEC,
   pollTimer: null,
+
+  twoFaActive: null,
+  twoFaCurrentCode: '',
+  twoFaSaved: [],
+  twoFaShares: [],
+  twoFaSharedView: null,
+  twoFaTimer: null,
+  twoFaLastEpoch: -1,
+
+  msConnected: false,
+  msEmail: '',
+  msDisplayName: '',
+  msClientId: '',
+  msAccessToken: '',
+  msRefreshToken: '',
+  msFolders: [],
+  msFolder: 'all_incoming',
+  msSearchQuery: '',
+  msMessages: [],
+  msLoading: false,
+  msError: null,
+  msSelectedId: null,
+  msSelectedDetail: null,
+  msReaderTab: 'html',
+  msAllowImages: true,
 
   adminToken: '',
   adminAuthenticated: false,
@@ -81,11 +111,6 @@ const els = {
 
   sidebarActiveAddr: $('sidebar-active-addr'),
   btnSidebarCopy: $('btn-sidebar-copy'),
-  sideCountAll: $('side-count-all'),
-  sideCountInbox: $('side-count-inbox'),
-  sideCountOtp: $('side-count-otp'),
-  sideDomainCount: $('side-domain-count'),
-  btnSidebarAdmin: $('btn-sidebar-admin'),
 
   btnSidebarQuickCreate: $('btn-sidebar-quick-create'),
   adminSideMailboxes: $('admin-side-mailboxes'),
@@ -102,14 +127,15 @@ const els = {
   btnOpenAdmin: $('btn-open-admin'),
   btnMobileLogout: $('btn-mobile-logout'),
 
-  mobNavPublic: $('mob-nav-public'),
   mobNavAdminBar: $('mob-nav-admin-bar'),
-  mobNavInbox: $('mob-nav-inbox'),
-  mobNavAdmin: $('mob-nav-admin'),
 
   adminWorkspaceShell: $('admin-workspace-shell'),
   publicViewerShell: $('public-viewer-shell'),
   adminReaderBanner: $('admin-reader-banner'),
+
+  toolPanelInbox: $('tool-panel-inbox'),
+  toolPanel2fa: $('tool-panel-2fa'),
+  toolPanelMsmail: $('tool-panel-msmail'),
 
   adminViewTitle: $('admin-view-title'),
   adminViewSubtitle: $('admin-view-subtitle'),
@@ -141,7 +167,6 @@ const els = {
   adminMailboxesTbody: $('admin-mailboxes-tbody'),
 
   adminFilterDomain: $('admin-filter-domain'),
-  adminFilterType: $('admin-filter-type'),
   adminFilterSearch: $('admin-filter-search'),
   btnAdminRefreshMsgs: $('btn-admin-refresh-msgs'),
   adminCatchallWorkspace: $('admin-catchall-workspace'),
@@ -166,11 +191,6 @@ const els = {
   inputAdminSimTo: $('input-admin-sim-to'),
   selectAdminSimType: $('select-admin-sim-type'),
 
-  heroDomainCount: $('hero-domain-count'),
-  heroInboxCount: $('hero-inbox-count'),
-  btnToggleAutoPoll: $('btn-toggle-autopoll'),
-  pollStatusText: $('poll-status-text'),
-
   addressForm: $('address-form'),
   inputUsername: $('input-username'),
   selectDomain: $('select-domain'),
@@ -187,8 +207,6 @@ const els = {
   inputInboxSearch: $('input-inbox-search'),
   inboxList: $('inbox-list'),
   countAll: $('count-all'),
-  countInbox: $('count-inbox'),
-  countOtp: $('count-otp'),
 
   readerEmpty: $('reader-empty'),
   readerContent: $('reader-content'),
@@ -196,6 +214,52 @@ const els = {
   domainPills: $('domain-pills'),
   retentionInfo: $('retention-info'),
   footerYear: $('footer-year'),
+
+  twofaSharedCard: $('twofa-shared-card'),
+  twofaSharedLabel: $('twofa-shared-label'),
+  twofaSharedExp: $('twofa-shared-exp'),
+  twofaSharedCode: $('twofa-shared-code'),
+  btnExitShared2fa: $('btn-exit-shared-2fa'),
+  btnCopyShared2fa: $('btn-copy-shared-2fa'),
+  twofaForm: $('twofa-form'),
+  input2faLabel: $('input-2fa-label'),
+  input2faSecret: $('input-2fa-secret'),
+  btn2faGenerate: $('btn-2fa-generate'),
+  btn2faSave: $('btn-2fa-save'),
+  btn2faSample: $('btn-2fa-sample'),
+  btn2faClear: $('btn-2fa-clear'),
+  twofaError: $('twofa-error'),
+  twofaActiveTitle: $('twofa-active-title'),
+  twofaStatusPill: $('twofa-status-pill'),
+  twofaCurrentCode: $('twofa-current-code'),
+  btnCopy2faCode: $('btn-copy-2fa-code'),
+  select2faShareExp: $('select-2fa-share-exp'),
+  btn2faCreateShare: $('btn-2fa-create-share'),
+  twofaShareOutput: $('twofa-share-output'),
+  input2faShareUrl: $('input-2fa-share-url'),
+  btnCopy2faShareUrl: $('btn-copy-2fa-share-url'),
+  twofaSavedCount: $('twofa-saved-count'),
+  twofaSavedList: $('twofa-saved-list'),
+  twofaSharesWrap: $('twofa-shares-wrap'),
+  twofaSharesList: $('twofa-shares-list'),
+
+  msmailConnectForm: $('msmail-connect-form'),
+  inputMsCombo: $('input-ms-combo'),
+  btnMsConnect: $('btn-ms-connect'),
+  btnMsDisconnect: $('btn-ms-disconnect'),
+  msDetectEmail: $('ms-detect-email'),
+  msDetectClient: $('ms-detect-client'),
+  msDetectToken: $('ms-detect-token'),
+  msmailError: $('msmail-error'),
+  msmailWorkspace: $('msmail-workspace'),
+  msmailActiveLabel: $('msmail-active-label'),
+  msmailCount: $('msmail-count'),
+  btnMsRefresh: $('btn-ms-refresh'),
+  selectMsFolder: $('select-ms-folder'),
+  inputMsSearch: $('input-ms-search'),
+  msmailList: $('msmail-list'),
+  msmailEmpty: $('msmail-empty'),
+  msmailReader: $('msmail-reader'),
 
   adminModal: $('admin-modal'),
   btnCloseAdmin: $('btn-close-admin'),
@@ -365,6 +429,62 @@ function parseAddressInput(rawInput, selectedDomain) {
   return { valid: true, localPart, domain };
 }
 
+function resolveToolFromLocation() {
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  if (path === '/2fa') return '2fa';
+  if (path === '/mail-reader') return 'msmail';
+  return 'inbox';
+}
+
+function syncPublicToolPanels() {
+  const tool = state.publicTool || 'inbox';
+  if (els.toolPanelInbox) els.toolPanelInbox.classList.toggle('hidden', tool !== 'inbox');
+  if (els.toolPanel2fa) els.toolPanel2fa.classList.toggle('hidden', tool !== '2fa');
+  if (els.toolPanelMsmail) els.toolPanelMsmail.classList.toggle('hidden', tool !== 'msmail');
+
+  document.querySelectorAll('.public-tool-link[data-public-nav]').forEach((link) => {
+    const active = link.dataset.publicNav === tool;
+    link.classList.toggle('is-active', active);
+    if (active) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
+}
+
+function setPublicTool(tool, { pushHistory = true } = {}) {
+  const nextTool = ['inbox', '2fa', 'msmail'].includes(tool) ? tool : 'inbox';
+  closeActiveDropdown();
+  state.publicTool = nextTool;
+
+  if (state.adminAuthenticated) {
+    if (nextTool === '2fa') state.adminView = 'tool-2fa';
+    else if (nextTool === 'msmail') state.adminView = 'tool-msmail';
+    else state.adminView = 'reader';
+  }
+
+  if (pushHistory && window.history?.pushState) {
+    const url = new URL(window.location.href);
+    if (nextTool === '2fa') {
+      url.pathname = '/2fa';
+      url.searchParams.delete('email');
+    } else if (nextTool === 'msmail') {
+      url.pathname = '/mail-reader';
+      url.searchParams.delete('email');
+      url.searchParams.delete('share');
+    } else {
+      url.pathname = '/';
+      url.searchParams.delete('share');
+      const addr = getActiveAddress();
+      if (addr) url.searchParams.set('email', addr);
+    }
+    window.history.pushState({}, '', url.toString());
+  }
+
+  syncModeShell();
+  if (nextTool === '2fa') {
+    refreshTwoFaCodes();
+  }
+}
+
 function syncModeShell() {
   const isAdmin = state.adminAuthenticated;
   document.body.classList.toggle('is-admin-mode', isAdmin);
@@ -379,8 +499,7 @@ function syncModeShell() {
   els.btnOpenAdmin.classList.toggle('hidden', isAdmin);
   els.btnMobileLogout.classList.toggle('hidden', !isAdmin);
 
-  els.mobNavPublic.classList.toggle('hidden', isAdmin);
-  els.mobNavAdminBar.classList.toggle('hidden', !isAdmin);
+  if (els.mobNavAdminBar) els.mobNavAdminBar.classList.toggle('hidden', !isAdmin);
 
   els.adminDefaultPinWarning.classList.toggle('hidden', !(isAdmin && state.adminDefaultPin));
   els.btnClearInbox.classList.toggle('hidden', !isAdmin);
@@ -390,15 +509,19 @@ function syncModeShell() {
     els.readonlyNotice.classList.toggle('is-admin', isAdmin);
     els.readonlyNotice.textContent = isAdmin
       ? 'Mode Admin aktif: Anda dapat membuka semua alamat dan mengelola pesan.'
-      : 'Masukkan alamat email dari Admin untuk membaca pesan masuk dan kode OTP.';
+      : 'Masukkan alamat email dari Admin untuk membaca seluruh pesan masuk dan kode OTP dalam satu kotak masuk.';
   }
 
   if (isAdmin) {
-    const showPerAddrReader = state.adminView === 'reader';
-    els.adminWorkspaceShell.classList.toggle('hidden', showPerAddrReader);
-    els.publicViewerShell.classList.toggle('hidden', !showPerAddrReader);
+    if (state.adminView === 'reader') state.publicTool = 'inbox';
+    else if (state.adminView === 'tool-2fa') state.publicTool = '2fa';
+    else if (state.adminView === 'tool-msmail') state.publicTool = 'msmail';
 
-    if (!showPerAddrReader) {
+    const showUtilityShell = ['reader', 'tool-2fa', 'tool-msmail'].includes(state.adminView);
+    els.adminWorkspaceShell.classList.toggle('hidden', showUtilityShell);
+    els.publicViewerShell.classList.toggle('hidden', !showUtilityShell);
+
+    if (!showUtilityShell) {
       const meta = ADMIN_VIEW_META[state.adminView] || ADMIN_VIEW_META.mailboxes;
       els.adminViewTitle.textContent = meta.title;
       els.adminViewSubtitle.textContent = meta.subtitle;
@@ -419,6 +542,7 @@ function syncModeShell() {
     els.publicViewerShell.classList.remove('hidden');
   }
 
+  syncPublicToolPanels();
   updateAddressActionButtons();
   if (state.selectedDetail) {
     renderPublicReader();
@@ -441,6 +565,8 @@ function switchAdminView(view, { focusQuickInput = false } = {}) {
     loadAdminDomains();
   } else if (view === 'settings') {
     loadAdminStatsAndMessages();
+  } else if (view === 'tool-2fa') {
+    refreshTwoFaCodes();
   }
 }
 
@@ -488,8 +614,9 @@ function setActiveAddress(localPart, domain, { pushUrl = true } = {}) {
   const full = getActiveAddress();
   if (full) {
     try { localStorage.setItem(STORAGE_KEYS.activeAddress, full); } catch {}
-    if (pushUrl && window.history?.replaceState) {
+    if (pushUrl && window.history?.replaceState && state.publicTool === 'inbox') {
       const url = new URL(window.location.href);
+      url.pathname = '/';
       url.searchParams.set('email', full);
       window.history.replaceState({}, '', url.toString());
     }
@@ -501,7 +628,6 @@ function setActiveAddress(localPart, domain, { pushUrl = true } = {}) {
   renderFilterCounts();
   if (full) {
     fetchInbox({ silent: false });
-    resetPollCountdown();
   } else {
     renderInboxList();
   }
@@ -526,8 +652,6 @@ function renderDomainControls() {
   if (els.retentionInfo) {
     els.retentionInfo.textContent = `Retensi otomatis: ${formatRetentionLabel(state.retentionHours)}`;
   }
-  if (els.heroDomainCount) els.heroDomainCount.textContent = String(list.length);
-  if (els.sideDomainCount) els.sideDomainCount.textContent = String(list.length);
   renderDomainPills();
 }
 
@@ -548,40 +672,7 @@ function renderDomainPills() {
 }
 
 function renderFilterCounts() {
-  els.countAll.textContent = String(state.counts.all || 0);
-  els.countInbox.textContent = String(state.counts.inbox || 0);
-  els.countOtp.textContent = String(state.counts.otp || 0);
-
-  if (els.sideCountAll) els.sideCountAll.textContent = String(state.counts.all || 0);
-  if (els.sideCountInbox) els.sideCountInbox.textContent = String(state.counts.inbox || 0);
-  if (els.sideCountOtp) els.sideCountOtp.textContent = String(state.counts.otp || 0);
-
-  if (els.heroInboxCount) els.heroInboxCount.textContent = String(state.counts.all || 0);
-}
-
-function syncNavActiveStates() {
-  document.querySelectorAll('.filter-tab').forEach((btn) => {
-    const active = btn.dataset.filter === state.filter;
-    btn.classList.toggle('is-active', active);
-    btn.setAttribute('aria-selected', String(active));
-  });
-  document.querySelectorAll('[data-nav-filter]').forEach((btn) => {
-    btn.classList.toggle('is-active', btn.dataset.navFilter === state.filter);
-  });
-  if (els.mobNavInbox) els.mobNavInbox.classList.add('is-active');
-}
-
-function setFilter(nextFilter, { scrollToInbox = false } = {}) {
-  state.filter = nextFilter;
-  syncNavActiveStates();
-  if (getActiveAddress()) {
-    fetchInbox({ silent: false });
-  } else {
-    renderInboxList();
-  }
-  if (scrollToInbox) {
-    els.mailWorkspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+  if (els.countAll) els.countAll.textContent = String(state.counts.all || 0);
 }
 
 function getMessageAvatarMarkup(msg, senderLabel) {
@@ -593,6 +684,10 @@ function getMessageAvatarMarkup(msg, senderLabel) {
   return `<span class="msg-avatar" aria-hidden="true">${escapeHtml(initial)}</span>`;
 }
 
+function isDesktopSplitViewport() {
+  return window.innerWidth > 820;
+}
+
 function renderMessageCard(msg, { selected, showRecipient = false, openAttr = 'data-open-id', variant = 'compact' }) {
   const badges = [];
 
@@ -600,6 +695,10 @@ function renderMessageCard(msg, { selected, showRecipient = false, openAttr = 'd
     badges.push(
       `<button type="button" class="badge badge-otp mono" data-quick-otp="${escapeHtml(msg.otpCode)}" title="Klik untuk menyalin kode OTP">Salin OTP ${escapeHtml(msg.otpCode)}</button>`
     );
+  }
+
+  if (msg.folderTag === 'Junk') {
+    badges.push('<span class="badge badge-neutral">Junk / Spam</span>');
   }
 
   if (msg.hasAttachments) {
@@ -699,12 +798,9 @@ function renderInboxList() {
   }
 
   if (state.messages.length === 0) {
-    const emptyMsg =
-      state.filter === 'otp'
-        ? 'Belum ada email kode OTP untuk alamat ini.'
-        : state.searchQuery
-          ? `Tidak ada pesan yang cocok dengan kata kunci "${escapeHtml(state.searchQuery)}".`
-          : 'Belum ada pesan masuk di alamat ini. Halaman akan memperbarui secara otomatis saat email tiba.';
+    const emptyMsg = state.searchQuery
+      ? `Tidak ada pesan yang cocok dengan kata kunci "${escapeHtml(state.searchQuery)}".`
+      : 'Belum ada pesan masuk di alamat ini. Halaman akan memperbarui secara otomatis saat email tiba.';
 
     els.inboxList.innerHTML = `
       <div class="state-panel">
@@ -742,10 +838,12 @@ async function fetchInbox({ silent = false } = {}) {
     renderInboxList();
   }
 
+  let autoOpenId = null;
+
   try {
     const params = new URLSearchParams({
       address: addr,
-      filter: state.filter,
+      filter: 'all',
       limit: '60',
     });
     if (state.searchQuery.trim()) params.set('q', state.searchQuery.trim());
@@ -780,10 +878,14 @@ async function fetchInbox({ silent = false } = {}) {
     state.messages = incoming;
     state.counts = res.counts || { all: 0, inbox: 0, otp: 0, unread: 0 };
 
-    if (state.selectedId && !incoming.some((m) => m.id === state.selectedId) && !state.searchQuery && state.filter === 'all') {
+    if (state.selectedId && !incoming.some((m) => m.id === state.selectedId) && !state.searchQuery) {
       state.selectedId = null;
       state.selectedDetail = null;
       renderReaderEmpty();
+    }
+
+    if (!state.selectedId && incoming.length > 0 && isDesktopSplitViewport()) {
+      autoOpenId = incoming[0].id;
     }
   } catch (err) {
     if (getActiveAddress() !== addr) return;
@@ -803,6 +905,10 @@ async function fetchInbox({ silent = false } = {}) {
   } finally {
     state.inboxLoading = false;
     renderInboxList();
+  }
+
+  if (autoOpenId) {
+    openMessage(autoOpenId);
   }
 }
 
@@ -951,10 +1057,12 @@ ${emailStylesMarkup}
 }
 
 function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode = 'public' }) {
+  const isMsMail = mode === 'msmail';
   const auth = detail.authResults || {};
-  const canDelete = mode === 'admin' || state.adminAuthenticated;
+  const canDelete = !isMsMail && (mode === 'admin' || state.adminAuthenticated);
   const addrParam = mode === 'public' ? `?address=${encodeURIComponent(detail.recipient)}` : '';
   const isUnregisteredCatchall = mode === 'admin' && !state.adminMailboxAddressSet.has(detail.recipient);
+  const hasRawSource = Boolean(detail.rawSource);
 
   const authBadges = [];
   for (const key of ['spf', 'dkim', 'dmarc']) {
@@ -989,7 +1097,9 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
   if (detail.htmlBody) availableTabs.push({ id: 'html', label: 'Tampilan HTML', icon: tabIcons.html });
   availableTabs.push({ id: 'text', label: 'Teks Polos', icon: tabIcons.text });
   availableTabs.push({ id: 'headers', label: 'Header', count: (detail.headers || []).length, icon: tabIcons.headers });
-  availableTabs.push({ id: 'raw', label: 'Raw EML', icon: tabIcons.raw });
+  if (hasRawSource) {
+    availableTabs.push({ id: 'raw', label: 'Raw EML', icon: tabIcons.raw });
+  }
 
   const chosenTab = availableTabs.some((t) => t.id === activeTab) ? activeTab : availableTabs[0].id;
   let bodyMarkup = '';
@@ -1042,6 +1152,22 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
   if (detail.attachments && detail.attachments.length > 0) {
     const items = detail.attachments
       .map((att) => {
+        if (isMsMail) {
+          if (att.dataUrl) {
+            return `
+              <a class="attachment-pill" href="${escapeHtml(att.dataUrl)}" download="${escapeHtml(att.filename)}">
+                <span>${escapeHtml(att.filename)}</span>
+                <span class="attachment-size">${escapeHtml(formatBytes(att.sizeBytes))}</span>
+              </a>
+            `;
+          }
+          return `
+            <span class="attachment-pill">
+              <span>${escapeHtml(att.filename)}</span>
+              <span class="attachment-size">${escapeHtml(formatBytes(att.sizeBytes))}</span>
+            </span>
+          `;
+        }
         const href = `/api/attachments/${encodeURIComponent(att.id)}${addrParam}`;
         return `
           <a class="attachment-pill" href="${href}" download="${escapeHtml(att.filename)}">
@@ -1059,11 +1185,18 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
     `;
   }
 
+  const backLabel =
+    mode === 'public'
+      ? 'Kembali ke Kotak Masuk'
+      : mode === 'msmail'
+        ? 'Kembali ke Daftar Outlook'
+        : 'Kembali ke Daftar';
+
   return `
     <div class="reader-header">
       <button type="button" class="btn btn-soft btn-sm mobile-back-btn" data-mobile-back="${mode}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="width:15px;height:15px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-        <span>${mode === 'public' ? 'Kembali ke Kotak Masuk' : 'Kembali ke Daftar'}</span>
+        <span>${backLabel}</span>
       </button>
       <div class="reader-top-bar">
         <h2 class="reader-subject">${escapeHtml(detail.subject || '(Tanpa Subjek)')}</h2>
@@ -1073,7 +1206,11 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
               ? `<button type="button" class="btn btn-sm btn-soft" data-admin-register-addr="${escapeHtml(detail.recipient)}">Daftarkan Email</button>`
               : ''
           }
-          <a class="btn btn-sm" href="/api/emails/${encodeURIComponent(detail.id)}/raw${addrParam}" download>Unduh .eml</a>
+          ${
+            !isMsMail && hasRawSource
+              ? `<a class="btn btn-sm" href="/api/emails/${encodeURIComponent(detail.id)}/raw${addrParam}" download>Unduh .eml</a>`
+              : ''
+          }
           ${
             canDelete
               ? `<button type="button" class="btn btn-sm btn-danger-outline" data-delete-email="${escapeHtml(detail.id)}" data-delete-mode="${mode}">Hapus</button>`
@@ -1085,7 +1222,11 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
       <div class="reader-meta-grid">
         <div class="meta-item">
           <span class="meta-label">Dari</span>
-          <span class="meta-value">${escapeHtml(detail.fromName ? `${detail.fromName} <${detail.fromAddress || detail.sender}>` : detail.fromAddress || detail.sender || '(Tanpa Pengirim)')}</span>
+          <span class="meta-value">${
+            detail.fromName && (detail.fromAddress || detail.sender) && detail.fromName !== (detail.fromAddress || detail.sender)
+              ? `<strong>${escapeHtml(detail.fromName)}</strong> <span class="mono" style="color:var(--text-secondary);overflow-wrap:anywhere;">${escapeHtml(detail.fromAddress || detail.sender)}</span>`
+              : escapeHtml(detail.fromAddress || detail.fromName || detail.sender || '(Tanpa Pengirim)')
+          }</span>
         </div>
         <div class="meta-item">
           <span class="meta-label">Kepada (Penerima)</span>
@@ -1171,44 +1312,27 @@ async function openMessage(emailId) {
   }
 }
 
-function updatePollBadge() {
-  if (!state.autoPoll) {
-    els.btnToggleAutoPoll.classList.add('is-paused');
-    els.btnToggleAutoPoll.setAttribute('aria-pressed', 'false');
-    els.pollStatusText.textContent = 'Otomatis dijeda';
-  } else {
-    els.btnToggleAutoPoll.classList.remove('is-paused');
-    els.btnToggleAutoPoll.setAttribute('aria-pressed', 'true');
-    els.pollStatusText.textContent = `Otomatis ${state.pollCountdown}d`;
-  }
-}
-
-function resetPollCountdown() {
-  state.pollCountdown = POLL_INTERVAL_SEC;
-  updatePollBadge();
-}
-
 function startPollingLoop() {
   if (state.pollTimer) clearInterval(state.pollTimer);
+  let tick = 0;
   state.pollTimer = setInterval(() => {
-    if (!state.autoPoll || document.hidden) return;
+    if (document.hidden) return;
+    tick += 1;
+
     if (state.adminAuthenticated && state.adminView === 'catchall') {
-      state.pollCountdown -= 1;
-      if (state.pollCountdown <= 0) {
-        state.pollCountdown = POLL_INTERVAL_SEC;
-        loadAdminStatsAndMessages();
-      }
+      loadAdminStatsAndMessages({ silent: true });
       return;
     }
-    if (!getActiveAddress() || !state.activeMailboxValid) return;
-    state.pollCountdown -= 1;
-    if (state.pollCountdown <= 0) {
-      state.pollCountdown = POLL_INTERVAL_SEC;
+
+    if (state.publicTool === 'msmail' && state.msConnected && tick % 3 === 0) {
+      fetchMsMessages({ silent: true });
+      return;
+    }
+
+    if (state.publicTool === 'inbox' && getActiveAddress() && state.activeMailboxValid) {
       fetchInbox({ silent: true });
     }
-    updatePollBadge();
-  }, 1000);
-  updatePollBadge();
+  }, POLL_INTERVAL_SEC * 1000);
 }
 
 function openAdminLoginModal() {
@@ -1241,11 +1365,11 @@ async function loadAdminAll() {
   }
 }
 
-async function loadAdminStatsAndMessages() {
+async function loadAdminStatsAndMessages({ silent = false } = {}) {
   try {
     const params = new URLSearchParams({
       domain: els.adminFilterDomain.value || 'all',
-      type: els.adminFilterType.value || 'all',
+      type: 'all',
       limit: '80',
     });
     if (els.adminFilterSearch.value.trim()) {
@@ -1277,11 +1401,22 @@ async function loadAdminStatsAndMessages() {
     }
 
     state.adminMessages = msgRes.messages || [];
+
+    if (state.adminSelectedId && !state.adminMessages.some((m) => m.id === state.adminSelectedId)) {
+      state.adminSelectedId = null;
+      state.adminSelectedDetail = null;
+      renderAdminCatchallReader();
+    }
+
     renderAdminCatchallList();
+
+    if (state.adminView === 'catchall' && !state.adminSelectedId && state.adminMessages.length > 0 && isDesktopSplitViewport()) {
+      openAdminCatchallMessage(state.adminMessages[0].id);
+    }
   } catch (err) {
     if (err.status === 401) {
       handleAdminSessionExpired();
-    } else {
+    } else if (!silent) {
       showToast(`Gagal memuat pesan Admin: ${err.message}`, 'error');
     }
   }
@@ -1293,7 +1428,7 @@ function renderAdminCatchallList() {
     els.adminCatchallList.innerHTML = `
       <div class="state-panel">
         <h3>Belum Ada Pesan</h3>
-        <p>Belum ada pesan yang cocok dengan filter domain atau tipe saat ini.</p>
+        <p>Belum ada pesan yang cocok dengan filter pencarian saat ini.</p>
       </div>
     `;
     return;
@@ -1351,6 +1486,829 @@ async function openAdminCatchallMessage(emailId) {
       </div>
     `;
   }
+}
+
+/* =========================================================
+ * PUBLIC TOOL 2: 2FA TOTP AUTHENTICATOR (/2fa)
+ * ========================================================= */
+function cleanBase32Client(raw) {
+  return String(raw || '')
+    .toUpperCase()
+    .replace(/[\s\-=]+/g, '');
+}
+
+function base32ToBytesClient(rawSecret) {
+  const cleaned = cleanBase32Client(rawSecret);
+  if (!cleaned) {
+    throw new Error('Setup key 2FA masih kosong.');
+  }
+  if (cleaned.length < 8) {
+    throw new Error('Setup key 2FA terlalu pendek. Masukkan minimal 8 karakter Base32.');
+  }
+
+  let bits = 0;
+  let value = 0;
+  const output = [];
+
+  for (let i = 0; i < cleaned.length; i++) {
+    const idx = BASE32_ALPHABET.indexOf(cleaned[i]);
+    if (idx === -1) {
+      throw new Error(`Karakter "${cleaned[i]}" tidak valid untuk format Base32 (gunakan A-Z dan 2-7).`);
+    }
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      output.push((value >>> (bits - 8)) & 0xff);
+      bits -= 8;
+    }
+  }
+  return new Uint8Array(output);
+}
+
+function parseClientTotpInput(rawInput, fallbackLabel = '') {
+  const trimmed = String(rawInput || '').trim();
+  if (!trimmed) {
+    return { valid: false, error: 'Masukkan setup key Base32 atau tautan otpauth:// terlebih dahulu.' };
+  }
+
+  let secret = '';
+  let label = String(fallbackLabel || '').trim();
+  let digits = 6;
+  let period = 30;
+  let algorithm = 'SHA-1';
+
+  if (/^otpauth:\/\//i.test(trimmed)) {
+    try {
+      const parsedUrl = new URL(trimmed);
+      if (parsedUrl.protocol.toLowerCase() !== 'otpauth:') {
+        return { valid: false, error: 'Skema tautan 2FA tidak dikenali.' };
+      }
+      const hostType = parsedUrl.hostname.toLowerCase();
+      if (hostType && hostType !== 'totp') {
+        return { valid: false, error: 'Hanya format TOTP (otpauth://totp/...) yang didukung.' };
+      }
+      secret = cleanBase32Client(parsedUrl.searchParams.get('secret') || '');
+      const pathLabel = decodeURIComponent(parsedUrl.pathname.replace(/^\/+/, '')).trim();
+      const issuer = (parsedUrl.searchParams.get('issuer') || '').trim();
+      if (!label) {
+        if (pathLabel) {
+          label = issuer && !pathLabel.toLowerCase().startsWith(issuer.toLowerCase())
+            ? `${issuer} (${pathLabel})`
+            : pathLabel;
+        } else if (issuer) {
+          label = issuer;
+        }
+      }
+
+      const rawDigits = Number(parsedUrl.searchParams.get('digits') || 6);
+      if (rawDigits === 6 || rawDigits === 8) digits = rawDigits;
+
+      const rawPeriod = Number(parsedUrl.searchParams.get('period') || 30);
+      if (rawPeriod >= 10 && rawPeriod <= 120) period = Math.round(rawPeriod);
+
+      const rawAlgo = String(parsedUrl.searchParams.get('algorithm') || 'SHA1').toUpperCase().replace('-', '');
+      if (rawAlgo === 'SHA256') algorithm = 'SHA-256';
+      else if (rawAlgo === 'SHA512') algorithm = 'SHA-512';
+      else algorithm = 'SHA-1';
+    } catch {
+      return { valid: false, error: 'Format tautan otpauth:// tidak valid.' };
+    }
+  } else {
+    secret = cleanBase32Client(trimmed);
+  }
+
+  try {
+    base32ToBytesClient(secret);
+  } catch (err) {
+    return { valid: false, error: err.message };
+  }
+
+  return {
+    valid: true,
+    secret,
+    label: label.slice(0, 120),
+    digits,
+    period,
+    algorithm,
+  };
+}
+
+async function computeClientTotpCode(secretBase32, { period = 30, digits = 6, algorithm = 'SHA-1' } = {}) {
+  const keyBytes = base32ToBytesClient(secretBase32);
+  const epochSeconds = Math.floor(Date.now() / 1000);
+  const counter = Math.floor(epochSeconds / period);
+
+  const counterBytes = new Uint8Array(8);
+  let temp = counter;
+  for (let i = 7; i >= 0; i--) {
+    counterBytes[i] = temp & 0xff;
+    temp = Math.floor(temp / 256);
+  }
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyBytes,
+    { name: 'HMAC', hash: { name: algorithm } },
+    false,
+    ['sign']
+  );
+
+  const sig = await crypto.subtle.sign('HMAC', cryptoKey, counterBytes);
+  const hmac = new Uint8Array(sig);
+  const offset = hmac[hmac.length - 1] & 0x0f;
+  const binary =
+    ((hmac[offset] & 0x7f) << 24) |
+    ((hmac[offset + 1] & 0xff) << 16) |
+    ((hmac[offset + 2] & 0xff) << 8) |
+    (hmac[offset + 3] & 0xff);
+
+  const mod = 10 ** digits;
+  return String(binary % mod).padStart(digits, '0');
+}
+
+function formatOtpDigits(code) {
+  const clean = String(code || '').replace(/\s+/g, '');
+  if (clean.length === 6) return `${clean.slice(0, 3)} ${clean.slice(3)}`;
+  if (clean.length === 8) return `${clean.slice(0, 4)} ${clean.slice(4)}`;
+  return clean || '--- ---';
+}
+
+function maskSecretHint(secret) {
+  const clean = cleanBase32Client(secret);
+  if (clean.length <= 6) return 'Base32 tersimpan';
+  return `${clean.slice(0, 4)}****${clean.slice(-3)}`;
+}
+
+function loadTwoFaLocalState() {
+  try {
+    const rawSaved = JSON.parse(localStorage.getItem(STORAGE_KEYS.saved2fa) || '[]');
+    if (Array.isArray(rawSaved)) {
+      state.twoFaSaved = rawSaved.filter((item) => item && item.secret);
+    }
+  } catch {
+    state.twoFaSaved = [];
+  }
+
+  try {
+    const rawShares = JSON.parse(localStorage.getItem(STORAGE_KEYS.twoFaShares) || '[]');
+    const now = Date.now();
+    if (Array.isArray(rawShares)) {
+      state.twoFaShares = rawShares.filter((s) => s && s.id && (!s.expiresAt || s.expiresAt > now));
+      localStorage.setItem(STORAGE_KEYS.twoFaShares, JSON.stringify(state.twoFaShares));
+    }
+  } catch {
+    state.twoFaShares = [];
+  }
+}
+
+function persistSavedTwoFa() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.saved2fa, JSON.stringify(state.twoFaSaved));
+  } catch {}
+}
+
+function persistTwoFaShares() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.twoFaShares, JSON.stringify(state.twoFaShares));
+  } catch {}
+}
+
+async function activateTwoFaEntry(entry, { hideShareUrl = true } = {}) {
+  state.twoFaActive = {
+    label: entry.label || 'Akun 2FA Aktif',
+    secret: entry.secret,
+    digits: entry.digits || 6,
+    period: entry.period || 30,
+    algorithm: entry.algorithm || 'SHA-1',
+  };
+  els.twofaError.classList.add('hidden');
+  if (hideShareUrl) {
+    els.twofaShareOutput.classList.add('hidden');
+  }
+
+  const code = await computeClientTotpCode(state.twoFaActive.secret, state.twoFaActive);
+  state.twoFaCurrentCode = code;
+  els.twofaCurrentCode.textContent = formatOtpDigits(code);
+  els.twofaActiveTitle.textContent = state.twoFaActive.label;
+  els.twofaStatusPill.textContent = 'Kode Aktif';
+  els.btnCopy2faCode.disabled = false;
+  els.btn2faCreateShare.disabled = false;
+  renderSavedTwoFaList();
+}
+
+function clearTwoFaActive() {
+  state.twoFaActive = null;
+  state.twoFaCurrentCode = '';
+  els.input2faLabel.value = '';
+  els.input2faSecret.value = '';
+  els.twofaError.classList.add('hidden');
+  els.twofaShareOutput.classList.add('hidden');
+  els.twofaCurrentCode.textContent = '--- ---';
+  els.twofaActiveTitle.textContent = 'Tempel setup key untuk menampilkan kode';
+  els.twofaStatusPill.textContent = 'Siap digunakan';
+  els.btnCopy2faCode.disabled = true;
+  els.btn2faCreateShare.disabled = true;
+  renderSavedTwoFaList();
+}
+
+async function renderSavedTwoFaList() {
+  if (!els.twofaSavedList) return;
+  els.twofaSavedCount.textContent = String(state.twoFaSaved.length);
+
+  if (state.twoFaSaved.length === 0) {
+    els.twofaSavedList.innerHTML = `
+      <div class="state-panel" style="padding:24px 18px;">
+        <h3>Belum Ada Kunci Tersimpan</h3>
+        <p>Tempel setup key di sebelah kiri lalu klik <strong>Simpan ke Perangkat</strong> agar kode 6 digit selalu siap dipakai kapan saja.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const itemsWithCodes = await Promise.all(
+    state.twoFaSaved.map(async (item) => {
+      try {
+        const code = await computeClientTotpCode(item.secret, item);
+        return { ...item, liveCode: code };
+      } catch {
+        return { ...item, liveCode: '------' };
+      }
+    })
+  );
+
+  els.twofaSavedList.innerHTML = itemsWithCodes
+    .map((item) => {
+      const isActive = state.twoFaActive && state.twoFaActive.secret === item.secret;
+      return `
+        <div class="twofa-saved-item ${isActive ? 'is-active' : ''}" data-saved-id="${escapeHtml(item.id)}">
+          <div class="twofa-saved-meta">
+            <div class="twofa-saved-name">${escapeHtml(item.label || 'Akun 2FA')}</div>
+            <div class="twofa-saved-hint mono">${escapeHtml(maskSecretHint(item.secret))}</div>
+          </div>
+          <div class="twofa-saved-right">
+            <span class="twofa-saved-live mono">${escapeHtml(formatOtpDigits(item.liveCode))}</span>
+            <button type="button" class="btn btn-primary btn-sm" data-2fa-copy="${escapeHtml(item.liveCode)}" data-2fa-name="${escapeHtml(item.label || 'Akun 2FA')}">Salin</button>
+            <button type="button" class="btn btn-soft btn-sm" data-2fa-use="${escapeHtml(item.id)}">Buka</button>
+            <button type="button" class="btn btn-sm btn-danger-outline" data-2fa-delete="${escapeHtml(item.id)}">Hapus</button>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+function renderTwoFaSharesList() {
+  if (!els.twofaSharesWrap || !els.twofaSharesList) return;
+  const now = Date.now();
+  state.twoFaShares = state.twoFaShares.filter((s) => !s.expiresAt || s.expiresAt > now);
+  persistTwoFaShares();
+
+  if (state.twoFaShares.length === 0) {
+    els.twofaSharesWrap.classList.add('hidden');
+    els.twofaSharesList.innerHTML = '';
+    return;
+  }
+
+  els.twofaSharesWrap.classList.remove('hidden');
+  els.twofaSharesList.innerHTML = state.twoFaShares
+    .map((s) => {
+      const shareUrl = s.url || `${window.location.origin}/2fa?share=${encodeURIComponent(s.id)}`;
+      return `
+        <div class="twofa-share-row">
+          <div style="min-width:0;flex:1;">
+            <div style="font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(s.label || 'Link 2FA')}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">Aktif s/d ${escapeHtml(formatFullDateTime(s.expiresAt))}</div>
+          </div>
+          <div class="toolbar-group">
+            <button type="button" class="btn btn-soft btn-sm" data-share-copy="${escapeHtml(shareUrl)}">Salin Link</button>
+            <button type="button" class="btn btn-sm btn-danger-outline" data-share-revoke="${escapeHtml(s.id)}">Cabut</button>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+async function loadSharedTwoFaFromUrl(shareId, { silent = false } = {}) {
+  const cleanId = String(shareId || '').trim();
+  if (!cleanId) return;
+  try {
+    const res = await apiFetch(`/api/2fa/share/${encodeURIComponent(cleanId)}`);
+    state.twoFaSharedView = res.share;
+    els.twofaSharedCard.classList.remove('hidden');
+    els.twofaSharedLabel.textContent = res.share.label || 'Akun 2FA Bersama';
+    els.twofaSharedExp.textContent = `Berlaku hingga ${formatFullDateTime(res.share.expiresAt)} | Setup key rahasia disembunyikan`;
+    els.twofaSharedCode.textContent = formatOtpDigits(res.share.code);
+  } catch (err) {
+    state.twoFaSharedView = null;
+    els.twofaSharedCard.classList.add('hidden');
+    if (!silent) {
+      showToast(err.message || 'Link kode 2FA tidak valid atau sudah kedaluwarsa.', 'error');
+    }
+  }
+}
+
+async function handleCreateTwoFaShare() {
+  if (!state.twoFaActive) return;
+  els.btn2faCreateShare.disabled = true;
+  try {
+    const expiresInHours = Number(els.select2faShareExp.value || 24);
+    const res = await apiFetch('/api/2fa/share', {
+      method: 'POST',
+      body: JSON.stringify({
+        label: state.twoFaActive.label,
+        secret: state.twoFaActive.secret,
+        expiresInHours,
+      }),
+    });
+    const share = res.share;
+    const shareUrl = `${window.location.origin}/2fa?share=${encodeURIComponent(share.id)}`;
+    els.input2faShareUrl.value = shareUrl;
+    els.twofaShareOutput.classList.remove('hidden');
+
+    state.twoFaShares.unshift({
+      id: share.id,
+      label: share.label,
+      expiresAt: share.expiresAt,
+      revokeKey: share.revokeKey,
+      url: shareUrl,
+    });
+    persistTwoFaShares();
+    renderTwoFaSharesList();
+    showToast('Link privat 2FA berhasil dibuat (tanpa memperlihatkan setup key).', 'success');
+  } catch (err) {
+    showToast(`Gagal membuat link 2FA: ${err.message}`, 'error');
+  } finally {
+    els.btn2faCreateShare.disabled = !state.twoFaActive;
+  }
+}
+
+async function handleRevokeTwoFaShare(shareId) {
+  const found = state.twoFaShares.find((s) => s.id === shareId);
+  try {
+    const q = found?.revokeKey ? `?revokeKey=${encodeURIComponent(found.revokeKey)}` : '';
+    await apiFetch(`/api/2fa/share/${encodeURIComponent(shareId)}${q}`, {
+      method: 'DELETE',
+      withOptionalAdmin: true,
+    });
+  } catch {}
+  state.twoFaShares = state.twoFaShares.filter((s) => s.id !== shareId);
+  persistTwoFaShares();
+  renderTwoFaSharesList();
+  if (els.input2faShareUrl.value.includes(shareId)) {
+    els.twofaShareOutput.classList.add('hidden');
+    els.input2faShareUrl.value = '';
+  }
+  showToast('Link privat 2FA telah dicabut.');
+}
+
+async function refreshTwoFaCodes() {
+  if (state.twoFaActive) {
+    try {
+      const code = await computeClientTotpCode(state.twoFaActive.secret, state.twoFaActive);
+      state.twoFaCurrentCode = code;
+      els.twofaCurrentCode.textContent = formatOtpDigits(code);
+    } catch {}
+  }
+  if (state.twoFaSaved.length > 0) {
+    await renderSavedTwoFaList();
+  }
+  if (state.twoFaSharedView?.id) {
+    await loadSharedTwoFaFromUrl(state.twoFaSharedView.id, { silent: true });
+  }
+  renderTwoFaSharesList();
+}
+
+function startTwoFaEpochLoop() {
+  if (state.twoFaTimer) clearInterval(state.twoFaTimer);
+  state.twoFaLastEpoch = Math.floor(Date.now() / 30000);
+  state.twoFaTimer = setInterval(() => {
+    if (document.hidden) return;
+    const epoch = Math.floor(Date.now() / 30000);
+    if (epoch !== state.twoFaLastEpoch) {
+      state.twoFaLastEpoch = epoch;
+      refreshTwoFaCodes();
+    }
+  }, 1000);
+}
+
+/* =========================================================
+ * PUBLIC TOOL 3: MICROSOFT / OUTLOOK INBOX READER (/mail-reader)
+ * ========================================================= */
+const MS_UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MS_UUID_ANY_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+const MS_EMAIL_REGEX = /^[^\s@:|;]+@[^\s@:|;]+\.[^\s@:|;]+$/;
+const MS_EMAIL_ANY_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+
+function detectMsComboClient(rawCombo) {
+  const line = String(rawCombo || '')
+    .trim()
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .find(Boolean) || '';
+
+  if (!line) {
+    return { email: '', clientId: '', refreshToken: '', ready: false };
+  }
+
+  let tokens = [];
+  if (line.includes('|')) tokens = line.split('|');
+  else if (line.includes('----')) tokens = line.split('----');
+  else if (line.includes('\t')) tokens = line.split('\t');
+  else if (line.includes(';')) tokens = line.split(';');
+  else if (line.includes(':')) tokens = line.split(':');
+  else tokens = line.split(/\s+/);
+
+  tokens = tokens.map((t) => t.trim()).filter(Boolean);
+
+  let email = '';
+  let clientId = '';
+  const rest = [];
+
+  for (const tok of tokens) {
+    if (!clientId && MS_UUID_REGEX.test(tok)) {
+      clientId = tok.toLowerCase();
+      continue;
+    }
+    if (!email && MS_EMAIL_REGEX.test(tok)) {
+      email = tok.toLowerCase();
+      continue;
+    }
+    rest.push(tok);
+  }
+
+  if (!clientId) {
+    const m = line.match(MS_UUID_ANY_REGEX);
+    if (m) clientId = m[0].toLowerCase();
+  }
+  if (!email) {
+    const m = line.match(MS_EMAIL_ANY_REGEX);
+    if (m) email = m[0].toLowerCase();
+  }
+
+  const candidates = rest
+    .filter((t) => t.toLowerCase() !== clientId && t.toLowerCase() !== email)
+    .sort((a, b) => {
+      const score = (s) => s.length + (/^(?:M\.|0\.|1\.|OAQ|Ew)/i.test(s) ? 500 : 0);
+      return score(b) - score(a);
+    });
+
+  const refreshToken = candidates.length > 0 && candidates[0].length >= 24 ? candidates[0] : '';
+  return {
+    email,
+    clientId,
+    refreshToken,
+    ready: Boolean(clientId && refreshToken),
+  };
+}
+
+function updateMsDetectStrip(rawCombo) {
+  const det = detectMsComboClient(rawCombo);
+
+  if (det.email) {
+    els.msDetectEmail.textContent = `Email: ${det.email}`;
+    els.msDetectEmail.classList.add('is-ready');
+  } else if (det.ready) {
+    els.msDetectEmail.textContent = 'Email: Otomatis dari Graph';
+    els.msDetectEmail.classList.add('is-ready');
+  } else {
+    els.msDetectEmail.textContent = 'Email: Menunggu input';
+    els.msDetectEmail.classList.remove('is-ready');
+  }
+
+  if (det.clientId) {
+    els.msDetectClient.textContent = `Client ID: ${det.clientId.slice(0, 8)}...`;
+    els.msDetectClient.classList.add('is-ready');
+  } else {
+    els.msDetectClient.textContent = 'Client ID: Menunggu UUID';
+    els.msDetectClient.classList.remove('is-ready');
+  }
+
+  if (det.refreshToken) {
+    els.msDetectToken.textContent = `Refresh Token: Siap (${det.refreshToken.length} kar)`;
+    els.msDetectToken.classList.add('is-ready');
+  } else {
+    els.msDetectToken.textContent = 'Refresh Token: Menunggu token';
+    els.msDetectToken.classList.remove('is-ready');
+  }
+}
+
+function persistMsSession() {
+  if (!state.msConnected) return;
+  try {
+    sessionStorage.setItem(
+      STORAGE_KEYS.msSession,
+      JSON.stringify({
+        email: state.msEmail,
+        displayName: state.msDisplayName,
+        clientId: state.msClientId,
+        accessToken: state.msAccessToken,
+        refreshToken: state.msRefreshToken,
+        folder: state.msFolder,
+      })
+    );
+  } catch {}
+}
+
+function syncMsFolderOptions() {
+  if (!els.selectMsFolder) return;
+  const folders = state.msFolders && state.msFolders.length > 0
+    ? state.msFolders
+    : [
+        { id: 'all_incoming', displayName: 'Semua Masuk (Inbox + Junk)' },
+        { id: 'inbox', displayName: 'Inbox' },
+        { id: 'junkemail', displayName: 'Junk Email (Spam)' },
+        { id: 'sentitems', displayName: 'Sent Items' },
+        { id: 'deleteditems', displayName: 'Deleted Items' },
+      ];
+
+  els.selectMsFolder.innerHTML = folders
+    .map((f) => {
+      const countSuffix = typeof f.totalItemCount === 'number' && f.totalItemCount > 0 ? ` (${f.totalItemCount})` : '';
+      return `<option value="${escapeHtml(f.id)}">${escapeHtml(f.displayName)}${escapeHtml(countSuffix)}</option>`;
+    })
+    .join('');
+
+  if (folders.some((f) => f.id === state.msFolder)) {
+    els.selectMsFolder.value = state.msFolder;
+  } else {
+    state.msFolder = folders[0]?.id || 'all_incoming';
+    els.selectMsFolder.value = state.msFolder;
+  }
+  els.selectMsFolder.disabled = !state.msConnected;
+  syncCustomDropdown(els.selectMsFolder);
+}
+
+function getFilteredMsMessages() {
+  const q = state.msSearchQuery.trim().toLowerCase();
+  if (!q) return state.msMessages;
+  return state.msMessages.filter((m) => {
+    const hay = `${m.fromName || ''} ${m.fromAddress || ''} ${m.subject || ''} ${m.snippet || ''} ${m.otpCode || ''}`.toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function renderMsMessagesList() {
+  const filtered = getFilteredMsMessages();
+  els.msmailCount.textContent = String(filtered.length);
+
+  if (!state.msConnected && !state.msLoading) {
+    els.msmailList.innerHTML = `
+      <div class="state-panel">
+        <h3>Belum Ada Akun Terhubung</h3>
+        <p>Tempel combo Microsoft di atas lalu klik <strong>Hubungkan &amp; Buka Inbox</strong> untuk memuat pesan.</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (state.msLoading && state.msMessages.length === 0) {
+    els.msmailList.innerHTML = `
+      <div class="state-panel">
+        <h3>Menghubungkan ke Microsoft Graph</h3>
+        <p>Menukar Refresh Token dan mengambil email terbaru dari Inbox serta Junk Email...</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (filtered.length === 0) {
+    els.msmailList.innerHTML = `
+      <div class="state-panel">
+        <h3>Tidak Ada Pesan</h3>
+        <div class="state-addr-box">${escapeHtml(state.msEmail || 'Outlook Mailbox')}</div>
+        <p>${
+          state.msSearchQuery
+            ? `Tidak ada email yang cocok dengan "${escapeHtml(state.msSearchQuery)}".`
+            : 'Folder ini masih kosong. Klik Segarkan untuk memeriksa email baru.'
+        }</p>
+      </div>
+    `;
+    return;
+  }
+
+  els.msmailList.innerHTML = filtered
+    .map((msg) =>
+      renderMessageCard(msg, {
+        selected: msg.id === state.msSelectedId,
+        showRecipient: false,
+        openAttr: 'data-ms-open-id',
+        variant: 'simple',
+      })
+    )
+    .join('');
+}
+
+function renderMsReader() {
+  if (!state.msSelectedDetail) {
+    els.msmailEmpty.classList.remove('hidden');
+    els.msmailReader.classList.add('hidden');
+    els.msmailReader.innerHTML = '';
+    return;
+  }
+  els.msmailEmpty.classList.add('hidden');
+  els.msmailReader.classList.remove('hidden');
+  els.msmailReader.innerHTML = buildMessageDetailMarkup(state.msSelectedDetail, {
+    activeTab: state.msReaderTab,
+    allowExternalImages: state.msAllowImages,
+    mode: 'msmail',
+  });
+}
+
+async function connectMsMailbox({ combo = '', email = '', refreshToken = '', clientId = '', folder = 'all_incoming', silentRestore = false } = {}) {
+  els.msmailError.classList.add('hidden');
+  state.msLoading = true;
+  els.btnMsConnect.disabled = true;
+  els.btnMsConnect.textContent = 'Menghubungkan...';
+  renderMsMessagesList();
+
+  let autoOpenId = null;
+
+  try {
+    const res = await apiFetch('/api/ms-mail/connect', {
+      method: 'POST',
+      body: JSON.stringify({
+        combo,
+        email,
+        refreshToken,
+        clientId,
+        folder,
+      }),
+    });
+
+    state.msConnected = true;
+    state.msEmail = res.email || email || 'Outlook Mailbox';
+    state.msDisplayName = res.displayName || state.msEmail;
+    state.msClientId = res.clientId || clientId;
+    state.msAccessToken = res.accessToken || '';
+    state.msRefreshToken = res.refreshToken || refreshToken;
+    state.msFolders = res.folders || [];
+    state.msFolder = res.folder || folder || 'all_incoming';
+    state.msMessages = res.messages || [];
+    state.msSelectedId = null;
+    state.msSelectedDetail = null;
+    els.msmailWorkspace.classList.remove('is-reading');
+
+    els.msmailActiveLabel.textContent = state.msEmail;
+    els.btnMsRefresh.disabled = false;
+    els.btnMsDisconnect.classList.remove('hidden');
+
+    persistMsSession();
+    syncMsFolderOptions();
+    renderMsReader();
+
+    if (state.msMessages.length > 0 && isDesktopSplitViewport()) {
+      autoOpenId = state.msMessages[0].id;
+    }
+
+    if (!silentRestore) {
+      showToast(`Terhubung ke ${state.msEmail}`, 'success');
+    }
+  } catch (err) {
+    if (silentRestore) {
+      try { sessionStorage.removeItem(STORAGE_KEYS.msSession); } catch {}
+    } else {
+      els.msmailError.textContent = err.message;
+      els.msmailError.classList.remove('hidden');
+    }
+  } finally {
+    state.msLoading = false;
+    els.btnMsConnect.disabled = false;
+    els.btnMsConnect.textContent = 'Hubungkan & Buka Inbox';
+    renderMsMessagesList();
+  }
+
+  if (autoOpenId) {
+    openMsMessage(autoOpenId);
+  }
+}
+
+async function fetchMsMessages({ silent = false } = {}) {
+  if (!state.msConnected) return;
+  if (!silent) {
+    state.msLoading = true;
+    renderMsMessagesList();
+  }
+
+  let autoOpenId = null;
+
+  try {
+    const res = await apiFetch('/api/ms-mail/messages', {
+      method: 'POST',
+      body: JSON.stringify({
+        accessToken: state.msAccessToken,
+        refreshToken: state.msRefreshToken,
+        clientId: state.msClientId,
+        email: state.msEmail,
+        folder: state.msFolder,
+        top: 40,
+      }),
+    });
+
+    if (res.accessToken) state.msAccessToken = res.accessToken;
+    if (res.refreshToken) state.msRefreshToken = res.refreshToken;
+    state.msMessages = res.messages || [];
+    persistMsSession();
+
+    if (state.msSelectedId && !state.msMessages.some((m) => m.id === state.msSelectedId)) {
+      state.msSelectedId = null;
+      state.msSelectedDetail = null;
+      renderMsReader();
+    }
+
+    const filtered = getFilteredMsMessages();
+    if (!state.msSelectedId && filtered.length > 0 && isDesktopSplitViewport()) {
+      autoOpenId = filtered[0].id;
+    }
+  } catch (err) {
+    if (!silent) {
+      showToast(`Gagal memuat ulang inbox Microsoft: ${err.message}`, 'error');
+    }
+  } finally {
+    state.msLoading = false;
+    renderMsMessagesList();
+  }
+
+  if (autoOpenId) {
+    openMsMessage(autoOpenId);
+  }
+}
+
+async function openMsMessage(messageId) {
+  if (!state.msConnected || !messageId) return;
+
+  state.msSelectedId = messageId;
+  state.msAllowImages = true;
+  els.msmailWorkspace.classList.add('is-reading');
+  renderMsMessagesList();
+
+  els.msmailEmpty.classList.add('hidden');
+  els.msmailReader.classList.remove('hidden');
+  els.msmailReader.innerHTML = '<div class="state-panel"><h3>Memuat Isi Pesan Outlook...</h3></div>';
+
+  try {
+    const res = await apiFetch('/api/ms-mail/message', {
+      method: 'POST',
+      body: JSON.stringify({
+        accessToken: state.msAccessToken,
+        refreshToken: state.msRefreshToken,
+        clientId: state.msClientId,
+        email: state.msEmail,
+        messageId,
+      }),
+    });
+    if (state.msSelectedId !== messageId) return;
+    if (res.accessToken) state.msAccessToken = res.accessToken;
+    if (res.refreshToken) state.msRefreshToken = res.refreshToken;
+    persistMsSession();
+
+    state.msSelectedDetail = res.email;
+    state.msReaderTab = res.email.htmlBody ? 'html' : 'text';
+
+    const row = state.msMessages.find((m) => m.id === messageId);
+    if (row) row.isRead = true;
+
+    renderMsMessagesList();
+    renderMsReader();
+  } catch (err) {
+    els.msmailReader.innerHTML = `
+      <div class="state-panel">
+        <h3 class="state-error-title">Gagal Membuka Pesan Outlook</h3>
+        <p>${escapeHtml(err.message)}</p>
+      </div>
+    `;
+  }
+}
+
+function disconnectMsMailbox() {
+  state.msConnected = false;
+  state.msEmail = '';
+  state.msDisplayName = '';
+  state.msClientId = '';
+  state.msAccessToken = '';
+  state.msRefreshToken = '';
+  state.msFolders = [];
+  state.msFolder = 'all_incoming';
+  state.msSearchQuery = '';
+  state.msMessages = [];
+  state.msSelectedId = null;
+  state.msSelectedDetail = null;
+
+  try { sessionStorage.removeItem(STORAGE_KEYS.msSession); } catch {}
+
+  els.inputMsCombo.value = '';
+  els.inputMsSearch.value = '';
+  els.msmailError.classList.add('hidden');
+  els.msmailActiveLabel.textContent = 'Belum terhubung';
+  els.btnMsRefresh.disabled = true;
+  els.btnMsDisconnect.classList.add('hidden');
+  els.msmailWorkspace.classList.remove('is-reading');
+
+  updateMsDetectStrip('');
+  syncMsFolderOptions();
+  renderMsMessagesList();
+  renderMsReader();
+  showToast('Koneksi kotak masuk Microsoft diputuskan.');
 }
 
 async function loadAdminMailboxes() {
@@ -1586,7 +2544,6 @@ function bindEvents() {
   els.btnThemeToggle.addEventListener('click', toggleTheme);
   els.btnSidebarTheme.addEventListener('click', toggleTheme);
   els.btnSidebarCopy.addEventListener('click', copyActiveEmailAction);
-  els.btnSidebarAdmin.addEventListener('click', openAdminLoginModal);
   els.btnOpenAdmin.addEventListener('click', openAdminLoginModal);
   els.btnSidebarLogout.addEventListener('click', logoutAdmin);
   els.btnMobileLogout.addEventListener('click', logoutAdmin);
@@ -1596,6 +2553,13 @@ function bindEvents() {
   });
 
   document.addEventListener('click', (e) => {
+    const publicNav = e.target.closest('[data-public-nav]');
+    if (publicNav && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      setPublicTool(publicNav.dataset.publicNav, { pushHistory: true });
+      return;
+    }
+
     const viewTrigger = e.target.closest('[data-admin-view]');
     if (viewTrigger && state.adminAuthenticated) {
       const targetView = viewTrigger.dataset.adminView;
@@ -1603,19 +2567,17 @@ function bindEvents() {
     }
   });
 
-  document.querySelectorAll('[data-nav-filter]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      setFilter(btn.dataset.navFilter, { scrollToInbox: true });
-    });
-  });
-
-  if (els.mobNavInbox) els.mobNavInbox.addEventListener('click', () => setFilter('all', { scrollToInbox: true }));
-  if (els.mobNavAdmin) els.mobNavAdmin.addEventListener('click', openAdminLoginModal);
-
-  els.btnToggleAutoPoll.addEventListener('click', () => {
-    state.autoPoll = !state.autoPoll;
-    if (state.autoPoll) resetPollCountdown();
-    else updatePollBadge();
+  window.addEventListener('popstate', () => {
+    state.publicTool = resolveToolFromLocation();
+    if (state.adminAuthenticated) {
+      if (state.publicTool === '2fa') state.adminView = 'tool-2fa';
+      else if (state.publicTool === 'msmail') state.adminView = 'tool-msmail';
+    }
+    syncModeShell();
+    const shareParam = new URLSearchParams(window.location.search).get('share') || '';
+    if (state.publicTool === '2fa' && shareParam) {
+      loadSharedTwoFaFromUrl(shareParam);
+    }
   });
 
   els.inputUsername.addEventListener('input', () => {
@@ -1643,7 +2605,6 @@ function bindEvents() {
 
   els.btnRefreshInbox.addEventListener('click', () => {
     fetchInbox({ silent: false });
-    resetPollCountdown();
   });
 
   if (els.domainPills) {
@@ -1668,10 +2629,12 @@ function bindEvents() {
     if (els.mailWorkspace.classList.contains('is-reading')) {
       els.mailWorkspace.classList.remove('is-reading');
     }
-  });
-
-  document.querySelectorAll('.filter-tab').forEach((tab) => {
-    tab.addEventListener('click', () => setFilter(tab.dataset.filter));
+    if (els.msmailWorkspace.classList.contains('is-reading')) {
+      els.msmailWorkspace.classList.remove('is-reading');
+    }
+    if (els.adminCatchallWorkspace.classList.contains('is-reading')) {
+      els.adminCatchallWorkspace.classList.remove('is-reading');
+    }
   });
 
   let searchDebounce = null;
@@ -1734,6 +2697,8 @@ function bindEvents() {
     if (backBtn) {
       if (backBtn.dataset.mobileBack === 'admin') {
         els.adminCatchallWorkspace.classList.remove('is-reading');
+      } else if (backBtn.dataset.mobileBack === 'msmail') {
+        els.msmailWorkspace.classList.remove('is-reading');
       } else {
         els.mailWorkspace.classList.remove('is-reading');
       }
@@ -1751,6 +2716,9 @@ function bindEvents() {
       if (tabBtn.dataset.tabMode === 'admin') {
         state.adminReaderTab = tabBtn.dataset.readerTab;
         renderAdminCatchallReader();
+      } else if (tabBtn.dataset.tabMode === 'msmail') {
+        state.msReaderTab = tabBtn.dataset.readerTab;
+        renderMsReader();
       } else {
         state.readerTab = tabBtn.dataset.readerTab;
         renderPublicReader();
@@ -1763,6 +2731,9 @@ function bindEvents() {
       if (imgBtn.dataset.toggleImages === 'admin') {
         state.adminAllowImages = !state.adminAllowImages;
         renderAdminCatchallReader();
+      } else if (imgBtn.dataset.toggleImages === 'msmail') {
+        state.msAllowImages = !state.msAllowImages;
+        renderMsReader();
       } else {
         state.allowExternalImages = !state.allowExternalImages;
         renderPublicReader();
@@ -1821,7 +2792,222 @@ function bindEvents() {
 
   els.readerContent.addEventListener('click', handleReaderClick);
   els.adminCatchallReader.addEventListener('click', handleReaderClick);
+  els.msmailReader.addEventListener('click', handleReaderClick);
 
+  /* 2FA TOTP Authenticator Events */
+  els.twofaForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const parsed = parseClientTotpInput(els.input2faSecret.value, els.input2faLabel.value);
+    if (!parsed.valid) {
+      els.twofaError.textContent = parsed.error;
+      els.twofaError.classList.remove('hidden');
+      els.input2faSecret.focus();
+      return;
+    }
+    if (!els.input2faLabel.value.trim() && parsed.label) {
+      els.input2faLabel.value = parsed.label;
+    }
+    await activateTwoFaEntry(parsed);
+  });
+
+  els.input2faSecret.addEventListener('input', async () => {
+    els.twofaError.classList.add('hidden');
+    const raw = els.input2faSecret.value.trim();
+    if (!raw) return;
+    const parsed = parseClientTotpInput(raw, els.input2faLabel.value);
+    if (parsed.valid && (parsed.secret.length >= 16 || /^otpauth:\/\//i.test(raw))) {
+      if (!els.input2faLabel.value.trim() && parsed.label) {
+        els.input2faLabel.value = parsed.label;
+      }
+      await activateTwoFaEntry(parsed);
+    }
+  });
+
+  els.input2faLabel.addEventListener('input', () => {
+    if (state.twoFaActive) {
+      state.twoFaActive.label = els.input2faLabel.value.trim() || 'Akun 2FA Aktif';
+      els.twofaActiveTitle.textContent = state.twoFaActive.label;
+    }
+  });
+
+  els.btn2faSample.addEventListener('click', async () => {
+    els.input2faLabel.value = 'Contoh Akun AMC';
+    els.input2faSecret.value = SAMPLE_2FA_KEY;
+    const parsed = parseClientTotpInput(SAMPLE_2FA_KEY, 'Contoh Akun AMC');
+    if (parsed.valid) {
+      await activateTwoFaEntry(parsed);
+    }
+  });
+
+  els.btn2faClear.addEventListener('click', clearTwoFaActive);
+
+  els.btn2faSave.addEventListener('click', async () => {
+    const parsed = parseClientTotpInput(els.input2faSecret.value, els.input2faLabel.value);
+    if (!parsed.valid) {
+      els.twofaError.textContent = parsed.error;
+      els.twofaError.classList.remove('hidden');
+      els.input2faSecret.focus();
+      return;
+    }
+    const label = parsed.label || els.input2faLabel.value.trim() || `Akun ${state.twoFaSaved.length + 1}`;
+    const existingIdx = state.twoFaSaved.findIndex((item) => item.secret === parsed.secret);
+    if (existingIdx >= 0) {
+      state.twoFaSaved[existingIdx].label = label;
+    } else {
+      state.twoFaSaved.unshift({
+        id: `2fa-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        label,
+        secret: parsed.secret,
+        digits: parsed.digits,
+        period: parsed.period,
+        algorithm: parsed.algorithm,
+        createdAt: Date.now(),
+      });
+    }
+    persistSavedTwoFa();
+    await activateTwoFaEntry({ ...parsed, label });
+    showToast(`Kunci 2FA "${label}" disimpan di perangkat ini.`, 'success');
+  });
+
+  els.btnCopy2faCode.addEventListener('click', () => {
+    if (!state.twoFaCurrentCode) return;
+    copyText(state.twoFaCurrentCode, `Kode 2FA ${state.twoFaCurrentCode} disalin`);
+  });
+
+  els.btn2faCreateShare.addEventListener('click', handleCreateTwoFaShare);
+
+  els.btnCopy2faShareUrl.addEventListener('click', () => {
+    if (!els.input2faShareUrl.value) return;
+    copyText(els.input2faShareUrl.value, 'Link privat 2FA disalin ke clipboard');
+  });
+
+  els.btnCopyShared2fa.addEventListener('click', () => {
+    if (!state.twoFaSharedView?.code) return;
+    copyText(state.twoFaSharedView.code, `Kode 2FA ${state.twoFaSharedView.code} disalin`);
+  });
+
+  els.btnExitShared2fa.addEventListener('click', () => {
+    state.twoFaSharedView = null;
+    els.twofaSharedCard.classList.add('hidden');
+    if (window.history?.replaceState) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('share');
+      window.history.replaceState({}, '', url.toString());
+    }
+  });
+
+  els.twofaSavedList.addEventListener('click', async (e) => {
+    const copyBtn = e.target.closest('[data-2fa-copy]');
+    if (copyBtn) {
+      const code = copyBtn.getAttribute('data-2fa-copy') || '';
+      copyText(code, `Kode 2FA ${code} disalin`);
+      return;
+    }
+
+    const useBtn = e.target.closest('[data-2fa-use]');
+    if (useBtn) {
+      const id = useBtn.getAttribute('data-2fa-use');
+      const found = state.twoFaSaved.find((item) => item.id === id);
+      if (found) {
+        els.input2faLabel.value = found.label || '';
+        els.input2faSecret.value = found.secret || '';
+        await activateTwoFaEntry(found);
+      }
+      return;
+    }
+
+    const delBtn = e.target.closest('[data-2fa-delete]');
+    if (delBtn) {
+      const id = delBtn.getAttribute('data-2fa-delete');
+      state.twoFaSaved = state.twoFaSaved.filter((item) => item.id !== id);
+      persistSavedTwoFa();
+      await renderSavedTwoFaList();
+      showToast('Kunci 2FA dihapus dari perangkat ini.');
+    }
+  });
+
+  els.twofaSharesList.addEventListener('click', (e) => {
+    const copyBtn = e.target.closest('[data-share-copy]');
+    if (copyBtn) {
+      copyText(copyBtn.getAttribute('data-share-copy'), 'Link privat 2FA disalin');
+      return;
+    }
+    const revBtn = e.target.closest('[data-share-revoke]');
+    if (revBtn) {
+      handleRevokeTwoFaShare(revBtn.getAttribute('data-share-revoke'));
+    }
+  });
+
+  /* Microsoft / Outlook Inbox Mail Reader Events */
+  document.querySelectorAll('[data-ms-example]').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const fmt = chip.getAttribute('data-ms-example');
+      if (fmt === 'colon') {
+        els.inputMsCombo.placeholder = 'email@outlook.com:sandi:M.C509_...:9e5f94bc-e8a4-4e73-b8be-63364c29d753';
+        showToast('Format titik dua aktif. Tempel combo email:sandi:refresh_token:client_id.');
+      } else {
+        els.inputMsCombo.placeholder = 'email@outlook.com|sandi|M.C509_...|9e5f94bc-e8a4-4e73-b8be-63364c29d753';
+        showToast('Format pipe aktif. Tempel combo email|sandi|refresh_token|client_id.');
+      }
+      els.inputMsCombo.focus();
+    });
+  });
+
+  els.inputMsCombo.addEventListener('input', () => {
+    els.msmailError.classList.add('hidden');
+    updateMsDetectStrip(els.inputMsCombo.value);
+  });
+
+  els.msmailConnectForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const raw = els.inputMsCombo.value.trim();
+    if (!raw) {
+      els.msmailError.textContent = 'Tempel combo Microsoft terlebih dahulu.';
+      els.msmailError.classList.remove('hidden');
+      els.inputMsCombo.focus();
+      return;
+    }
+    connectMsMailbox({ combo: raw, folder: state.msFolder || 'all_incoming' });
+  });
+
+  els.btnMsDisconnect.addEventListener('click', disconnectMsMailbox);
+
+  els.btnMsRefresh.addEventListener('click', () => {
+    fetchMsMessages({ silent: false });
+  });
+
+  els.selectMsFolder.addEventListener('change', () => {
+    state.msFolder = els.selectMsFolder.value || 'all_incoming';
+    state.msSelectedId = null;
+    state.msSelectedDetail = null;
+    els.msmailWorkspace.classList.remove('is-reading');
+    renderMsReader();
+    fetchMsMessages({ silent: false });
+  });
+
+  let msSearchTimer = null;
+  els.inputMsSearch.addEventListener('input', () => {
+    clearTimeout(msSearchTimer);
+    msSearchTimer = setTimeout(() => {
+      state.msSearchQuery = els.inputMsSearch.value.trim();
+      renderMsMessagesList();
+    }, 150);
+  });
+
+  els.msmailList.addEventListener('click', (e) => {
+    const otpBtn = e.target.closest('[data-quick-otp]');
+    if (otpBtn) {
+      e.stopPropagation();
+      copyText(otpBtn.dataset.quickOtp, `Kode OTP ${otpBtn.dataset.quickOtp} disalin`);
+      return;
+    }
+    const openBtn = e.target.closest('[data-ms-open-id]');
+    if (openBtn) {
+      openMsMessage(openBtn.getAttribute('data-ms-open-id'));
+    }
+  });
+
+  /* Admin Login & Workspace Events */
   els.btnCloseAdmin.addEventListener('click', closeAdminLoginModal);
   els.adminModal.addEventListener('click', (e) => {
     if (e.target === els.adminModal) closeAdminLoginModal();
@@ -1860,7 +3046,6 @@ function bindEvents() {
     }
   });
 
-  // Admin Quick Single Email Creator
   els.adminQuickMailboxForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const raw = els.inputQuickUsername.value.trim();
@@ -1876,7 +3061,6 @@ function bindEvents() {
     }
   });
 
-  // Admin Bulk Email Creator
   els.adminCreateMailboxForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const raw = els.inputNewMailboxes.value.trim();
@@ -1942,6 +3126,7 @@ function bindEvents() {
       const [u, d] = addr.split('@');
       if (u && d) {
         state.adminView = 'reader';
+        state.publicTool = 'inbox';
         syncModeShell();
         setActiveAddress(u, d);
       }
@@ -1957,7 +3142,7 @@ function bindEvents() {
     const copyLinkBtn = e.target.closest('[data-mailbox-copy-link]');
     if (copyLinkBtn) {
       const addr = copyLinkBtn.dataset.mailboxCopyLink;
-      const link = `${window.location.origin}${window.location.pathname}?email=${encodeURIComponent(addr)}`;
+      const link = `${window.location.origin}/?email=${encodeURIComponent(addr)}`;
       copyText(link, `Link inbox ${addr} disalin`);
       return;
     }
@@ -1980,15 +3165,14 @@ function bindEvents() {
     }
   });
 
-  // Catch-All Filters
-  els.adminFilterDomain.addEventListener('change', loadAdminStatsAndMessages);
-  els.adminFilterType.addEventListener('change', loadAdminStatsAndMessages);
+  // Catch-All Unified Filters
+  els.adminFilterDomain.addEventListener('change', () => loadAdminStatsAndMessages());
   let adminSearchTimer = null;
   els.adminFilterSearch.addEventListener('input', () => {
     clearTimeout(adminSearchTimer);
-    adminSearchTimer = setTimeout(loadAdminStatsAndMessages, 250);
+    adminSearchTimer = setTimeout(() => loadAdminStatsAndMessages(), 250);
   });
-  els.btnAdminRefreshMsgs.addEventListener('click', loadAdminStatsAndMessages);
+  els.btnAdminRefreshMsgs.addEventListener('click', () => loadAdminStatsAndMessages());
 
   // Admin Domains
   els.adminAddDomainForm.addEventListener('submit', async (e) => {
@@ -2536,16 +3720,44 @@ function initCustomDropdownEngine() {
 
 async function init() {
   els.footerYear.textContent = String(new Date().getFullYear());
+  const searchParams = new URLSearchParams(window.location.search);
+  const shareParam = (searchParams.get('share') || '').trim();
+  const urlEmail = (searchParams.get('email') || '').trim();
+
+  state.publicTool = shareParam ? '2fa' : resolveToolFromLocation();
+
   syncThemeUI();
-  syncNavActiveStates();
+  loadTwoFaLocalState();
   initCustomDropdownEngine();
   syncCustomDropdowns();
+  syncPublicToolPanels();
+  renderSavedTwoFaList();
+  renderTwoFaSharesList();
+  startTwoFaEpochLoop();
 
   try {
     state.adminToken = sessionStorage.getItem(STORAGE_KEYS.adminToken) || '';
   } catch {}
 
   bindEvents();
+
+  if (shareParam) {
+    loadSharedTwoFaFromUrl(shareParam);
+  }
+
+  let savedMs = null;
+  try {
+    savedMs = JSON.parse(sessionStorage.getItem(STORAGE_KEYS.msSession) || 'null');
+  } catch {}
+  if (savedMs && savedMs.clientId && savedMs.refreshToken) {
+    connectMsMailbox({
+      email: savedMs.email || '',
+      refreshToken: savedMs.refreshToken,
+      clientId: savedMs.clientId,
+      folder: savedMs.folder || 'all_incoming',
+      silentRestore: true,
+    });
+  }
 
   try {
     const [, domRes] = await Promise.all([
@@ -2563,6 +3775,9 @@ async function init() {
         const sess = await apiFetch('/api/admin/session', { admin: true });
         state.adminAuthenticated = true;
         state.adminDefaultPin = Boolean(sess.isDefaultPin);
+        if (state.publicTool === '2fa') state.adminView = 'tool-2fa';
+        else if (state.publicTool === 'msmail') state.adminView = 'tool-msmail';
+        else if (urlEmail) state.adminView = 'reader';
       } catch {
         state.adminToken = '';
         state.adminAuthenticated = false;
@@ -2576,7 +3791,6 @@ async function init() {
       await loadAdminAll();
     }
 
-    const urlEmail = new URLSearchParams(window.location.search).get('email') || '';
     let savedAddr = '';
     try { savedAddr = localStorage.getItem(STORAGE_KEYS.activeAddress) || ''; } catch {}
     const candidate = (urlEmail || savedAddr).trim().toLowerCase();
@@ -2584,11 +3798,7 @@ async function init() {
     if (candidate.includes('@')) {
       const [u, d] = candidate.split('@');
       if (LOCAL_PART_REGEX.test(u) && state.domains.some((dom) => dom.domain === d)) {
-        if (urlEmail && state.adminAuthenticated) {
-          state.adminView = 'reader';
-          syncModeShell();
-        }
-        setActiveAddress(u, d, { pushUrl: Boolean(urlEmail) });
+        setActiveAddress(u, d, { pushUrl: Boolean(urlEmail) && state.publicTool === 'inbox' });
       } else {
         updateAddressActionButtons();
         renderInboxList();

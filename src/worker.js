@@ -3,14 +3,17 @@ import {
   addDomains,
   clearInbox,
   createMailboxes,
+  createTotpShare,
   deleteDomain,
   deleteEmail,
   deleteMailbox,
+  deleteTotpShare,
   getAdminStats,
   getAttachmentWithOwner,
   getEmailDetail,
   getMailbox,
   getSettings,
+  getTotpShare,
   listAdminDomains,
   listAdminMailboxes,
   listAdminMessages,
@@ -30,8 +33,14 @@ import {
   verifyAdminPin,
 } from './auth.js';
 import { buildSimulatedEmail } from './simulator.js';
+import { generateTotpCode, parseTotpInput } from './totp.js';
+import {
+  connectMicrosoftMailbox,
+  getMicrosoftMessageDetail,
+  listMicrosoftMessages,
+} from './ms-mail.js';
 
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '3.0.0';
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -326,6 +335,121 @@ async function handleApi(request, env, url) {
     }, 201);
   }
 
+  if (pathname === '/api/2fa/share' && method === 'POST') {
+    const body = await readJsonBody(request);
+    if (!body) return errorJson('Body JSON tidak valid.', 400);
+
+    const parsed = parseTotpInput(body.secret || '', body.label || '');
+    if (!parsed.valid) {
+      return errorJson(parsed.error, 400, 'INVALID_TOTP_SECRET');
+    }
+
+    const share = await createTotpShare(env.DB, {
+      label: parsed.label || body.label || 'Akun 2FA',
+      secretBase32: parsed.secret,
+      digits: parsed.digits,
+      period: parsed.period,
+      algorithm: parsed.algorithm,
+      expiresInHours: Number(body.expiresInHours || 24),
+    });
+
+    return json({ ok: true, share }, 201);
+  }
+
+  const totpShareMatch = pathname.match(/^\/api\/2fa\/share\/([a-z0-9_-]{6,40})$/i);
+  if (totpShareMatch) {
+    const shareId = totpShareMatch[1];
+    if (method === 'GET') {
+      const share = await getTotpShare(env.DB, shareId);
+      if (!share) {
+        return errorJson('Tautan kode 2FA tidak ditemukan atau sudah kedaluwarsa.', 404, 'SHARE_NOT_FOUND');
+      }
+      const generated = await generateTotpCode(share.secretBase32, {
+        period: share.period,
+        digits: share.digits,
+        algorithm: share.algorithm,
+      });
+      return json({
+        ok: true,
+        share: {
+          id: share.id,
+          label: share.label,
+          code: generated.code,
+          digits: share.digits,
+          expiresAt: share.expiresAt,
+        },
+      });
+    }
+
+    if (method === 'DELETE') {
+      const isAdmin = await isAdminRequest(request, env);
+      const revokeKey = searchParams.get('revokeKey') || '';
+      const deleted = await deleteTotpShare(env.DB, shareId, revokeKey, { isAdmin });
+      if (deleted === null) {
+        return errorJson('Kunci pencabutan tidak cocok.', 403, 'FORBIDDEN');
+      }
+      if (!deleted) {
+        return errorJson('Tautan kode 2FA tidak ditemukan.', 404, 'SHARE_NOT_FOUND');
+      }
+      return json({ ok: true, revoked: true });
+    }
+  }
+
+  if (pathname === '/api/ms-mail/connect' && method === 'POST') {
+    const body = await readJsonBody(request);
+    if (!body) return errorJson('Body JSON tidak valid.', 400);
+
+    const res = await connectMicrosoftMailbox({
+      combo: body.combo || '',
+      email: body.email || '',
+      refreshToken: body.refreshToken || '',
+      clientId: body.clientId || '',
+      folder: body.folder || 'all_incoming',
+      allowMock: isSimulatorAllowed(env),
+    });
+    if (!res.ok) {
+      return errorJson(res.error, res.status || 400, res.code || 'MS_CONNECT_ERROR');
+    }
+    return json(res);
+  }
+
+  if (pathname === '/api/ms-mail/messages' && method === 'POST') {
+    const body = await readJsonBody(request);
+    if (!body) return errorJson('Body JSON tidak valid.', 400);
+
+    const res = await listMicrosoftMessages({
+      accessToken: body.accessToken || '',
+      refreshToken: body.refreshToken || '',
+      clientId: body.clientId || '',
+      email: body.email || '',
+      folder: body.folder || 'all_incoming',
+      top: Number(body.top || 35),
+      allowMock: isSimulatorAllowed(env),
+    });
+    if (!res.ok) {
+      return errorJson(res.error, res.status || 400, 'MS_LIST_ERROR');
+    }
+    return json(res);
+  }
+
+  if (pathname === '/api/ms-mail/message' && method === 'POST') {
+    const body = await readJsonBody(request);
+    if (!body) return errorJson('Body JSON tidak valid.', 400);
+
+    const res = await getMicrosoftMessageDetail({
+      accessToken: body.accessToken || '',
+      refreshToken: body.refreshToken || '',
+      clientId: body.clientId || '',
+      email: body.email || '',
+      messageId: body.messageId || '',
+      allowMock: isSimulatorAllowed(env),
+    });
+    if (!res.ok) {
+      return errorJson(res.error, res.status || 400, 'MS_MESSAGE_ERROR');
+    }
+    return json(res);
+  }
+
   if (pathname === '/api/admin/login' && method === 'POST') {
     const body = await readJsonBody(request);
     if (!body || !body.pin) {
@@ -522,6 +646,11 @@ export default {
         return await handleApi(request, env, url);
       }
       if (env.ASSETS) {
+        const cleanPath = url.pathname.replace(/\/+$/, '') || '/';
+        if (cleanPath === '/2fa' || cleanPath === '/mail-reader') {
+          const indexUrl = new URL('/index.html', url.origin);
+          return await env.ASSETS.fetch(new Request(indexUrl.toString(), request));
+        }
         return await env.ASSETS.fetch(request);
       }
       return new Response('Static assets binding not configured', { status: 404 });

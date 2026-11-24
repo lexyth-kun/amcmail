@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>AMC Mail | Al Muthi Creative</title>
-  <meta name="description" content="AMC Mail: layanan kotak masuk email multi-domain Al Muthi Creative.">
+  <meta name="description" content="AMC Mail: layanan kotak masuk email multi-domain, generator kode 2FA TOTP, dan Microsoft Inbox Reader Al Muthi Creative.">
   <meta name="author" content="Al Muthi Creative">
   <meta name="theme-color" content="#38bdf8">
 
-  <link rel="icon" type="image/png" href="./assets/amc-logo.png">
-  <link rel="apple-touch-icon" href="./assets/amc-logo.png">
-  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" href="/assets/amc-logo.png">
+  <link rel="apple-touch-icon" href="/assets/amc-logo.png">
+  <link rel="manifest" href="/manifest.json">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,16 +26,16 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
 
-  <!-- Desktop Fixed Left Sidebar (304px, matching order.amc.web.id) -->
+  <!-- Desktop Fixed Left Sidebar for Admin Workspace (304px, matching order.amc.web.id) -->
   <aside class="desktop-app-sidebar" aria-label="Sidebar AMC Mail">
-    <a href="./" class="sidebar-brand" id="sidebar-home-link">
+    <a href="/" class="sidebar-brand" id="sidebar-home-link" data-public-nav="inbox">
       <div class="sidebar-logo-tile logo-sweep-wrap">
-        <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="44" height="44" fetchpriority="high">
+        <img src="/assets/amc-logo.png" alt="Logo Al Muthi Creative" width="44" height="44" fetchpriority="high">
       </div>
       <div>
         <span class="brand-title">AMC <span>Mail</span></span>
@@ -43,7 +43,7 @@
       </div>
     </a>
 
-    <!-- Sidebar Block A: Public Read-Only Navigation -->
+    <!-- Sidebar Block A: Public Read-Only Navigation (hidden in centered/full public shell) -->
     <div id="sidebar-public-block">
       <div class="sidebar-user-card">
         <div class="sidebar-user-top">
@@ -56,58 +56,6 @@
           </div>
         </div>
         <button type="button" class="btn btn-primary btn-sm" id="btn-sidebar-copy" style="width:100%;" disabled>Salin Alamat</button>
-      </div>
-
-      <div class="sidebar-section-label">Kotak Masuk</div>
-      <nav class="sidebar-nav-list" aria-label="Filter kotak masuk">
-        <button type="button" class="sidebar-link is-active" data-nav-filter="all" id="side-nav-all">
-          <span class="sidebar-link-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
-            <span>Semua Pesan</span>
-          </span>
-          <span class="sidebar-count" id="side-count-all">0</span>
-        </button>
-
-        <button type="button" class="sidebar-link" data-nav-filter="inbox" id="side-nav-inbox">
-          <span class="sidebar-link-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-            <span>Pesan Masuk</span>
-          </span>
-          <span class="sidebar-count" id="side-count-inbox">0</span>
-        </button>
-
-        <button type="button" class="sidebar-link" data-nav-filter="otp" id="side-nav-otp">
-          <span class="sidebar-link-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            <span>Kode OTP</span>
-          </span>
-          <span class="sidebar-count is-otp" id="side-count-otp">0</span>
-        </button>
-      </nav>
-
-      <div class="sidebar-section-label">Lainnya</div>
-      <div class="sidebar-nav-list">
-        <a href="#domain-directory" class="sidebar-link" id="side-nav-domains">
-          <span class="sidebar-link-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-            <span>Domain AMC</span>
-          </span>
-          <span class="sidebar-count" id="side-domain-count">6</span>
-        </a>
-
-        <button type="button" class="sidebar-link" id="btn-sidebar-admin">
-          <span class="sidebar-link-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-            <span>Login Admin</span>
-          </span>
-        </button>
-
-        <a href="https://order.amc.web.id" target="_blank" rel="noopener noreferrer" class="sidebar-link">
-          <span class="sidebar-link-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-            <span>AMC Order</span>
-          </span>
-        </a>
       </div>
     </div>
 
@@ -150,13 +98,6 @@
           <span class="sidebar-count" id="admin-side-messages">0</span>
         </button>
 
-        <button type="button" class="sidebar-link" data-admin-view="reader" id="admin-nav-reader">
-          <span class="sidebar-link-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-            <span>Buka Per Alamat</span>
-          </span>
-        </button>
-
         <button type="button" class="sidebar-link" data-admin-view="domains" id="admin-nav-domains">
           <span class="sidebar-link-left">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
@@ -173,8 +114,29 @@
         </button>
       </nav>
 
-      <div class="sidebar-section-label">Eksternal</div>
+      <div class="sidebar-section-label">Alat &amp; Pembaca</div>
       <div class="sidebar-nav-list">
+        <button type="button" class="sidebar-link" data-admin-view="reader" id="admin-nav-reader">
+          <span class="sidebar-link-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            <span>Buka Per Alamat</span>
+          </span>
+        </button>
+
+        <button type="button" class="sidebar-link" data-admin-view="tool-2fa" id="admin-nav-2fa">
+          <span class="sidebar-link-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>
+            <span>Generator 2FA</span>
+          </span>
+        </button>
+
+        <button type="button" class="sidebar-link" data-admin-view="tool-msmail" id="admin-nav-msmail">
+          <span class="sidebar-link-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg>
+            <span>Microsoft Reader</span>
+          </span>
+        </button>
+
         <a href="https://order.amc.web.id" target="_blank" rel="noopener noreferrer" class="sidebar-link">
           <span class="sidebar-link-left">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
@@ -202,12 +164,12 @@
     </div>
   </aside>
 
-  <!-- Mobile & Tablet Top Header (< 1024px, matching order.amc.web.id) -->
+  <!-- Full-Width Top Navigation Bar (Public Desktop & Mobile + Admin Mobile) -->
   <header class="mobile-header" id="site-header">
     <div class="mobile-header-inner">
-      <a href="./" class="mobile-brand" id="brand-home-link">
+      <a href="/" class="mobile-brand" id="brand-home-link" data-public-nav="inbox">
         <div class="mobile-logo-tile logo-sweep-wrap">
-          <img src="./assets/amc-logo.png" alt="Logo Al Muthi Creative" width="28" height="28" fetchpriority="high">
+          <img src="/assets/amc-logo.png" alt="Logo Al Muthi Creative" width="28" height="28" fetchpriority="high">
         </div>
         <div>
           <span class="brand-title">AMC <span>Mail</span></span>
@@ -215,7 +177,36 @@
         </div>
       </a>
 
-      <nav class="header-actions" aria-label="Navigasi atas">
+      <!-- Segmented Sky Tool Navigation (Kotak Masuk | 2FA | Microsoft Reader) -->
+      <nav class="public-tool-nav" id="public-tool-nav" aria-label="Menu fitur utama">
+        <a href="/" class="public-tool-link is-active" data-public-nav="inbox" id="nav-tool-inbox">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
+            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+          </svg>
+          <span>Kotak Masuk</span>
+        </a>
+
+        <a href="/2fa" class="public-tool-link" data-public-nav="2fa" id="nav-tool-2fa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <path d="M9 12l2 2 4-4"></path>
+          </svg>
+          <span>2FA</span>
+        </a>
+
+        <a href="/mail-reader" class="public-tool-link" data-public-nav="msmail" id="nav-tool-msmail">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
+            <rect x="3" y="3" width="8" height="8" rx="1.2"></rect>
+            <rect x="13" y="3" width="8" height="8" rx="1.2"></rect>
+            <rect x="3" y="13" width="8" height="8" rx="1.2"></rect>
+            <rect x="13" y="13" width="8" height="8" rx="1.2"></rect>
+          </svg>
+          <span>Mail Reader</span>
+        </a>
+      </nav>
+
+      <nav class="header-actions" aria-label="Aksi kanan atas">
         <a href="https://order.amc.web.id" target="_blank" rel="noopener noreferrer" class="header-order-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
           <span>AMC Order</span>
@@ -254,7 +245,7 @@
   </header>
 
   <main class="app-main" id="main-content">
-    <!-- Full-page Admin Workspace (visible after Admin PIN login) -->
+    <!-- Full-Page Admin Workspace (visible after Admin PIN login) -->
     <div id="admin-workspace-shell" class="admin-shell hidden">
       <header class="desktop-welcome-card admin-welcome-banner">
         <div class="admin-topbar-copy">
@@ -274,7 +265,7 @@
         </div>
       </header>
 
-      <!-- Order-style 3-card Stat Grid (clickable shortcuts) -->
+      <!-- Order-style 3-card Stat Grid -->
       <div class="desktop-stat-grid" aria-label="Ringkasan Workspace Admin">
         <button type="button" class="desktop-stat-card" data-admin-view="mailboxes">
           <span class="desktop-stat-icon" aria-hidden="true">
@@ -327,7 +318,7 @@
           <form class="quick-create-grid" id="admin-quick-mailbox-form">
             <div class="builder-field">
               <label for="input-quick-username" class="builder-label">Username</label>
-              <input type="text" id="input-quick-username" class="username-input" placeholder="contoh: cs atau klien.budi" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+              <input type="text" id="input-quick-username" class="username-input" placeholder="contoh: info atau cs" autocomplete="off" autocapitalize="off" spellcheck="false" required>
             </div>
             <span class="at-divider" aria-hidden="true">@</span>
             <div class="builder-field">
@@ -362,7 +353,7 @@
             <form class="add-domain-form" id="admin-create-mailbox-form" style="margin-top:12px;margin-bottom:0;">
               <div class="form-field">
                 <label for="input-new-mailboxes">Daftar username atau email lengkap (satu per baris atau pisahkan koma)</label>
-                <textarea id="input-new-mailboxes" class="textarea-input" placeholder="cs&#10;klien.budi&#10;tagihan@almuthicreative.my.id" required></textarea>
+                <textarea id="input-new-mailboxes" class="textarea-input" placeholder="info&#10;cs&#10;tagihan@almuthicreative.my.id" required></textarea>
               </div>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div class="form-field">
@@ -421,10 +412,10 @@
         </div>
       </section>
 
-      <!-- Admin View 2: Full-Page Split-Pane Catch-All Inbox Reader -->
-      <section id="admin-view-catchall" class="admin-view-section hidden">
-        <div class="admin-card" style="padding:16px 18px;">
-          <div class="admin-filter-row" style="margin-bottom:0;">
+      <!-- Admin View 2: Full-Page Unified Split-Pane Catch-All Inbox Reader -->
+      <section id="admin-view-catchall" class="admin-view-section is-fill-view hidden">
+        <div class="admin-card" style="padding:16px 20px;">
+          <div class="admin-filter-row is-catchall-unified" style="margin-bottom:0;">
             <div class="form-field">
               <label for="admin-filter-domain">Domain</label>
               <select id="admin-filter-domain" class="select-input" data-dd-kind="domain" data-dd-title="Filter Domain">
@@ -432,27 +423,19 @@
               </select>
             </div>
             <div class="form-field">
-              <label for="admin-filter-type">Tipe Pesan</label>
-              <select id="admin-filter-type" class="select-input" data-dd-kind="type" data-dd-title="Tipe Pesan">
-                <option value="all">Semua Tipe</option>
-                <option value="otp">OTP / Verifikasi</option>
-                <option value="inbox">Pesan Masuk Biasa</option>
-              </select>
-            </div>
-            <div class="form-field">
-              <label for="admin-filter-search">Cari Semua Inbox</label>
-              <input type="search" id="admin-filter-search" class="text-input" placeholder="Penerima, pengirim, subjek, OTP...">
+              <label for="admin-filter-search">Cari Semua Pesan &amp; OTP</label>
+              <input type="search" id="admin-filter-search" class="text-input" placeholder="Penerima, pengirim, subjek, atau kode OTP...">
             </div>
             <button type="button" class="btn btn-soft btn-sm" id="btn-admin-refresh-msgs">Segarkan</button>
           </div>
         </div>
 
-        <div class="mail-workspace" id="admin-catchall-workspace" aria-label="Pembaca Catch-All Admin">
+        <div class="mail-workspace is-fill-workspace" id="admin-catchall-workspace" aria-label="Pembaca Catch-All Admin">
           <aside class="inbox-pane" aria-label="Daftar Semua Pesan Catch-All">
             <div class="inbox-pane-header">
               <div class="inbox-title-row">
                 <h2 class="inbox-heading">
-                  <span>Catch-All</span>
+                  <span>Semua Pesan</span>
                   <span class="inbox-heading-addr" id="admin-catchall-count-label">0 pesan</span>
                 </h2>
               </div>
@@ -464,7 +447,7 @@
             <div class="state-panel" id="admin-catchall-empty">
               <h3>Pilih Pesan dari Daftar Catch-All</h3>
               <p>
-                Seluruh email masuk dan kode OTP dari semua domain AMC dapat dibaca penuh langsung di panel ini.
+                Seluruh email masuk dan kode OTP dari semua domain AMC ditampilkan utuh dalam satu daftar terpadu.
               </p>
             </div>
             <div class="reader-content hidden" id="admin-catchall-reader"></div>
@@ -539,7 +522,7 @@
             <ol class="cf-guide-steps">
               <li>Tambahkan domain Anda ke akun Cloudflare AMC ini dan ganti Nameserver di registrar sampai berstatus Active.</li>
               <li>Buka menu Email Service lalu Email Routing, klik Onboard Domain, pilih domain, lalu klik Activate (hapus MX lama dulu jika bentrok).</li>
-              <li>Buka tab Routing rules, edit Catch-all address, aktifkan statusnya, pilih Send to a Worker, lalu pilih Worker <code>amcmail</code>.</li>
+              <li>Buka tab Routing rules, hapus aturan Custom address yang ingin dialihkan, lalu aktifkan Catch-all address dengan aksi Send to a Worker ke Worker <code>mail-amc</code>.</li>
               <li>Email pertama yang masuk akan otomatis menandai domain sebagai Terkoneksi.</li>
             </ol>
           </details>
@@ -582,7 +565,7 @@
             <h2>Kirim Uji Coba Email</h2>
             <div class="form-field">
               <label for="input-admin-sim-to">Alamat tujuan</label>
-              <input type="email" id="input-admin-sim-to" class="text-input mono" placeholder="nama@amc.web.id" required>
+              <input type="email" id="input-admin-sim-to" class="text-input mono" placeholder="info@amc.web.id" required>
             </div>
             <div class="form-field">
               <label for="select-admin-sim-type">Skenario uji</label>
@@ -597,147 +580,405 @@
       </section>
     </div>
 
-    <!-- Public Read-Only Viewer (or Admin per-address reader view) -->
+    <!-- Full-Viewport Public & Utility Shell (Kotak Masuk | 2FA | Microsoft Mail Reader) -->
     <div id="public-viewer-shell" class="public-shell">
       <div class="admin-reader-banner hidden" id="admin-reader-banner">
-        <span>Anda membuka pembaca per alamat dalam <strong>Mode Admin</strong>.</span>
+        <span>Anda membuka fitur ini dalam <strong>Mode Admin</strong>.</span>
         <div class="toolbar-group">
-          <button type="button" class="btn btn-sm btn-primary" data-admin-view="mailboxes">Kembali ke Daftar Email</button>
+          <button type="button" class="btn btn-sm btn-primary" data-admin-view="mailboxes">Kembali ke Kelola Email</button>
           <button type="button" class="btn btn-sm btn-soft" data-admin-view="catchall">Semua Pesan</button>
         </div>
       </div>
 
-      <!-- Compact Sky Lookup Card -->
-      <section class="desktop-welcome-card amc-hero-card is-compact-lookup" aria-labelledby="main-heading">
-        <div class="hero-header-row">
-          <div class="hero-copy">
+      <!-- PUBLIC TOOL 1: KOTAK MASUK AMC (UNIFIED INBOX, NO COUNTDOWN, FULL-SCREEN SPLIT DESKTOP) -->
+      <div id="tool-panel-inbox" class="public-tool-panel">
+        <section class="desktop-welcome-card amc-lookup-bar" aria-labelledby="main-heading">
+          <div class="lookup-copy">
             <h1 id="main-heading">Cek Kotak Masuk</h1>
             <p class="hero-subtitle" id="readonly-notice">
-              Masukkan alamat email dari Admin untuk membaca pesan masuk dan kode OTP.
+              Masukkan alamat email dari Admin untuk membaca seluruh pesan masuk dan kode OTP dalam satu kotak masuk.
             </p>
           </div>
 
-          <button type="button" class="poll-control" id="btn-toggle-autopoll" aria-pressed="true" title="Jeda atau lanjutkan pembaruan inbox otomatis">
-            <span class="dot" aria-hidden="true"></span>
-            <span id="poll-status-text">Otomatis 10d</span>
-          </button>
-        </div>
-
-        <div class="address-shell">
-          <form class="address-builder" id="address-form" novalidate>
-            <div class="builder-field">
-              <label for="input-username" class="builder-label">Alamat Email atau Username</label>
-              <input
-                type="text"
-                id="input-username"
-                class="username-input"
-                placeholder="contoh: demo atau cs@amc.web.id"
-                autocomplete="off"
-                autocapitalize="off"
-                spellcheck="false"
-                maxlength="120"
-              >
-            </div>
-
-            <span class="at-divider" aria-hidden="true">@</span>
-
-            <div class="builder-field">
-              <label for="select-domain" class="builder-label">Domain AMC</label>
-              <select id="select-domain" class="domain-select" data-dd-kind="domain" data-dd-title="Pilih Domain AMC"></select>
-            </div>
-
-            <div class="address-primary-actions">
-              <button type="submit" class="btn btn-primary btn-open-main" id="btn-open-inbox">
-                Buka Inbox
-              </button>
-
-              <button type="button" class="btn btn-soft btn-copy-main" id="btn-copy-email" disabled>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <rect x="9" y="9" width="13" height="13" rx="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span id="btn-copy-label">Salin</span>
-              </button>
-            </div>
-          </form>
-
-          <p class="builder-error hidden" id="builder-error" role="alert"></p>
-        </div>
-      </section>
-
-      <!-- Clean Full-Width Single-Column Inbox & Message Reader -->
-      <section class="mail-workspace is-simple-reader" id="mail-workspace" aria-label="Kotak Masuk dan Pembaca Pesan">
-        <div class="inbox-pane" aria-label="Daftar Pesan Masuk">
-          <div class="inbox-pane-header">
-            <div class="inbox-title-row">
-              <div class="inbox-heading">
-                <h2>Kotak Masuk</h2>
-                <span class="inbox-heading-addr" id="inbox-active-label">Belum dipilih</span>
+          <div class="lookup-form-wrap">
+            <form class="address-builder" id="address-form" novalidate>
+              <div class="builder-field">
+                <label for="input-username" class="builder-label">Alamat Email atau Username</label>
+                <input
+                  type="text"
+                  id="input-username"
+                  class="username-input"
+                  placeholder="contoh: info atau info@amc.web.id"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  maxlength="120"
+                >
               </div>
 
-              <div class="inbox-head-actions">
-                <button type="button" class="btn btn-soft btn-sm" id="btn-refresh-inbox" disabled>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:15px;height:15px;">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <polyline points="1 20 1 14 7 14"></polyline>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                  </svg>
-                  <span>Segarkan</span>
+              <span class="at-divider" aria-hidden="true">@</span>
+
+              <div class="builder-field">
+                <label for="select-domain" class="builder-label">Domain AMC</label>
+                <select id="select-domain" class="domain-select" data-dd-kind="domain" data-dd-title="Pilih Domain AMC"></select>
+              </div>
+
+              <div class="address-primary-actions">
+                <button type="submit" class="btn btn-primary btn-open-main" id="btn-open-inbox">
+                  Buka Inbox
                 </button>
-                <button type="button" class="btn btn-sm btn-danger-outline btn-icon hidden" id="btn-clear-inbox" aria-label="Hapus semua pesan di alamat ini" title="Hapus semua pesan di alamat ini (Admin)">
+
+                <button type="button" class="btn btn-soft btn-copy-main" id="btn-copy-email" disabled>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                    <path d="M10 11v6"></path>
-                    <path d="M14 11v6"></path>
+                    <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                   </svg>
+                  <span id="btn-copy-label">Salin</span>
                 </button>
               </div>
-            </div>
+            </form>
 
-            <div class="inbox-controls-row">
-              <div class="filter-tabs" role="tablist" aria-label="Filter jenis pesan">
-                <button type="button" class="filter-tab is-active" data-filter="all" role="tab" aria-selected="true" id="tab-filter-all">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
-                  <span>Semua</span>
-                  <span class="filter-count" id="count-all">0</span>
-                </button>
-                <button type="button" class="filter-tab" data-filter="inbox" role="tab" aria-selected="false" id="tab-filter-inbox">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                  <span>Masuk</span>
-                  <span class="filter-count" id="count-inbox">0</span>
-                </button>
-                <button type="button" class="filter-tab" data-filter="otp" role="tab" aria-selected="false" id="tab-filter-otp">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                  <span>OTP</span>
-                  <span class="filter-count" id="count-otp">0</span>
-                </button>
+            <p class="builder-error hidden" id="builder-error" role="alert"></p>
+          </div>
+        </section>
+
+        <!-- Full-Height Unified Split-Pane Inbox & Reader -->
+        <section class="mail-workspace is-unified-workspace" id="mail-workspace" aria-label="Kotak Masuk Terpadu dan Pembaca Pesan">
+          <aside class="inbox-pane" aria-label="Daftar Pesan Masuk">
+            <div class="inbox-pane-header">
+              <div class="inbox-title-row">
+                <div class="inbox-heading">
+                  <h2>Kotak Masuk</h2>
+                  <span class="inbox-heading-addr" id="inbox-active-label">Belum dipilih</span>
+                  <span class="unified-count-pill"><span id="count-all">0</span> pesan</span>
+                </div>
+
+                <div class="inbox-head-actions">
+                  <button type="button" class="btn btn-soft btn-sm" id="btn-refresh-inbox" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:15px;height:15px;">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <polyline points="1 20 1 14 7 14"></polyline>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span>Segarkan</span>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-danger-outline btn-icon hidden" id="btn-clear-inbox" aria-label="Hapus semua pesan di alamat ini" title="Hapus semua pesan di alamat ini (Admin)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                      <path d="M10 11v6"></path>
+                      <path d="M14 11v6"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
 
-              <div class="search-wrap inbox-search-inline">
+              <div class="search-wrap inbox-search-unified">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="search" id="input-inbox-search" class="search-input" aria-label="Cari pesan" placeholder="Cari pengirim, subjek, OTP..." autocomplete="off">
+                <input type="search" id="input-inbox-search" class="search-input" aria-label="Cari pesan atau kode OTP" placeholder="Cari pengirim, subjek, atau kode OTP..." autocomplete="off">
               </div>
+            </div>
+
+            <div class="inbox-list" id="inbox-list" aria-live="polite"></div>
+          </aside>
+
+          <div class="reader-pane" id="reader-pane" aria-live="polite">
+            <div class="state-panel reader-welcome-panel" id="reader-empty">
+              <div class="reader-welcome-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </div>
+              <h3>Area Baca Pesan &amp; Kode OTP</h3>
+              <p>
+                Seluruh email biasa maupun kode verifikasi OTP digabungkan dalam satu kotak masuk dan otomatis terbuka di panel ini tanpa perlu berpindah tab.
+              </p>
+              <div class="domain-quick-strip" id="domain-pills" aria-label="Domain aktif AMC"></div>
+            </div>
+
+            <div class="reader-content hidden" id="reader-content"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- PUBLIC TOOL 2: 2FA AUTHENTICATOR (/2fa) -->
+      <div id="tool-panel-2fa" class="public-tool-panel hidden">
+        <div class="twofa-workspace">
+          <div class="twofa-main-col">
+            <!-- Shared Read-Only 2FA Card (shown when visiting /2fa?share=...) -->
+            <section class="admin-card twofa-shared-banner hidden" id="twofa-shared-card" aria-label="Kode 2FA Bersama">
+              <div class="admin-card-head">
+                <div>
+                  <span class="badge badge-brand">Link Kode 2FA Privat</span>
+                  <h2 id="twofa-shared-label" style="margin-top:6px;">Akun Bersama</h2>
+                  <p class="card-sub" id="twofa-shared-exp">Setup key rahasia disembunyikan demi keamanan.</p>
+                </div>
+                <button type="button" class="btn btn-soft btn-sm" id="btn-exit-shared-2fa">Tutup Link</button>
+              </div>
+              <div class="twofa-code-stage">
+                <div class="twofa-code-digits mono" id="twofa-shared-code">--- ---</div>
+                <button type="button" class="btn btn-primary" id="btn-copy-shared-2fa">Salin Kode 2FA</button>
+              </div>
+            </section>
+
+            <!-- 2FA Setup Key Generator Card -->
+            <section class="desktop-welcome-card twofa-hero-card" aria-labelledby="twofa-heading">
+              <div class="twofa-head">
+                <div>
+                  <h1 id="twofa-heading">Generator Kode 2FA (TOTP)</h1>
+                  <p class="hero-subtitle">
+                    Tempel setup key Base32 atau tautan <code>otpauth://</code> untuk menghasilkan kode autentikasi 2 faktor 6 digit langsung di browser.
+                  </p>
+                </div>
+                <span class="badge badge-otp">Aktif Otomatis</span>
+              </div>
+
+              <form class="twofa-form" id="twofa-form" novalidate>
+                <div class="twofa-inputs-grid">
+                  <div class="builder-field">
+                    <label for="input-2fa-label" class="builder-label">Label Akun (opsional)</label>
+                    <input type="text" id="input-2fa-label" class="username-input" placeholder="contoh: Microsoft / ChatGPT / Canva" maxlength="80" autocomplete="off">
+                  </div>
+                  <div class="builder-field">
+                    <label for="input-2fa-secret" class="builder-label">Setup Key 2FA (Base32 atau otpauth://)</label>
+                    <input type="text" id="input-2fa-secret" class="username-input mono" placeholder="Tempel setup key Base32, spasi dan strip diabaikan" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+                  </div>
+                </div>
+
+                <div class="twofa-form-actions">
+                  <button type="submit" class="btn btn-primary" id="btn-2fa-generate">Buat Kode 2FA</button>
+                  <button type="button" class="btn btn-soft" id="btn-2fa-save">Simpan ke Perangkat</button>
+                  <button type="button" class="btn" id="btn-2fa-sample">Contoh Key</button>
+                  <button type="button" class="btn" id="btn-2fa-clear">Bersihkan</button>
+                </div>
+                <p class="builder-error hidden" id="twofa-error" role="alert"></p>
+              </form>
+            </section>
+
+            <!-- Current Live 6-Digit Code + Controlled Private Share Card -->
+            <section class="admin-card twofa-display-card" aria-label="Kode 2FA Saat Ini">
+              <div class="twofa-current-top">
+                <div>
+                  <span class="meta-label">KODE 2FA SAAT INI</span>
+                  <h2 id="twofa-active-title">Tempel setup key untuk menampilkan kode</h2>
+                </div>
+                <span class="badge badge-brand" id="twofa-status-pill">Siap digunakan</span>
+              </div>
+
+              <div class="twofa-code-stage">
+                <div class="twofa-code-digits mono" id="twofa-current-code">--- ---</div>
+                <button type="button" class="btn btn-primary btn-copy-2fa" id="btn-copy-2fa-code" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span>Salin Kode</span>
+                </button>
+              </div>
+
+              <div class="twofa-share-section">
+                <div class="twofa-share-head">
+                  <h3>Bagikan Kode Tanpa Membuka Setup Key</h3>
+                  <p class="card-sub">Buat link privat berbatas waktu yang hanya menampilkan kode 6 digit aktif tanpa memperlihatkan kunci rahasia Base32.</p>
+                </div>
+
+                <div class="twofa-share-controls">
+                  <div class="form-field">
+                    <label for="select-2fa-share-exp">Masa berlaku link</label>
+                    <select id="select-2fa-share-exp" class="select-input" data-dd-kind="retention" data-dd-title="Masa Berlaku Link 2FA">
+                      <option value="1">1 Jam (Disarankan)</option>
+                      <option value="24" selected>24 Jam</option>
+                      <option value="168">7 Hari</option>
+                    </select>
+                  </div>
+                  <button type="button" class="btn btn-soft" id="btn-2fa-create-share" disabled>Buat Link Privat</button>
+                </div>
+
+                <div class="twofa-share-output hidden" id="twofa-share-output">
+                  <input type="text" id="input-2fa-share-url" class="text-input mono" readonly aria-label="Tautan privat 2FA">
+                  <button type="button" class="btn btn-primary btn-sm" id="btn-copy-2fa-share-url">Salin Link</button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Right Column: Saved 2FA Keys on This Device & Active Share Links -->
+          <aside class="twofa-side-col" aria-label="Daftar Kunci 2FA Tersimpan">
+            <section class="admin-card twofa-saved-card">
+              <div class="admin-card-head">
+                <div>
+                  <h2>Kunci 2FA Tersimpan</h2>
+                  <p class="card-sub">Tersimpan lokal di browser perangkat ini dengan kode 6 digit yang selalu diperbarui otomatis.</p>
+                </div>
+                <span class="unified-count-pill"><span id="twofa-saved-count">0</span> akun</span>
+              </div>
+
+              <div class="twofa-saved-list" id="twofa-saved-list" aria-live="polite"></div>
+
+              <div class="twofa-shares-wrap" id="twofa-shares-wrap">
+                <div class="twofa-shares-title">Link Privat Aktif</div>
+                <div class="twofa-shares-list" id="twofa-shares-list"></div>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </div>
+
+      <!-- PUBLIC TOOL 3: MICROSOFT / OUTLOOK INBOX MAIL READER (/mail-reader) -->
+      <div id="tool-panel-msmail" class="public-tool-panel hidden">
+        <section class="desktop-welcome-card msmail-connect-bar" aria-labelledby="msmail-heading">
+          <div class="msmail-bar-top">
+            <div class="lookup-copy">
+              <h1 id="msmail-heading">Microsoft / Outlook Inbox Reader</h1>
+              <p class="hero-subtitle">
+                Buka kotak masuk Outlook, Hotmail, dan Microsoft 365 menggunakan Refresh Token &amp; Client ID tanpa login akun.
+              </p>
+            </div>
+
+            <div class="msmail-format-pills">
+              <button type="button" class="badge badge-brand ms-format-chip" data-ms-example="pipe" title="Gunakan contoh format garis vertikal">
+                Format Pipe: email|sandi|refresh_token|client_id
+              </button>
+              <button type="button" class="badge badge-neutral ms-format-chip" data-ms-example="colon" title="Gunakan contoh format titik dua">
+                Format Titik Dua: email:sandi:refresh_token:client_id
+              </button>
+              <button type="button" class="btn btn-sm btn-danger-outline hidden" id="btn-ms-disconnect">
+                Putus Koneksi
+              </button>
             </div>
           </div>
 
-          <div class="inbox-list" id="inbox-list" aria-live="polite"></div>
-        </div>
+          <form class="msmail-connect-form" id="msmail-connect-form" novalidate>
+            <div class="msmail-combo-row">
+              <div class="builder-field" style="flex:1;">
+                <label for="input-ms-combo" class="builder-label">Combo Microsoft OAuth (email, refresh_token, dan client_id terdeteksi otomatis; sandi diabaikan)</label>
+                <input
+                  type="text"
+                  id="input-ms-combo"
+                  class="username-input mono"
+                  placeholder="email@outlook.com|sandi|M.C509_...|9e5f94bc-e8a4-4e73-b8be-63364c29d753"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  required
+                >
+              </div>
+              <button type="submit" class="btn btn-primary btn-open-main" id="btn-ms-connect">
+                Hubungkan &amp; Buka Inbox
+              </button>
+            </div>
 
-        <div class="reader-pane" id="reader-pane" aria-live="polite">
-          <div class="state-panel" id="reader-empty">
-            <h3>Pilih Pesan untuk Membaca</h3>
-            <p>
-              Klik salah satu pesan di kotak masuk untuk melihat isi email atau kode OTP.
-            </p>
+            <div class="msmail-detect-strip" id="ms-detect-strip">
+              <span class="ms-detect-item" id="ms-detect-email">Email: Menunggu input</span>
+              <span class="ms-detect-item" id="ms-detect-client">Client ID: Menunggu UUID</span>
+              <span class="ms-detect-item" id="ms-detect-token">Refresh Token: Menunggu token</span>
+              <span class="ms-detect-item is-privacy">Privasi: Sesi tab lokal, tidak disimpan di server</span>
+            </div>
+
+            <p class="builder-error hidden" id="msmail-error" role="alert"></p>
+          </form>
+        </section>
+
+        <!-- Full-Height Split-Pane Microsoft Inbox & Reader -->
+        <section class="mail-workspace is-unified-workspace" id="msmail-workspace" aria-label="Kotak Masuk Microsoft dan Pembaca Pesan">
+          <aside class="inbox-pane" aria-label="Daftar Pesan Microsoft">
+            <div class="inbox-pane-header">
+              <div class="inbox-title-row">
+                <div class="inbox-heading">
+                  <h2>Outlook</h2>
+                  <span class="inbox-heading-addr" id="msmail-active-label">Belum terhubung</span>
+                  <span class="unified-count-pill"><span id="msmail-count">0</span> pesan</span>
+                </div>
+
+                <div class="inbox-head-actions">
+                  <button type="button" class="btn btn-soft btn-sm" id="btn-ms-refresh" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:15px;height:15px;">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <polyline points="1 20 1 14 7 14"></polyline>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span>Segarkan</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="msmail-controls-grid">
+                <select id="select-ms-folder" class="select-input" data-dd-kind="type" data-dd-title="Folder Microsoft" disabled>
+                  <option value="all_incoming">Semua Masuk (Inbox + Junk)</option>
+                  <option value="inbox">Inbox</option>
+                  <option value="junkemail">Junk Email (Spam)</option>
+                  <option value="sentitems">Sent Items</option>
+                  <option value="deleteditems">Deleted Items</option>
+                </select>
+
+                <div class="search-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input type="search" id="input-ms-search" class="search-input" aria-label="Cari pesan Microsoft" placeholder="Cari email / OTP..." autocomplete="off">
+                </div>
+              </div>
+            </div>
+
+            <div class="inbox-list" id="msmail-list" aria-live="polite">
+              <div class="state-panel">
+                <h3>Belum Ada Akun Terhubung</h3>
+                <p>Tempel combo Microsoft di atas lalu klik Hubungkan &amp; Buka Inbox untuk memuat pesan.</p>
+              </div>
+            </div>
+          </aside>
+
+          <div class="reader-pane" id="msmail-reader-pane" aria-live="polite">
+            <div class="msmail-guide-stage" id="msmail-empty">
+              <div class="msmail-guide-head">
+                <h3>Panduan Koneksi Microsoft Inbox Reader</h3>
+                <p>Buka email verifikasi dan pesan masuk dari Hotmail, Outlook, atau Microsoft 365 secara instan melalui Microsoft Graph API.</p>
+              </div>
+
+              <div class="msmail-guide-grid">
+                <div class="msmail-guide-item">
+                  <span class="step-badge" aria-hidden="true">1</span>
+                  <div>
+                    <h4>Deteksi Format Combo Otomatis</h4>
+                    <p>Mendukung pemisah garis vertikal (<code>|</code>), titik dua (<code>:</code>), maupun empat strip (<code>----</code>). Urutan <code>refresh_token</code> dan <code>client_id</code> dikenali otomatis.</p>
+                  </div>
+                </div>
+
+                <div class="msmail-guide-item">
+                  <span class="step-badge" aria-hidden="true">2</span>
+                  <div>
+                    <h4>Gabungan Inbox &amp; Junk Otomatis</h4>
+                    <p>Secara bawaan menggabungkan pesan dari folder <strong>Inbox</strong> dan <strong>Junk Email (Spam)</strong> agar email kode OTP tidak terlewat.</p>
+                  </div>
+                </div>
+
+                <div class="msmail-guide-item">
+                  <span class="step-badge" aria-hidden="true">3</span>
+                  <div>
+                    <h4>Salin Kode OTP Satu Klik</h4>
+                    <p>Kode verifikasi 4 sampai 8 digit pada subjek maupun isi email dideteksi otomatis dan siap disalin langsung dari daftar pesan.</p>
+                  </div>
+                </div>
+
+                <div class="msmail-guide-item">
+                  <span class="step-badge" aria-hidden="true">4</span>
+                  <div>
+                    <h4>Sesi Privat Tanpa Riwayat Server</h4>
+                    <p>Bagian sandi diabaikan sepenuhnya. Refresh token hanya dipakai untuk permintaan aktif ke Microsoft Graph dan bersih saat tab ditutup.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="reader-content hidden" id="msmail-reader"></div>
           </div>
-
-          <div class="reader-content hidden" id="reader-content"></div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
 
     <footer class="site-footer">
@@ -745,24 +986,18 @@
       <span class="footer-sep" aria-hidden="true">&middot;</span>
       <span id="retention-info">Retensi otomatis: 7 hari</span>
       <span class="footer-sep" aria-hidden="true">&middot;</span>
+      <a href="/" data-public-nav="inbox">Kotak Masuk</a>
+      <span class="footer-sep" aria-hidden="true">&middot;</span>
+      <a href="/2fa" data-public-nav="2fa">2FA</a>
+      <span class="footer-sep" aria-hidden="true">&middot;</span>
+      <a href="/mail-reader" data-public-nav="msmail">Mail Reader</a>
+      <span class="footer-sep" aria-hidden="true">&middot;</span>
       <a href="https://order.amc.web.id" target="_blank" rel="noopener noreferrer">order.amc.web.id</a>
     </footer>
   </main>
 
   <!-- Mobile Bottom Navigation: Admin (< 1024px) -->
   <nav class="mobile-bottom-nav" aria-label="Navigasi bawah mobile">
-    <div class="mobile-nav-grid" id="mob-nav-public">
-      <button type="button" class="mobile-nav-item is-active" id="mob-nav-inbox" data-mob-action="inbox">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
-        <span>Inbox</span>
-      </button>
-
-      <button type="button" class="mobile-nav-item" id="mob-nav-admin" data-mob-action="admin">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-        <span>Admin</span>
-      </button>
-    </div>
-
     <div class="mobile-nav-grid hidden" id="mob-nav-admin-bar">
       <button type="button" class="mobile-nav-item is-active" data-admin-view="mailboxes" id="mob-admin-mailboxes">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
@@ -791,7 +1026,7 @@
     <div class="modal-panel is-compact">
       <div class="modal-head">
         <h2 class="modal-title" id="admin-modal-title">
-          <span class="modal-title-logo"><img src="./assets/amc-logo.png" alt="" width="22" height="22"></span>
+          <span class="modal-title-logo"><img src="/assets/amc-logo.png" alt="" width="22" height="22"></span>
           <span>Masuk Workspace Admin</span>
         </h2>
         <button type="button" class="btn btn-sm" id="btn-close-admin" aria-label="Tutup Login Admin">Tutup</button>
@@ -815,6 +1050,6 @@
 
   <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="./js/app.js"></script>
+  <script type="module" src="/js/app.js"></script>
 </body>
 </html>

@@ -813,8 +813,120 @@ export async function getAdminStats(db) {
   };
 }
 
-export async function purgeExpiredEmails(db, olderThanHours = null) {
+const ensuredTotpShareDbs = new WeakSet();
+
+export async function ensureTotpSharesTable(db) {
+  if (ensuredTotpShareDbs.has(db)) return;
+  await db.batch([
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS totp_shares (
+         id TEXT PRIMARY KEY,
+         label TEXT NOT NULL DEFAULT '',
+         secret_b32 TEXT NOT NULL,
+         digits INTEGER NOT NULL DEFAULT 6,
+         period INTEGER NOT NULL DEFAULT 30,
+         algorithm TEXT NOT NULL DEFAULT 'SHA-1',
+         revoke_key TEXT NOT NULL,
+         created_at INTEGER NOT NULL,
+         expires_at INTEGER NOT NULL
+       )`
+    ),
+    db.prepare('CREATE INDEX IF NOT EXISTS idx_totp_shares_expires ON totp_shares (expires_at)'),
+  ]);
+  ensuredTotpShareDbs.add(db);
+}
+
+function randomUrlToken(byteLen = 12) {
+  const bytes = new Uint8Array(byteLen);
+  crypto.getRandomValues(bytes);
+  let str = '';
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+  for (let i = 0; i < bytes.length; i++) {
+    str += chars[bytes[i] % chars.length];
+  }
+  return str;
+}
+
+export async function createTotpShare(
+  db,
+  { label = '', secretBase32, digits = 6, period = 30, algorithm = 'SHA-1', expiresInHours = 24 }
+) {
+  await ensureTotpSharesTable(db);
   const now = Date.now();
+  const validHours = [1, 24, 168].includes(Number(expiresInHours)) ? Number(expiresInHours) : 24;
+  const expiresAt = now + validHours * 60 * 60 * 1000;
+  const id = randomUrlToken(14);
+  const revokeKey = randomUrlToken(18);
+  const cleanLabel = String(label || 'Akun 2FA').trim().slice(0, 120) || 'Akun 2FA';
+
+  await db
+    .prepare(
+      `INSERT INTO totp_shares (id, label, secret_b32, digits, period, algorithm, revoke_key, created_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(id, cleanLabel, secretBase32, digits, period, algorithm, revokeKey, now, expiresAt)
+    .run();
+
+  return {
+    id,
+    label: cleanLabel,
+    digits,
+    period,
+    createdAt: now,
+    expiresAt,
+    revokeKey,
+  };
+}
+
+export async function getTotpShare(db, id) {
+  await ensureTotpSharesTable(db);
+  const cleanId = String(id || '').trim();
+  if (!cleanId) return null;
+  const now = Date.now();
+  const row = await db
+    .prepare(
+      'SELECT id, label, secret_b32, digits, period, algorithm, created_at, expires_at FROM totp_shares WHERE id = ?'
+    )
+    .bind(cleanId)
+    .first();
+
+  if (!row) return null;
+  if (Number(row.expires_at) <= now) {
+    await db.prepare('DELETE FROM totp_shares WHERE id = ?').bind(cleanId).run();
+    return null;
+  }
+
+  return {
+    id: row.id,
+    label: row.label,
+    secretBase32: row.secret_b32,
+    digits: Number(row.digits || 6),
+    period: Number(row.period || 30),
+    algorithm: row.algorithm || 'SHA-1',
+    createdAt: Number(row.created_at),
+    expiresAt: Number(row.expires_at),
+  };
+}
+
+export async function deleteTotpShare(db, id, revokeKey = '', { isAdmin = false } = {}) {
+  await ensureTotpSharesTable(db);
+  const cleanId = String(id || '').trim();
+  if (!cleanId) return false;
+
+  const row = await db.prepare('SELECT id, revoke_key FROM totp_shares WHERE id = ?').bind(cleanId).first();
+  if (!row) return false;
+  if (!isAdmin && (!revokeKey || row.revoke_key !== revokeKey)) {
+    return null;
+  }
+
+  await db.prepare('DELETE FROM totp_shares WHERE id = ?').bind(cleanId).run();
+  return true;
+}
+
+export async function purgeExpiredEmails(db, olderThanHours = null) {
+  await ensureTotpSharesTable(db);
+  const now = Date.now();
+  await db.prepare('DELETE FROM totp_shares WHERE expires_at <= ?').bind(now).run();
   let res;
   if (olderThanHours !== null && olderThanHours >= 0) {
     const cutoff = now - olderThanHours * 60 * 60 * 1000;
