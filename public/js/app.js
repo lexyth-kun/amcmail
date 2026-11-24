@@ -374,6 +374,59 @@ function triggerClassAnim(el, className, durationMs = 620) {
   }, durationMs);
 }
 
+/* ---- AMC Trash Motion: animasi buang/hapus (item menyusut, berputar, jatuh ke tong sampah) ---- */
+const TRASH_SVG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="amc-trash-lid"><path d="M3 6h18"></path><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"></path></g><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path></svg>';
+
+function spawnTrashPuff(rect) {
+  if (prefersReducedMotion() || !rect) return;
+  const puff = document.createElement('div');
+  puff.className = 'amc-trash-puff';
+  const size = 46;
+  const cx = Math.min(Math.max(rect.left + rect.width / 2, size), window.innerWidth - size);
+  const cy = Math.min(Math.max(rect.top + rect.height / 2, size), window.innerHeight - size);
+  puff.style.left = `${cx}px`;
+  puff.style.top = `${cy}px`;
+  let bits = '';
+  for (let i = 0; i < 8; i += 1) {
+    const ang = (Math.PI * 2 * i) / 8 + Math.random() * 0.5;
+    const dist = 26 + Math.random() * 26;
+    bits += `<i style="--tx:${(Math.cos(ang) * dist).toFixed(1)}px;--ty:${(Math.sin(ang) * dist - 10).toFixed(1)}px;--d:${(i * 22) % 120}ms"></i>`;
+  }
+  puff.innerHTML = `<span class="amc-trash-bin">${TRASH_SVG}</span>${bits}`;
+  document.body.appendChild(puff);
+  setTimeout(() => puff.remove(), 1100);
+}
+
+/** Animasikan elemen yang dihapus lalu selesai saat animasi usai. */
+async function animateRemove(el, { puff = true, delay = 0 } = {}) {
+  if (!el || !el.isConnected) return;
+  if (prefersReducedMotion()) return;
+  if (delay) await waitMs(delay);
+  const rect = el.getBoundingClientRect();
+  const isRow = el.tagName === 'TR';
+  if (!isRow) {
+    el.style.setProperty('--amc-h', `${Math.round(rect.height)}px`);
+  }
+  el.classList.add(isRow ? 'amc-removing-row' : 'amc-removing');
+  if (puff) spawnTrashPuff(rect);
+  await waitMs(isRow ? 560 : 640);
+}
+
+/** Animasikan banyak elemen berurutan (stagger) - untuk hapus semua. */
+async function animateRemoveMany(nodes, { max = 8 } = {}) {
+  const list = Array.from(nodes || []).slice(0, max);
+  if (!list.length || prefersReducedMotion()) return;
+  await Promise.all(list.map((n, i) => animateRemove(n, { puff: i === 0, delay: i * 70 })));
+}
+
+function findMsgCardEls(id) {
+  const safe = String(id).replace(/"/g, '\\"');
+  return document.querySelectorAll(
+    `[data-open-id="${safe}"], [data-admin-open-id="${safe}"], [data-ms-open-id="${safe}"]`
+  );
+}
+
 function spawnSkySparkles(targetEl, count = 5, palette = 'sky') {
   if (!targetEl || prefersReducedMotion()) return;
   const rect = targetEl.getBoundingClientRect();
@@ -1512,7 +1565,7 @@ function buildMessageDetailMarkup(detail, { activeTab, allowExternalImages, mode
           }
           ${
             canDelete
-              ? `<button type="button" class="btn btn-sm btn-danger-outline" data-delete-email="${escapeHtml(detail.id)}" data-delete-mode="${mode}">Hapus</button>`
+              ? `<button type="button" class="btn btn-sm btn-danger-outline" data-delete-email="${escapeHtml(detail.id)}" data-delete-mode="${mode}">${TRASH_SVG}<span>Hapus</span></button>`
               : ''
           }
         </div>
@@ -2050,7 +2103,7 @@ async function renderSavedTwoFaList() {
             <span class="twofa-saved-live mono">${escapeHtml(formatOtpDigits(item.liveCode))}</span>
             <button type="button" class="btn btn-primary btn-sm btn-copy-anim" data-2fa-copy="${escapeHtml(item.liveCode)}" data-2fa-name="${escapeHtml(item.label || 'Akun 2FA')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Salin</span></button>
             <button type="button" class="btn btn-soft btn-sm" data-2fa-use="${escapeHtml(item.id)}">Buka</button>
-            <button type="button" class="btn btn-sm btn-danger-outline" data-2fa-delete="${escapeHtml(item.id)}">Hapus</button>
+            <button type="button" class="btn btn-sm btn-danger-outline" data-2fa-delete="${escapeHtml(item.id)}">${TRASH_SVG}<span>Hapus</span></button>
           </div>
         </div>
       `;
@@ -2795,7 +2848,25 @@ async function loadAdminMailboxes() {
   }
 }
 
+function renderAdminSimRecipients() {
+  const sel = els.inputAdminSimTo;
+  if (!sel || sel.tagName !== 'SELECT') return;
+  const prev = sel.value;
+  const active = state.adminMailboxes.filter((m) => m.status === 'active');
+  if (!active.length) {
+    sel.innerHTML = '<option value="">Belum ada email aktif</option>';
+  } else {
+    sel.innerHTML = active
+      .map((m) => `<option value="${escapeHtml(m.address)}">${escapeHtml(m.address)}</option>`)
+      .join('');
+    if (prev && active.some((m) => m.address === prev)) sel.value = prev;
+  }
+  sel.disabled = !active.length;
+  syncCustomDropdowns(sel.parentElement);
+}
+
 function renderAdminMailboxesTable() {
+  renderAdminSimRecipients();
   if (state.adminMailboxes.length === 0) {
     els.adminMailboxesTbody.innerHTML =
       '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Belum ada alamat email terdaftar. Buat alamat email baru di formulir atas.</td></tr>';
@@ -2827,7 +2898,7 @@ function renderAdminMailboxesTable() {
               <button type="button" class="btn btn-sm btn-primary" data-mailbox-open="${escapeHtml(mb.address)}">Buka Inbox</button>
               <button type="button" class="btn btn-sm btn-copy-anim" data-mailbox-copy-addr="${escapeHtml(mb.address)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Salin</span></button>
               <button type="button" class="btn btn-sm btn-soft btn-copy-anim" data-mailbox-copy-link="${escapeHtml(mb.address)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Salin Link</span></button>
-              <button type="button" class="btn btn-sm btn-danger-outline" data-mailbox-delete="${mb.id}" data-mailbox-addr="${escapeHtml(mb.address)}">Hapus</button>
+              <button type="button" class="btn btn-sm btn-danger-outline" data-mailbox-delete="${mb.id}" data-mailbox-addr="${escapeHtml(mb.address)}">${TRASH_SVG}<span>Hapus</span></button>
             </div>
           </td>
         </tr>
@@ -2928,7 +2999,7 @@ function renderAdminDomainsTable() {
                   ? ''
                   : `<button type="button" class="btn btn-sm btn-soft" data-domain-default="${d.id}">Jadikan Default</button>`
               }
-              <button type="button" class="btn btn-sm btn-danger-outline" data-domain-delete="${d.id}" data-domain-name="${escapeHtml(d.domain)}">Hapus</button>
+              <button type="button" class="btn btn-sm btn-danger-outline" data-domain-delete="${d.id}" data-domain-name="${escapeHtml(d.domain)}">${TRASH_SVG}<span>Hapus</span></button>
             </div>
           </td>
         </tr>
@@ -3190,6 +3261,7 @@ function bindEvents() {
     if (!confirm(`Hapus semua pesan di ${addr}?`)) return;
     try {
       await apiFetch(`/api/inbox?address=${encodeURIComponent(addr)}`, { method: 'DELETE', admin: true });
+      await animateRemoveMany(els.inboxList.querySelectorAll('[data-open-id]'));
       state.selectedId = null;
       state.selectedDetail = null;
       renderReaderEmpty();
@@ -3310,6 +3382,7 @@ function bindEvents() {
       try {
         if (mode === 'admin') {
           await apiFetch(`/api/admin/messages/${encodeURIComponent(id)}`, { method: 'DELETE', admin: true });
+          await Promise.all([...findMsgCardEls(id)].map((n) => animateRemove(n)));
           state.adminSelectedId = null;
           state.adminSelectedDetail = null;
           els.adminCatchallWorkspace.classList.remove('is-reading');
@@ -3317,6 +3390,7 @@ function bindEvents() {
           await Promise.all([loadAdminStatsAndMessages(), loadAdminMailboxes()]);
         } else {
           await apiFetch(`/api/emails/${encodeURIComponent(id)}`, { method: 'DELETE', admin: true });
+          await Promise.all([...findMsgCardEls(id)].map((n) => animateRemove(n)));
           state.selectedId = null;
           state.selectedDetail = null;
           els.mailWorkspace.classList.remove('is-reading');
@@ -3462,6 +3536,7 @@ function bindEvents() {
     const delBtn = e.target.closest('[data-2fa-delete]');
     if (delBtn) {
       const id = delBtn.getAttribute('data-2fa-delete');
+      await animateRemove(delBtn.closest('.twofa-saved-item'));
       state.twoFaSaved = state.twoFaSaved.filter((item) => item.id !== id);
       persistSavedTwoFa();
       await renderSavedTwoFaList();
@@ -3752,6 +3827,7 @@ function bindEvents() {
       if (!confirm(`Hapus akses alamat ${addr} dari daftar email terdaftar?`)) return;
       try {
         const res = await apiFetch(`/api/admin/mailboxes/${id}`, { method: 'DELETE', admin: true });
+        await animateRemove(delBtn.closest('tr'));
         state.adminMailboxes = res.mailboxes || [];
         state.adminMailboxAddressSet = new Set(state.adminMailboxes.map((m) => m.address));
         renderAdminMailboxesTable();
@@ -3871,6 +3947,7 @@ function bindEvents() {
       if (!confirm(`Hapus domain ${name} dari daftar? Email lama tetap aman di arsip.`)) return;
       try {
         const res = await apiFetch(`/api/admin/domains/${id}`, { method: 'DELETE', admin: true });
+        await animateRemove(delBtn.closest('tr'));
         state.adminDomains = res.domains || [];
         renderAdminDomainsTable();
         syncAdminDomainDropdowns();
@@ -3924,7 +4001,10 @@ function bindEvents() {
     e.preventDefault();
     const to = els.inputAdminSimTo.value.trim().toLowerCase();
     const scenario = els.selectAdminSimType.value;
-    if (!to) return;
+    if (!to) {
+      showToast('Belum ada email aktif untuk dikirimi uji coba.', 'error');
+      return;
+    }
     const simBtn = els.adminSimForm.querySelector('button[type="submit"]');
     try {
       await apiFetch('/api/simulate', {

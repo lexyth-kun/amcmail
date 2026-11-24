@@ -26,7 +26,7 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="/css/style.css?v=202611240310">
+  <link rel="stylesheet" href="/css/style.css?v=202611240327">
 </head>
 <body>
   <a href="#main-content" class="skip-link">Langsung ke konten utama</a>
@@ -621,7 +621,10 @@
             <h2>Kirim Uji Coba Email</h2>
             <div class="form-field">
               <label for="input-admin-sim-to">Alamat tujuan</label>
-              <input type="email" id="input-admin-sim-to" class="text-input mono" placeholder="info@amc.web.id" required>
+              <select id="input-admin-sim-to" class="select-input mono" data-dd-kind="domain" data-dd-title="Email Aktif Tujuan" required>
+                <option value="">Memuat email aktif...</option>
+              </select>
+              <p class="field-hint">Hanya menampilkan alamat email yang berstatus Aktif.</p>
             </div>
             <div class="form-field">
               <label for="select-admin-sim-type">Skenario uji</label>
@@ -1300,6 +1303,6 @@
 
   <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="/js/app.js?v=202611240310"></script>
+  <script type="module" src="/js/app.js?v=202611240327"></script>
 </body>
 </html>
