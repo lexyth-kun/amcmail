@@ -1399,7 +1399,7 @@ function renderAdminMailboxesTable() {
             ${mb.totalEmails} pesan
           </td>
           <td>
-            <input type="text" class="text-input table-control" style="min-width:116px;max-width:146px;" value="${escapeHtml(mb.label)}" placeholder="Keterangan..." data-mailbox-label-id="${mb.id}">
+            <input type="text" class="text-input table-control" style="min-width:136px;max-width:210px;" value="${escapeHtml(mb.label)}" placeholder="Keterangan..." data-mailbox-label-id="${mb.id}">
           </td>
           <td style="text-align:right;white-space:nowrap;">
             <div class="table-actions">
@@ -1497,16 +1497,18 @@ function renderAdminDomainsTable() {
           <td class="mono" style="white-space:nowrap;">
             ${d.totalEmails} pesan
           </td>
-          <td>
-            <input type="text" class="text-input table-control" style="min-width:150px;" value="${escapeHtml(d.notes)}" placeholder="Catatan..." data-domain-notes-id="${d.id}">
+          <td style="min-width:210px;">
+            <input type="text" class="text-input table-control" style="width:100%;min-width:170px;" value="${escapeHtml(d.notes)}" placeholder="Catatan..." data-domain-notes-id="${d.id}">
           </td>
           <td style="text-align:right;white-space:nowrap;">
-            ${
-              d.isDefault || d.status !== 'active'
-                ? ''
-                : `<button type="button" class="btn btn-sm" data-domain-default="${d.id}">Jadikan Default</button>`
-            }
-            <button type="button" class="btn btn-sm btn-danger-outline" data-domain-delete="${d.id}" data-domain-name="${escapeHtml(d.domain)}">Hapus</button>
+            <div class="table-actions">
+              ${
+                d.isDefault || d.status !== 'active'
+                  ? ''
+                  : `<button type="button" class="btn btn-sm btn-soft" data-domain-default="${d.id}">Jadikan Default</button>`
+              }
+              <button type="button" class="btn btn-sm btn-danger-outline" data-domain-delete="${d.id}" data-domain-name="${escapeHtml(d.domain)}">Hapus</button>
+            </div>
           </td>
         </tr>
       `;
